@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>SärmäysPro v4.6.2</title>
+    <title>SärmäysPro v4.6.5</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -23,15 +23,15 @@
         .timer-val { font-size: 3rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; line-height: 1; margin: 5px 0; }
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
         .stat-box { text-align: center; padding: 6px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--gray); }
-        .stat-val { font-size: 1rem; font-weight: 900; display: block; }
+        .stat-val { font-size: 1.1rem; font-weight: 900; display: block; }
         .stat-label { font-size: 0.55rem; color: var(--light-gray); text-transform: uppercase; }
         input { padding: 12px; background: #000; border: 2px solid var(--gray); border-radius: 10px; color: #fff; font-size: 16px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 8px; }
         input:focus { border-color: var(--accent); outline: none; }
+        input.error-glow { border-color: var(--danger) !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
         .btn { border: none; border-radius: 10px; padding: 15px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; color: white; width: 100%; display: block; }
         .btn:disabled { background: var(--gray) !important; color: #444; cursor: not-allowed; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         .active-mode { background: var(--danger) !important; animation: blink 0.8s infinite !important; border: 2px solid white; }
-        #history-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 3000; display: none; padding: 10px; overflow-y: auto; }
         #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #reader { width: 85%; max-width: 350px; border-radius: 15px; border: 3px solid var(--accent); }
     </style>
@@ -43,16 +43,8 @@
     <button class="btn" onclick="stopScanner()" style="background:var(--danger); width:auto; padding: 12px 25px; margin-top:15px;">PERUUTA</button>
 </div>
 
-<div id="history-view">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 style="margin:0; color:var(--accent)">Jakson Historia</h3>
-        <button class="btn" style="width:auto; padding:8px 15px; background:var(--gray)" onclick="toggleHistoryView()">SULJE</button>
-    </div>
-    <div id="periodLogContent"></div>
-</div>
-
 <div class="container">
-    <div class="version-header">VERSION v4.6.2</div>
+    <div class="version-header">VERSION v4.6.5</div>
     <div class="header-box"><span style="font-weight:900; font-size:1.3rem; color:var(--accent)"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
     
     <div class="card">
@@ -60,80 +52,61 @@
         <div class="grid">
             <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
             <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
-            <button class="stat-box" onclick="toggleHistoryView()" style="border:1px solid var(--primary); background:none; color:inherit; cursor:pointer;">
-                <span id="periodEff" class="stat-val" style="color:var(--primary)">0.00</span><span class="stat-label">JAKSO</span>
-            </button>
+            <div class="stat-box"><span id="periodEff" class="stat-val" style="color:var(--primary)">0.00</span><span class="stat-label">JAKSO EFF</span></div>
         </div>
     </div>
 
     <div class="grid" style="margin-bottom: 8px;">
-        <button class="btn" style="background: var(--accent)" id="shiftBtn" onclick="toggleShift()">ALKU</button>
-        <button class="btn" style="background: var(--warn); color: #000;" onclick="handleManualToggle('FAIL')" id="failBtn" disabled>HÄIRIÖ</button>
-        <button class="btn" style="background: var(--proto);" onclick="handleManualToggle('PROTO')" id="protoBtn" disabled>PROTO</button>
+        <button class="btn" id="shiftBtn" style="background: var(--accent)" onclick="toggleShift()">ALKU</button>
+        <button class="btn" id="failBtn" style="background: var(--warn); color: #000;" onclick="handleManualToggle('FAIL')" disabled>HÄIRIÖ</button>
+        <button class="btn" id="protoBtn" style="background: var(--proto);" onclick="handleManualToggle('PROTO')" disabled>PROTO</button>
     </div>
 
     <div class="card">
-        <input type="text" id="in_id" placeholder="KORTIN NRO (6nro)" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateID(this)" disabled>
+        <input type="text" id="in_id" placeholder="TYÖ ID (Tasan 6nro)" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateIDManual(this)" onblur="finalValidateID(this)" disabled>
         <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" disabled>
         <div class="grid">
             <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled>
             <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" disabled>
             <input type="number" id="in_m" placeholder="MUUT" inputmode="decimal" disabled>
         </div>
-        <button class="btn" style="background: var(--primary); color:#000;" id="saveBtn" onclick="addJob()" disabled>TALLENNA KORTTI</button>
+        <button class="btn" id="saveBtn" style="background: var(--primary); color:#000;" onclick="addJob()" disabled>TALLENNA KORTTI</button>
     </div>
 
-    <div id="currentShiftList" class="card" style="padding:0; min-height:80px; margin-bottom: 20px;"></div>
+    <div id="currentShiftList" class="card" style="padding:0; min-height:80px;"></div>
 </div>
 
 <script>
     let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, shiftLog: [], activeManual: null };
-    let periodDb = JSON.parse(localStorage.getItem('sarmays_period_history')) || [];
     let periodStats = JSON.parse(localStorage.getItem('sarmays_period_stats')) || { totalMins: 0, totalWorkTimeMs: 0 };
     let html5QrCode = null;
 
     function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
-    
-    function beep(freq, dur) {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = freq; gain.gain.value = 0.05;
-            osc.start(); osc.stop(audioCtx.currentTime + dur);
-        } catch(e) {}
-    }
+    function beep(f, d) { try { const a=new(window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(); const g=a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value=f; g.gain.value=0.05; o.start(); o.stop(a.currentTime+d); } catch(e){} }
 
     function updateUI() {
         const sBtn = document.getElementById('shiftBtn');
         sBtn.innerText = db.isRunning ? "LOPPU" : "ALKU";
         sBtn.style.background = db.isRunning ? "var(--danger)" : "var(--accent)";
-        
-        const controls = ['failBtn', 'protoBtn', 'in_id', 'in_laji', 'in_s', 'in_t', 'in_m'];
-        controls.forEach(id => document.getElementById(id).disabled = !db.isRunning);
-        
+        ['failBtn', 'protoBtn', 'in_id', 'in_laji', 'in_s', 'in_t', 'in_m'].forEach(id => document.getElementById(id).disabled = !db.isRunning);
         document.getElementById('failBtn').classList.toggle('active-mode', db.activeManual?.type === 'FAIL');
         document.getElementById('protoBtn').classList.toggle('active-mode', db.activeManual?.type === 'PROTO');
-        
-        const idVal = document.getElementById('in_id').value;
-        document.getElementById('saveBtn').disabled = !db.isRunning || idVal.length !== 6;
+        document.getElementById('saveBtn').disabled = !db.isRunning || document.getElementById('in_id').value.length !== 6;
     }
 
     function toggleShift() {
+        let nowStr = new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'});
         if(!db.isRunning) {
-            let t = prompt("Aloitus (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
+            let t = prompt("Aloitusaika:", nowStr);
             if(!t) return;
             let [h, m] = t.split(':'); let d = new Date(); d.setHours(h, m, 0);
             db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
             vibrate(50); beep(880, 0.1);
         } else {
             if(confirm("Lopetetaanko vuoro?")) {
-                let shiftMins = db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
-                periodDb.push(...db.shiftLog.filter(i => i.type === 'JOB').map(i => ({...i, date: new Date().toLocaleDateString('fi-FI')})));
-                periodStats.totalMins += shiftMins;
+                let sMins = db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
+                periodStats.totalMins += sMins;
                 periodStats.totalWorkTimeMs += (Date.now() - db.startTime);
-                localStorage.setItem('sarmays_period_history', JSON.stringify(periodDb));
                 localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
                 db.isRunning = false; db.activeManual = null;
             }
@@ -142,66 +115,51 @@
         updateUI(); renderHistory();
     }
 
-    function handleManualToggle(type) {
-        if (db.activeManual && db.activeManual.type === type) {
-            let endStr = prompt("Lopetusaika (HH:MM)?", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
-            if (!endStr) return;
-            let id = type === 'PROTO' ? prompt("Mikä proto?") : prompt("Häiriön syy?");
-            if (id) {
-                db.shiftLog.push({ id: id, type: type, timestamp: Date.now(), manualTime: db.activeManual.startStr + "-" + endStr });
-                db.activeManual = null; vibrate(50);
+    // SKANNERIN LOGIIKKA - TIUKKA 6 NUMEROA
+    function handleScannerResult(id, text) {
+        const cleanText = text.trim();
+        const inputEl = document.getElementById(id);
+
+        if (id === 'in_id') {
+            if (cleanText.length === 6 && /^\d+$/.test(cleanText)) {
+                inputEl.value = cleanText;
+                inputEl.classList.remove('error-glow');
+                vibrate(50); beep(400, 0.05);
+                document.getElementById('in_laji').focus();
+            } else {
+                // HYLKÄÄ KOKONAAN JOS EI OLE TASAN 6
+                inputEl.value = "";
+                inputEl.classList.add('error-glow');
+                vibrate(250); beep(150, 0.3);
+                setTimeout(() => inputEl.classList.remove('error-glow'), 1000);
             }
         } else {
-            db.activeManual = { type: type, startStr: new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}) };
-            vibrate(50);
+            inputEl.value = cleanText;
+            vibrate(30);
         }
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        updateUI(); renderHistory();
+        updateUI();
     }
 
-    function validateID(el) {
-        // Poista kaikki paitsi numerot
-        let val = el.value.replace(/\D/g, '');
-        
-        // Jos yrittää syöttää yli 6 merkkiä käsin, hylkää
-        if (val.length > 6) {
-            el.value = ""; vibrate(200); beep(200, 0.3);
-            return;
+    function validateIDManual(el) {
+        el.value = el.value.replace(/\D/g, ''); // Vain numerot
+        if (el.value.length === 6) {
+            vibrate(30); beep(400, 0.05);
+            document.getElementById('in_laji').focus();
         }
-        
-        el.value = val;
         updateUI();
-        
-        // Automaattinen siirtyminen lajimerkkiin
-        if (val.length === 6) { 
-            vibrate(30); 
-            beep(400, 0.05);
-            document.getElementById('in_laji').focus(); 
+    }
+
+    function finalValidateID(el) {
+        if (el.value.length > 0 && el.value.length !== 6) {
+            el.value = "";
+            vibrate(200);
+            updateUI();
         }
     }
 
     function handleInputFocus(id) {
         if (!db.isRunning) return;
-        startScanner((text) => {
-            const cleanText = text.trim();
-            if (id === 'in_id') {
-                // Hylkää jos ei ole tasan 6 numeroa
-                if (cleanText.length === 6 && /^\d+$/.test(cleanText)) {
-                    document.getElementById(id).value = cleanText;
-                    vibrate(50);
-                    beep(400, 0.05);
-                    document.getElementById('in_laji').focus();
-                } else { 
-                    vibrate(200);
-                    beep(200, 0.3);
-                    alert("Hylätty: Koodin oltava tasan 6 numeroa!"); 
-                }
-            } else { 
-                document.getElementById(id).value = cleanText; 
-                vibrate(30);
-            }
-            updateUI();
-        });
+        startScanner((text) => handleScannerResult(id, text));
     }
 
     async function startScanner(callback) {
@@ -213,9 +171,31 @@
     }
 
     function stopScanner() {
-        if (html5QrCode) html5QrCode.stop().finally(() => {
-            document.getElementById('reader-container').style.display = 'none';
-        });
+        if (html5QrCode) html5QrCode.stop().finally(() => { document.getElementById('reader-container').style.display = 'none'; });
+    }
+
+    function handleManualToggle(type) {
+        let nowStr = new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'});
+        if (db.activeManual && db.activeManual.type === type) {
+            let endStr = prompt(type + " päättyy:", nowStr);
+            if (!endStr) return;
+            const finalize = (info) => {
+                db.shiftLog.push({ id: info || "Nimetön", type: type, timestamp: Date.now(), manualTime: db.activeManual.startStr + "-" + endStr });
+                db.activeManual = null;
+                localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+                updateUI(); renderHistory();
+            };
+            if (type === 'PROTO') {
+                if (confirm("Skannataanko lajimerkki?")) startScanner((text) => finalize(text));
+                else finalize(prompt("Syötä lajimerkki:"));
+            } else finalize(prompt("Häiriön syy:"));
+        } else {
+            let startStr = prompt(type + " alkaa:", nowStr);
+            if (!startStr) return;
+            db.activeManual = { type: type, startStr: startStr };
+            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+            updateUI();
+        }
     }
 
     function addJob() {
@@ -234,23 +214,20 @@
         const c = document.getElementById('currentShiftList'); c.innerHTML = "";
         db.shiftLog.slice().reverse().forEach(item => {
             let div = document.createElement('div'); div.style.padding = "8px"; div.style.borderBottom = "1px solid #222";
-            div.innerHTML = `<div style="display:flex; justify-content:space-between; font-size:0.75rem;"><span>#${item.id} ${item.type}</span><span>${new Date(item.timestamp).toLocaleTimeString('fi-FI')}</span></div>`;
+            div.innerHTML = `<div style="display:flex; justify-content:space-between; font-size:0.7rem;"><span>#${item.id} ${item.type}</span><span>${item.manualTime || new Date(item.timestamp).toLocaleTimeString('fi-FI')}</span></div>`;
             c.appendChild(div);
         });
     }
 
-    function toggleHistoryView() {
-        const v = document.getElementById('history-view');
-        v.style.display = v.style.display === 'block' ? 'none' : 'block';
-    }
-
     setInterval(() => {
         if(db.isRunning) {
-            let diff = Date.now() - db.startTime;
-            document.getElementById('mainClock').innerText = new Date(diff).toISOString().substr(11, 8);
+            let diffMs = Date.now() - db.startTime;
+            document.getElementById('mainClock').innerText = new Date(diffMs).toISOString().substr(11, 8);
             let sMins = db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
-            document.getElementById('shiftEff').innerText = (sMins / (diff / 60000) || 0).toFixed(2);
+            document.getElementById('shiftEff').innerText = (sMins / (diffMs / 60000) || 0).toFixed(2);
             document.getElementById('shiftMins').innerText = Math.round(sMins);
+            let pTime = (periodStats.totalWorkTimeMs / 60000) + (diffMs / 60000);
+            document.getElementById('periodEff').innerText = ((periodStats.totalMins + sMins) / pTime || 0).toFixed(2);
         }
     }, 1000);
 
