@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <title>SärmäysPro v5.0.3</title>
+    <title>SärmäysPro v5.0.4</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -12,7 +12,7 @@
             --primary: #f58220; --accent: #22c55e; 
             --danger: #ef4444; --warn: #facc15; --proto: #a855f7; 
             --gray: #262626; --light-gray: #a3a3a3;
-            --version-color: #00e5ff;
+            --version-color: #f59e0b;
         }
         * { box-sizing: border-box; touch-action: manipulation; }
         
@@ -57,7 +57,7 @@
 <body>
 
 <div class="container">
-    <div class="version-header">VERSION v5.0.3</div>
+    <div class="version-header">VERSION v5.0.4</div>
     
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
@@ -173,27 +173,19 @@
         const now = Date.now();
         const startBound = pSettings.start ? new Date(pSettings.start).setHours(0,0,0,0) : 0;
         const endBound = pSettings.end ? new Date(pSettings.end).setHours(23,59,59,999) : Infinity;
-        
         let weekMs = 0, pMs = 0, pMins = 0;
 
-        // 1. Laske menneet vuorot arkistosta
         if (periodStats.weeklyLog) {
             periodStats.weeklyLog.forEach(s => {
-                // Viikkolaskenta (viimeiset 7 päivää)
                 if (now - s.end < 604800000) weekMs += s.duration;
-                // Palkkajaksolaskenta
                 if (s.end >= startBound && s.end <= endBound) pMs += s.duration;
             });
         }
-
-        // 2. Lisää käynnissä oleva vuoro reaaliajassa
         if (db.isRunning && db.startTime) {
             const currentDuration = now - db.startTime;
             weekMs += currentDuration;
             if (now >= startBound && now <= endBound) pMs += currentDuration;
         }
-
-        // 3. Laske tuotetut minuutit EFF:iä varten
         [...periodData, ...db.shiftLog].forEach(i => {
             if (i.timestamp >= startBound && i.timestamp <= endBound) pMins += (i.s + i.t + i.m);
         });
@@ -210,7 +202,45 @@
         document.getElementById('periodEff').innerText = (pMins / (pMs / 60000) || 0).toFixed(2);
     }
 
-    // Skanneri, haku ja tallennus logiikka (v5.0.2 mukaiset)
+    function triggerField(id) {
+        currentTargetField = id;
+        document.getElementById('reader-container').style.display = 'flex';
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        
+        // Takakamera ja pienempi zoom (1.2)
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { 
+                fps: 20, 
+                qrbox: { width: 320, height: 160 },
+                videoConstraints: { 
+                    facingMode: "environment",
+                    zoom: 1.2 
+                } 
+            }, 
+            (text) => {
+                document.getElementById(id).value = text;
+                stopScanner();
+                if (id === 'in_id') setTimeout(() => triggerField('in_laji'), 400);
+            }
+        ).catch(() => {});
+    }
+
+    function stopScanner() { if (html5QrCode) html5QrCode.stop().then(() => document.getElementById('reader-container').style.display = 'none').catch(() => document.getElementById('reader-container').style.display = 'none'); }
+    function switchToManual() { stopScanner(); const el = document.getElementById(currentTargetField); el.readOnly = false; el.focus(); }
+
+    function handleInstantZero(el, nextId) { if (el.value === "0") { if (nextId) document.getElementById(nextId).focus(); else checkAutoSave(); } else { checkAutoSave(); } }
+
+    function checkAutoSave() {
+        const id = document.getElementById('in_id').value, laji = document.getElementById('in_laji').value, s = document.getElementById('in_s').value, t = document.getElementById('in_t').value;
+        if (id && laji && s !== "" && t !== "") {
+            db.shiftLog.push({ id, laji, s: parseFloat(s)||0, t: parseFloat(t)||0, m: parseFloat(document.getElementById('in_m').value)||0, timestamp: Date.now() });
+            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => { document.getElementById(k).value = ""; if(k.includes('in_id')||k.includes('in_laji')) document.getElementById(k).readOnly = true; });
+            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+            vibrate(50); renderHistory();
+        }
+    }
+
     function renderHistory() {
         const query = document.getElementById('shiftSearch').value.toLowerCase();
         const c = document.getElementById('currentShiftList'); c.innerHTML = "";
@@ -234,32 +264,6 @@
                 }
             }
         });
-    }
-
-    function triggerField(id) {
-        currentTargetField = id;
-        document.getElementById('reader-container').style.display = 'flex';
-        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: { width: 320, height: 160 }, videoConstraints: { zoom: 2.0 } }, (text) => {
-            document.getElementById(id).value = text;
-            stopScanner();
-            if (id === 'in_id') setTimeout(() => triggerField('in_laji'), 400);
-        }).catch(() => {});
-    }
-
-    function stopScanner() { if (html5QrCode) html5QrCode.stop().then(() => document.getElementById('reader-container').style.display = 'none').catch(() => document.getElementById('reader-container').style.display = 'none'); }
-    function switchToManual() { stopScanner(); const el = document.getElementById(currentTargetField); el.readOnly = false; el.focus(); }
-
-    function handleInstantZero(el, nextId) { if (el.value === "0") { if (nextId) document.getElementById(nextId).focus(); else checkAutoSave(); } else { checkAutoSave(); } }
-
-    function checkAutoSave() {
-        const id = document.getElementById('in_id').value, laji = document.getElementById('in_laji').value, s = document.getElementById('in_s').value, t = document.getElementById('in_t').value;
-        if (id && laji && s !== "" && t !== "") {
-            db.shiftLog.push({ id, laji, s: parseFloat(s)||0, t: parseFloat(t)||0, m: parseFloat(document.getElementById('in_m').value)||0, timestamp: Date.now() });
-            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => { document.getElementById(k).value = ""; if(k.includes('in_id')||k.includes('in_laji')) document.getElementById(k).readOnly = true; });
-            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-            vibrate(50); renderHistory();
-        }
     }
 
     function openPeriod() { 
@@ -297,18 +301,14 @@
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db)); renderHistory();
     }
 
-    // REAALIAIKAINEN PÄIVITYS SEKUNNEITTAIN
     setInterval(() => {
         if(db.isRunning && db.startTime) {
             let diff = Date.now() - db.startTime;
             document.getElementById('mainClock').innerText = new Date(diff).toISOString().substr(11, 8);
-            
-            // Laske EFF ja tunnit lennosta
             let sMins = db.shiftLog.reduce((a, b) => a + (b.s+b.t+b.m || 0), 0);
             document.getElementById('shiftEff').innerText = (sMins / (diff / 60000) || 0).toFixed(2);
             document.getElementById('shiftMins').innerText = Math.round(sMins);
-            
-            calculateStats(); // Tämä päivittää "Viikon työtunnit" reaaliajassa
+            calculateStats();
         }
     }, 1000);
 
@@ -316,3 +316,4 @@
 </script>
 </body>
 </html>
+
