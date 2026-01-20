@@ -8,205 +8,200 @@
     <style>
         :root { 
             --vamm-yellow: #fecb00; 
-            --bg: #000000;
-            --card: #1a1a1a;
+            --bg: #0b0b0b;
+            --card: #1c1c1c;
             --text: #ffffff;
         }
         * { box-sizing: border-box; touch-action: manipulation; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         
-        .version-header { color: var(--vamm-yellow); font-weight: 900; font-size: 0.8rem; text-align: center; margin-bottom: 5px; }
+        .version-line { color: var(--vamm-yellow); font-weight: 900; font-size: 0.7rem; text-align: center; margin-bottom: 5px; }
         
-        .logo-box { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--vamm-yellow); margin-bottom: 15px; }
-        .logo-vamm { font-weight: 900; font-size: 1.8rem; color: var(--vamm-yellow); }
-        .logo-steel { font-weight: 300; font-size: 1.8rem; color: #fff; }
+        .header-box { text-align: center; padding: 10px 0; border-bottom: 3px solid var(--vamm-yellow); margin-bottom: 15px; }
+        .v-text { font-weight: 900; font-size: 1.8rem; color: var(--vamm-yellow); }
+        .s-text { font-weight: 300; font-size: 1.8rem; color: #fff; }
 
-        .card { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 10px; text-align: center; border: 1px solid #333; }
-        .timer-val { font-size: 4.5rem; font-family: monospace; color: var(--vamm-yellow); font-weight: 900; margin: 5px 0; line-height: 1; }
+        .main-card { background: var(--card); padding: 20px; border-radius: 20px; text-align: center; border: 1px solid #333; margin-bottom: 15px; }
+        .clock-large { font-size: 4.2rem; font-family: monospace; color: var(--vamm-yellow); font-weight: 900; margin: 10px 0; }
         
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .stat-item { background: #000; padding: 10px 2px; border-radius: 10px; border: 1px solid #222; }
-        .stat-nro { font-size: 1.2rem; font-weight: 900; display: block; }
-        .stat-txt { font-size: 0.6rem; color: #888; text-transform: uppercase; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .s-box { background: #000; padding: 10px; border-radius: 12px; border: 1px solid #222; }
+        .s-val { font-size: 1.2rem; font-weight: 900; display: block; }
+        .s-lab { font-size: 0.6rem; color: #777; text-transform: uppercase; }
 
-        .btn-large { border: none; border-radius: 12px; font-weight: 900; font-size: 1.2rem; height: 70px; width: 100%; cursor: pointer; text-transform: uppercase; margin-bottom: 8px; }
-        .btn-start { background: var(--vamm-yellow); color: #000; }
-        .btn-stop { background: #ce1126; color: #fff; }
+        .btn { border: none; border-radius: 12px; font-weight: 900; font-size: 1.2rem; height: 75px; width: 100%; cursor: pointer; text-transform: uppercase; transition: 0.1s; }
+        .btn-go { background: var(--vamm-yellow); color: #000; }
+        .btn-stop { background: #d32f2f; color: #fff; }
+        .btn-save { background: #4caf50; color: #fff; height: 60px; margin-top: 10px; }
 
-        input { width: 100%; padding: 15px; background: #000; border: 1px solid #444; border-radius: 10px; color: #fff; font-size: 1.2rem; margin-bottom: 8px; text-align: center; }
+        .input-area { background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 15px; }
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid #444; border-radius: 10px; color: #fff; font-size: 1.2rem; margin-bottom: 10px; text-align: center; }
         
-        /* SKANNERIN ERIKOISMÄÄRITYKSET */
-        #scanner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; }
-        #reader { width: 100% !important; flex: 1; }
-        #reader__scan_region { background: #000; }
-        #reader video { object-fit: cover !important; }
-
-        .log-item { display: flex; justify-content: space-between; padding: 12px; background: #111; margin-top: 4px; border-radius: 8px; border-left: 4px solid var(--vamm-yellow); font-size: 0.9rem; }
+        #scanner-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; display: none; flex-direction: column; }
+        .log-row { display: flex; justify-content: space-between; padding: 15px; background: #1a1a1a; margin-top: 5px; border-radius: 10px; border-left: 4px solid var(--vamm-yellow); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="version-header">VERSION v5.4.0</div>
-    
-    <div class="logo-box">
-        <span class="logo-vamm">VAMM</span><span class="logo-steel">STEEL</span>
-    </div>
+<div class="version-line">VERSION v5.0.2</div>
 
-    <div class="card">
-        <div id="kello" class="timer-val">00:00:00</div>
-        <div class="stats-grid">
-            <div class="stat-item"><span id="eff_nyt" class="stat-nro">0.00</span><span class="stat-txt">EFF</span></div>
-            <div class="stat-item"><span id="min_nyt" class="stat-nro">0</span><span class="stat-txt">MIN</span></div>
-            <div class="stat-item" onclick="naytaArkisto()"><span id="eff_jakso" class="stat-nro" style="color:var(--vamm-yellow)">0.00</span><span class="stat-txt">JAKSO</span></div>
-        </div>
-    </div>
-
-    <button id="mainBtn" class="btn-large btn-start" onclick="hallitseVuoroa()">ALOITA VUORO</button>
-
-    <div id="inputArea" style="display:none">
-        <input type="text" id="in_id" placeholder="TYÖNUMERO (Skannaa)" readonly onclick="startScan('in_id')">
-        <input type="text" id="in_laji" placeholder="LAJIMERKKI (Skannaa)" readonly onclick="startScan('in_laji')">
-        <div class="stats-grid">
-            <input type="number" id="in_s" placeholder="ASET" oninput="tarkistaTallennus()">
-            <input type="number" id="in_t" placeholder="TAIV" oninput="tarkistaTallennus()">
-            <input type="number" id="in_m" placeholder="MUUT" oninput="tarkistaTallennus()">
-        </div>
-    </div>
-
-    <div id="lista"></div>
+<div class="header-box">
+    <span class="v-text">VAMM</span><span class="s-text">STEEL</span>
 </div>
 
-<div id="scanner-overlay">
-    <div id="reader"></div>
-    <button class="btn-large btn-stop" style="border-radius:0;" onclick="stopScan()">SULJE SKANNERI</button>
+<div class="main-card">
+    <div id="display-clock" class="clock-large">00:00:00</div>
+    <div class="stats">
+        <div class="s-box"><span id="st-eff" class="s-val">0.00</span><span class="s-lab">EFF</span></div>
+        <div class="s-box"><span id="st-min" class="s-val">0</span><span class="s-lab">MIN</span></div>
+        <div class="s-box" onclick="showHistory()" style="border-color: var(--vamm-yellow)">
+            <span id="st-arch" class="s-val" style="color:var(--vamm-yellow)">0.00</span><span class="s-lab">JAKSO</span>
+        </div>
+    </div>
 </div>
 
-<div id="arkistoRuutu" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; display:none; padding:20px; overflow-y:auto;">
-    <button onclick="suljeArkisto()" style="float:right; color:white; background:none; border:none; font-size:2.5rem">✕</button>
-    <h2 style="color:var(--vamm-yellow)">HISTORIA</h2>
-    <div id="arkistoSisältö"></div>
-    <button onclick="nollaaKaikki()" class="btn-large btn-stop" style="margin-top:20px">NOLLAA JAKSO HISTORIA</button>
+<button id="shift-btn" class="btn btn-go" onclick="toggleShift()">ALOITA VUORO</button>
+
+<div id="input-section" style="display:none; margin-top:15px;">
+    <div class="input-area">
+        <input type="text" id="i-id" placeholder="TYÖNUMERO" onclick="openScanner('i-id')" readonly>
+        <input type="text" id="i-laji" placeholder="LAJIMERKKI" onclick="openScanner('i-laji')" readonly>
+        <div class="stats">
+            <input type="number" id="i-s" placeholder="ASET">
+            <input type="number" id="i-t" placeholder="TAIV">
+            <input type="number" id="i-m" placeholder="MUUT">
+        </div>
+        <button class="btn btn-save" onclick="manualSave()">TALLENNA TYÖ</button>
+    </div>
+    <div id="recent-log"></div>
+</div>
+
+<div id="scanner-ui">
+    <div id="reader" style="flex:1;"></div>
+    <button class="btn btn-stop" style="border-radius:0;" onclick="closeScanner()">SULJE</button>
+</div>
+
+<div id="history-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:4000; display:none; padding:20px; overflow-y:auto;">
+    <button onclick="hideHistory()" style="float:right; color:white; background:none; border:none; font-size:3rem;">✕</button>
+    <h2 style="color:var(--vamm-yellow)">ARKISTO</h2>
+    <div id="history-content"></div>
+    <button onclick="resetAll()" class="btn btn-stop" style="margin-top:30px;">NOLLAA JAKSO HISTORIA</button>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('vamm_v14_data')) || { active: false, start: 0, log: [] };
-    let arch = JSON.parse(localStorage.getItem('vamm_v14_arch')) || [];
-    let scanner = null;
+    let state = JSON.parse(localStorage.getItem('vamm_v502_state')) || { active: false, start: 0, log: [] };
+    let archive = JSON.parse(localStorage.getItem('vamm_v502_arch')) || [];
+    let html5QrCode = null;
 
-    function save() {
-        localStorage.setItem('vamm_v14_data', JSON.stringify(db));
-        localStorage.setItem('vamm_v14_arch', JSON.stringify(arch));
+    function persist() {
+        localStorage.setItem('vamm_v502_state', JSON.stringify(state));
+        localStorage.setItem('vamm_v502_arch', JSON.stringify(archive));
     }
 
-    function hallitseVuoroa() {
-        if (!db.active) {
-            let t = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
-            if(!t) return;
-            let [h, m] = t.split(':');
+    function toggleShift() {
+        if (!state.active) {
+            let time = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
+            if(!time) return;
+            let [h, m] = time.split(':');
             let d = new Date(); d.setHours(h, m, 0, 0);
-            db.start = d.getTime();
-            db.active = true;
-            db.log = [];
-            try { new AudioContext().resume(); } catch(e){} 
+            state.start = d.getTime();
+            state.active = true;
+            state.log = [];
+            try { new AudioContext().resume(); } catch(e){}
         } else {
             if(confirm("Lopetetaanko vuoro?")) {
-                db.log.forEach(x => arch.push(x));
-                db.active = false;
-                db.start = 0;
+                state.log.forEach(i => archive.push(i));
+                state.active = false;
+                state.start = 0;
             }
         }
-        save();
-        paivitaUI();
+        persist();
+        refreshUI();
     }
 
-    function startScan(targetId) {
-        document.getElementById('scanner-overlay').style.display = 'flex';
-        scanner = new Html5Qrcode("reader");
-        const config = { 
-            fps: 20, 
-            qrbox: { width: 300, height: 120 }, // VIIVAKOODILLE SOPIVA ETSIN
-            aspectRatio: 1.0 
-        };
-        
-        scanner.start({ facingMode: "environment" }, config, (text) => {
-            document.getElementById(targetId).value = text.trim();
-            stopScan();
+    function manualSave() {
+        const id = document.getElementById('i-id').value;
+        const laji = document.getElementById('i-laji').value;
+        const s = document.getElementById('i-s').value;
+        const t = document.getElementById('i-t').value;
+        const m = document.getElementById('i-m').value || 0;
+
+        if (id && laji && s !== "" && t !== "") {
+            state.log.push({ id, laji, s: Number(s), t: Number(t), m: Number(m) });
+            ['i-id','i-laji','i-s','i-t','i-m'].forEach(k => document.getElementById(k).value = "");
+            persist();
+            renderList();
+        } else {
+            alert("Täytä kaikki kentät!");
+        }
+    }
+
+    function openScanner(target) {
+        document.getElementById('scanner-ui').style.display = 'flex';
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: {width: 280, height: 150} }, (text) => {
+            document.getElementById(target).value = text;
+            closeScanner();
         }).catch(() => {});
     }
 
-    function stopScan() {
-        if(scanner) {
-            scanner.stop().then(() => {
-                document.getElementById('scanner-overlay').style.display = 'none';
-                scanner = null;
+    function closeScanner() {
+        if(html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('scanner-ui').style.display = 'none';
+                html5QrCode = null;
             });
         }
     }
 
-    function tarkistaTallennus() {
-        const id = document.getElementById('in_id').value;
-        const laji = document.getElementById('in_laji').value;
-        const s = document.getElementById('in_s').value;
-        const t = document.getElementById('in_t').value;
-        const m = document.getElementById('in_m').value || 0;
-
-        if (id.length >= 3 && laji && s !== "" && t !== "") {
-            db.log.push({ id, laji, s: Number(s), t: Number(t), m: Number(m) });
-            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => document.getElementById(k).value = "");
-            save();
-            renderLista();
-        }
-    }
-
-    function pyoraKello() {
-        if (db.active && db.start > 0) {
-            let diff = Date.now() - db.start;
+    function updateClock() {
+        if (state.active && state.start > 0) {
+            let diff = Date.now() - state.start;
             if (diff < 0) diff = 0;
             let h = Math.floor(diff / 3600000);
             let m = Math.floor((diff % 3600000) / 60000);
             let s = Math.floor((diff % 60000) / 1000);
-            document.getElementById('kello').innerText = (h<10?"0"+h:h)+":"+(m<10?"0"+m:m)+":"+(s<10?"0"+s:s);
+            document.getElementById('display-clock').innerText = 
+                `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
             
-            let mins = db.log.reduce((a, b) => a + (b.s+b.t+b.m), 0);
-            let kulunut = diff / 60000;
-            document.getElementById('eff_nyt').innerText = kulunut > 0.5 ? (mins / kulunut).toFixed(2) : "0.00";
-            document.getElementById('min_nyt').innerText = Math.round(mins);
-            let jMins = arch.reduce((a, b) => a + (b.s+b.t+b.m), 0) + mins;
-            document.getElementById('eff_jakso').innerText = (jMins / 480).toFixed(2);
+            let workM = state.log.reduce((a, b) => a + (b.s+b.t+b.m), 0);
+            let elapsed = diff / 60000;
+            document.getElementById('st-eff').innerText = elapsed > 0.5 ? (workM / elapsed).toFixed(2) : "0.00";
+            document.getElementById('st-min').innerText = Math.round(workM);
+            let totalM = archive.reduce((a, b) => a + (b.s+b.t+b.m), 0) + workM;
+            document.getElementById('st-arch').innerText = (totalM / 480).toFixed(2);
         } else {
-            document.getElementById('kello').innerText = "00:00:00";
+            document.getElementById('display-clock').innerText = "00:00:00";
         }
-        requestAnimationFrame(pyoraKello);
+        requestAnimationFrame(updateClock);
     }
 
-    function renderLista() {
-        let l = document.getElementById('lista');
+    function renderList() {
+        let l = document.getElementById('recent-log');
         l.innerHTML = "";
-        [...db.log].reverse().forEach(x => {
-            l.innerHTML += `<div class="log-item"><b>#${x.id}</b> <span>${x.laji}</span> <b>${x.s+x.t+x.m} min</b></div>`;
+        [...state.log].reverse().forEach(x => {
+            l.innerHTML += `<div class="log-row"><b>#${x.id}</b> <span>${x.laji}</span> <b>${x.s+x.t+x.m}m</b></div>`;
         });
     }
 
-    function paivitaUI() {
-        const r = db.active;
-        document.getElementById('mainBtn').innerText = r ? "LOPETA VUORO" : "ALOITA VUORO";
-        document.getElementById('mainBtn').className = r ? "btn-large btn-stop" : "btn-large btn-start";
-        document.getElementById('inputArea').style.display = r ? "block" : "none";
-        renderLista();
+    function refreshUI() {
+        document.getElementById('shift-btn').innerText = state.active ? "LOPETA VUORO" : "ALOITA VUORO";
+        document.getElementById('shift-btn').className = state.active ? "btn btn-stop" : "btn btn-go";
+        document.getElementById('input-section').style.display = state.active ? "block" : "none";
+        renderList();
     }
 
-    function nollaaKaikki() {
+    function resetAll() {
         if (confirm("Haluatko varmasti nollata koko jakson historian")) {
             localStorage.clear();
             location.reload();
         }
     }
 
-    function naytaArkisto() { document.getElementById('arkistoRuutu').style.display='block'; }
-    function suljeArkisto() { document.getElementById('arkistoRuutu').style.display='none'; }
+    function showHistory() { document.getElementById('history-modal').style.display = 'block'; }
+    function hideHistory() { document.getElementById('history-modal').style.display = 'none'; }
 
-    window.onload = () => { paivitaUI(); pyoraKello(); };
+    window.onload = () => { refreshUI(); updateClock(); };
 </script>
 </body>
 </html>
