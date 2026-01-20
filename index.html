@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SärmäysPro v4.1.1</title>
+    <title>SärmäysPro v4.3.0</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -37,8 +37,11 @@
         input { padding: 16px; background: #000; border: 2px solid var(--gray); border-radius: 12px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 10px; }
         input:focus { border-color: var(--accent); outline: none; }
         
-        .btn { border: none; border-radius: 12px; padding: 18px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; display: block; width: 100%; }
-        .btn:disabled { background: var(--gray) !important; color: #444; pointer-events: none; }
+        .btn { border: none; border-radius: 12px; padding: 18px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; display: block; width: 100%; text-align: center; }
+        .btn:disabled { background: var(--gray) !important; color: #444; pointer-events: none; animation: none !important; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .blink-btn { animation: blink 2s infinite ease-in-out; }
         
         #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #reader { width: 90%; max-width: 400px; border-radius: 20px; overflow: hidden; border: 4px solid var(--accent); }
@@ -52,11 +55,11 @@
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v4.1.1</div>
+    <div class="version-header">VERSION v4.3.0</div>
     <div class="header-box"><span class="logo-text"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
     
     <div class="card">
-        <div class="section-title">Nykyinen Vuoro</div>
+        <div class="section-title">Vuoro</div>
         <div id="mainClock" class="timer-val">00:00:00</div>
         <div class="grid">
             <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
@@ -66,18 +69,18 @@
     </div>
 
     <div class="card" style="border-color: var(--primary);">
-        <div class="section-title" style="border-color: var(--accent);">Jakson Historia</div>
+        <div class="section-title" style="border-color: var(--accent);">Jakso</div>
         <div class="grid">
-            <div class="stat-box"><span id="periodEff" class="stat-val">0.00</span><span class="stat-label">JAKSO EFF</span></div>
-            <div class="stat-box"><span id="periodMins" class="stat-val">0</span><span class="stat-label">JAKSO MIN</span></div>
-            <div class="stat-box"><span id="periodCount" class="stat-val">0</span><span class="stat-label">KORTIT YHT.</span></div>
+            <div class="stat-box"><span id="periodEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
+            <div class="stat-box"><span id="periodMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
+            <div class="stat-box"><span id="periodCount" class="stat-val">0</span><span class="stat-label">KORTIT</span></div>
         </div>
     </div>
 
     <div class="grid" style="margin-bottom: 12px;">
         <button class="btn" style="background: var(--accent)" id="shiftBtn" onclick="toggleShift()">ALKU</button>
-        <button class="btn" style="background: var(--warn); color: #000;" onclick="handleManualEntry('FAIL')" id="failBtn" disabled>HÄIRIÖ</button>
-        <button class="btn" style="background: var(--proto);" onclick="handleManualEntry('PROTO')" id="protoBtn" disabled>PROTO</button>
+        <button class="btn blink-btn" style="background: var(--warn); color: #000;" onclick="handleManualEntry('FAIL')" id="failBtn" disabled>HÄIRIÖ</button>
+        <button class="btn blink-btn" style="background: var(--proto);" onclick="handleManualEntry('PROTO')" id="protoBtn" disabled>PROTO</button>
     </div>
 
     <div class="card">
@@ -113,35 +116,36 @@
         } catch(e) {}
     }
 
+    function formatDuration(mins) {
+        if (!mins || mins <= 0) return "";
+        let h = Math.floor(mins / 60);
+        let m = Math.round(mins % 60);
+        return (h > 0 ? h + "h " : "") + m + "m";
+    }
+
     function updateEffColor(elementId, value) {
         const el = document.getElementById(elementId);
-        if (value >= 1.0) {
-            el.className = 'stat-val eff-good';
-        } else if (value > 0.1) {
-            el.className = 'stat-val eff-bad';
-        } else {
-            el.className = 'stat-val';
-        }
+        if (value >= 1.0) el.className = 'stat-val eff-good';
+        else if (value > 0.1) el.className = 'stat-val eff-bad';
+        else el.className = 'stat-val';
     }
 
     function calculateStats() {
         let sMins = 0, sCards = 0;
         db.shiftLog.forEach(i => { if(i.type==='JOB') { sMins += (i.s + i.t + i.m); sCards++; } });
-        
         let sTimeMin = db.isRunning ? (Date.now() - db.startTime) / 60000 : 0;
-        let sEff = sTimeMin > 0.5 ? (sMins / sTimeMin) : 0;
-        
-        document.getElementById('shiftEff').innerText = sEff > 0 ? sEff.toFixed(2) : "0.00";
+        let sEff = sTimeMin > 0.1 ? (sMins / sTimeMin) : 0;
+        document.getElementById('shiftEff').innerText = sEff.toFixed(2);
         document.getElementById('shiftMins').innerText = Math.round(sMins);
         document.getElementById('shiftCount').innerText = sCards;
         updateEffColor('shiftEff', sEff);
 
-        let pTimeMin = (periodDb.totalWorkTimeMs + (db.isRunning ? (Date.now() - db.startTime) : 0)) / 60000;
-        let pMinsDone = periodDb.totalMins + sMins;
-        let pEff = pTimeMin > 0.5 ? (pMinsDone / pTimeMin) : 0;
-
-        document.getElementById('periodEff').innerText = pEff > 0 ? pEff.toFixed(2) : "0.00";
-        document.getElementById('periodMins').innerText = Math.round(pMinsDone);
+        let totalActiveMs = periodDb.totalWorkTimeMs + (db.isRunning ? (Date.now() - db.startTime) : 0);
+        let totalActiveMin = totalActiveMs / 60000;
+        let totalMinsDone = periodDb.totalMins + sMins;
+        let pEff = totalActiveMin > 0.1 ? (totalMinsDone / totalActiveMin) : 0;
+        document.getElementById('periodEff').innerText = pEff.toFixed(2);
+        document.getElementById('periodMins').innerText = Math.round(totalMinsDone);
         document.getElementById('periodCount').innerText = periodDb.totalCards + sCards;
         updateEffColor('periodEff', pEff);
     }
@@ -150,7 +154,8 @@
         if(!db.isRunning) {
             let t = prompt("Aloitus (HH:MM):", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
             if(!t) return;
-            db.startTime = Date.now(); db.isRunning = true; db.shiftLog = [];
+            let [h, m] = t.split(':'); let d = new Date(); d.setHours(h, m, 0);
+            db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
             beep(880, 0.1);
         } else {
             periodDb.totalMins += db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
@@ -171,11 +176,9 @@
 
     function addJob() {
         db.shiftLog.push({ 
-            id: document.getElementById('in_id').value, 
-            laji: document.getElementById('in_laji').value,
+            id: document.getElementById('in_id').value, laji: document.getElementById('in_laji').value,
             type: 'JOB', s: parseFloat(document.getElementById('in_s').value)||0, 
-            t: parseFloat(document.getElementById('in_t').value)||0, 
-            m: parseFloat(document.getElementById('in_m').value)||0,
+            t: parseFloat(document.getElementById('in_t').value)||0, m: parseFloat(document.getElementById('in_m').value)||0,
             timestamp: Date.now()
         });
         ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
@@ -193,11 +196,11 @@
     }
 
     function completeEntry(type, id) {
-        let nowStr = new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
-        let startT = prompt("Alku (HH:MM)?", nowStr);
-        let endT = prompt("Loppu (HH:MM)?", nowStr);
-        if(id && startT && endT) {
-            db.shiftLog.push({ id: id, type: type, timestamp: Date.now(), manualTime: startT + "-" + endT });
+        let now = new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+        let s = prompt("Alkamisaika (HH:MM)?", now);
+        let e = prompt("Lopetusaika (HH:MM)?", now);
+        if(id && s && e) {
+            db.shiftLog.push({ id: id, type: type, timestamp: Date.now(), manualTime: s + "-" + e });
             localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
             renderHistory(); calculateStats();
         }
@@ -256,8 +259,16 @@
         db.shiftLog.slice().reverse().forEach(item => {
             let div = document.createElement('div'); div.style.padding = "10px"; div.style.borderBottom = "1px solid #222";
             let timeDisp = item.manualTime || new Date(item.timestamp).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
-            let label = item.type === 'PROTO' ? `P: ${item.id}` : item.type === 'FAIL' ? `H: ${item.id}` : `#${item.id}`;
-            div.innerHTML = `<div style="display:flex; justify-content:space-between; font-size:0.85rem;"><span>${label}</span><span style="font-family:monospace">${timeDisp}</span></div>`;
+            let label = item.type === 'JOB' ? `<b>#${item.id}</b> ${item.laji || ""}` : 
+                        `<span style="color:${item.type==='PROTO'?'var(--proto)':'var(--warn)'}">${item.type}: ${item.id}</span>`;
+            let dur = item.type === 'JOB' ? formatDuration(item.s + item.t + item.m) : "";
+
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; align-items:center;">
+                    <span style="flex:2;">${label}</span>
+                    <span style="flex:1; text-align:right; color:var(--accent); font-weight:bold;">${dur}</span>
+                    <span style="flex:1; text-align:right; font-family:monospace; color:var(--light-gray);">${timeDisp}</span>
+                </div>`;
             c.appendChild(div);
         });
     }
