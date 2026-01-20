@@ -3,106 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SärmäysPro v3.1.3</title>
+    <title>SärmäysPro v4.2.0</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
-            --bg: #0a0a0a; --card: #161616; --text: #e2e8f0; 
+            --bg: #0f1115; --card: #1a1d23; --text: #e2e8f0; 
             --primary: #f58220; --accent: #22c55e; 
             --danger: #ef4444; --warn: #fbbf24; --proto: #a855f7; 
-            --gray: #262626; --light-gray: #737373;
-            --version-color: #ffff00; /* Kirkas neon-keltainen */
+            --gray: #2d333f; --light-gray: #94a3b8;
+            --version-color: #ffff00;
         }
         * { box-sizing: border-box; touch-action: manipulation; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 12px; min-height: 100vh; }
-        .container { max-width: 450px; margin: auto; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; min-height: 100vh; }
+        .container { max-width: 420px; margin: auto; }
         
-        /* Versionumero korostettuna ylhäällä */
-        .version-header { 
-            color: var(--version-color); 
-            font-weight: 900; 
-            font-size: 0.9rem; 
-            text-align: center; 
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-        }
+        .version-header { color: var(--version-color); font-weight: 800; font-size: 0.75rem; text-align: right; margin-bottom: 4px; opacity: 0.8; }
+        
+        .header-box { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--card); border-radius: 12px; margin-bottom: 10px; border-bottom: 2px solid var(--accent); }
+        .logo-text { font-weight: 900; font-size: 1.2rem; }
 
-        .header-box { text-align: center; margin-bottom: 15px; padding: 10px; border-bottom: 2px solid var(--accent); background: var(--card); border-radius: 16px; }
-        .logo-text { font-weight: 900; font-size: 1.6rem; color: var(--accent); }
+        .card { background: var(--card); padding: 12px; border-radius: 12px; border: 1px solid var(--gray); margin-bottom: 10px; }
+        .timer-val { font-size: 2.8rem; font-family: 'Courier New', monospace; text-align: center; color: var(--primary); font-weight: 900; line-height: 1; margin: 5px 0 12px 0; }
         
-        .card { background: var(--card); padding: 15px; border-radius: 16px; border: 1px solid var(--gray); margin-bottom: 12px; }
-        .timer-val { font-size: 3.5rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; margin-bottom: 10px; }
-        
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .stat-box { text-align: center; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--gray); }
-        .stat-val { font-size: 1.1rem; font-weight: 900; color: var(--accent); display: block; }
-        .stat-label { font-size: 0.6rem; color: var(--light-gray); text-transform: uppercase; }
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .stat-item { background: rgba(0,0,0,0.2); padding: 8px 4px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-label { font-size: 0.6rem; color: var(--light-gray); text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .stat-value { font-size: 1rem; font-weight: 800; }
 
-        input { padding: 16px; background: #000; border: 2px solid var(--gray); border-radius: 12px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 10px; transition: 0.2s; }
-        input:focus { border-color: var(--accent); outline: none; }
-        input.error { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); animation: shake 0.3s; }
-        input:disabled { opacity: 0.2; }
-        
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .eff-good { color: var(--accent); }
+        .eff-bad { color: var(--danger); }
 
-        .btn { border: none; border-radius: 12px; padding: 18px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; display: block; width: 100%; }
-        .btn:disabled { background: var(--gray) !important; color: #444; pointer-events: none; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        input { padding: 14px; background: #000; border: 2px solid var(--gray); border-radius: 10px; color: #fff; font-size: 16px; font-weight: 700; text-align: center; width: 100%; }
+        input:focus { border-color: var(--primary); outline: none; background: #050505; }
         
-        #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        #reader { width: 90%; max-width: 400px; border-radius: 20px; overflow: hidden; border: 4px solid var(--accent); }
+        .controls-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .btn { border: none; border-radius: 10px; padding: 14px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; color: white; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.7; }
+        .btn:disabled { background: var(--gray) !important; color: #555; pointer-events: none; }
+
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--gray); font-size: 0.8rem; }
+        .history-item:last-child { border-bottom: none; }
+
+        #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #reader { width: 85%; border-radius: 15px; overflow: hidden; border: 3px solid var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="reader-container">
     <div id="reader"></div>
-    <button class="btn" style="background:var(--danger); width:auto; padding: 15px 30px; margin-top:20px;" onclick="stopScanner()">PERUUTA (KÄSIN SYÖTTÖ)</button>
+    <button id="cancel-scan" class="btn" style="background:var(--danger); width:200px; margin-top:20px;">PERUUTA</button>
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v3.1.3</div>
+    <div class="version-header">V4.2.0</div>
     
     <div class="header-box">
-        <span class="logo-text"><span style="color:var(--primary)">VAMM</span> Steel Oy</span>
+        <span class="logo-text"><span style="color:var(--primary)">VAMM</span> Steel</span>
+        <button id="shiftBtn" class="btn" style="background:var(--accent); min-width:80px; padding:8px;" onclick="toggleShift()">ALKU</button>
     </div>
     
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
-        <div class="grid">
-            <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
-            <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
-            <div class="stat-box"><span id="shiftCount" class="stat-val">0</span><span class="stat-label">KORTIT</span></div>
+        <div class="stats-row">
+            <div class="stat-item"><span class="stat-label">VUORO EFF</span><span id="shiftEff" class="stat-value">-</span></div>
+            <div class="stat-item"><span class="stat-label">MIN</span><span id="shiftMins" class="stat-value">0</span></div>
+            <div class="stat-item"><span class="stat-label">KORTIT</span><span id="shiftCount" class="stat-value">0</span></div>
+        </div>
+        <div class="stats-row" style="margin-top:8px; border-top:1px solid var(--gray); padding-top:8px;">
+            <div class="stat-item"><span class="stat-label">JAKSO EFF</span><span id="periodEff" class="stat-value">-</span></div>
+            <div class="stat-item"><span class="stat-label">J. MIN</span><span id="periodMins" class="stat-value">0</span></div>
+            <div class="stat-item"><span class="stat-label">J. KORTIT</span><span id="periodCount" class="stat-value">0</span></div>
         </div>
     </div>
 
-    <div class="grid" style="margin-bottom: 12px;">
-        <button class="btn" style="background: var(--accent)" id="shiftBtn" onclick="toggleShift()">ALKU</button>
-        <button class="btn" style="background: var(--warn); color: #000;" onclick="askModeData('FAIL')" id="failBtn" disabled>HÄIRIÖ</button>
-        <button class="btn" style="background: var(--proto);" id="protoBtn" onclick="startProtoSequence()" disabled>PROTO</button>
+    <div class="controls-grid">
+        <button class="btn" style="background: var(--warn); color:#000;" onclick="handleManualEntry('FAIL')" id="failBtn" disabled>HÄIRIÖ</button>
+        <button class="btn" style="background: var(--proto);" onclick="handleManualEntry('PROTO')" id="protoBtn" disabled>PROTO</button>
+        <button class="btn" style="background: var(--primary); color:#000;" id="saveBtn" onclick="addJob()" disabled>TALLENNA</button>
     </div>
 
-    <div class="card">
-        <input type="text" id="in_id" placeholder="KORTIN NRO (6 numeroa)" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateID(this)" disabled>
-        <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" oninput="checkInput()" disabled>
-        <div class="grid">
-            <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled>
-            <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" disabled>
+    <div class="card input-group">
+        <input type="text" id="in_id" placeholder="KORTIN NUMERO" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateID(this)" disabled>
+        <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" disabled>
+        <div class="stats-row">
+            <input type="number" id="in_s" placeholder="ASET" inputmode="decimal" disabled>
+            <input type="number" id="in_t" placeholder="TAIV" inputmode="decimal" disabled>
             <input type="number" id="in_m" placeholder="MUUT" inputmode="decimal" disabled>
         </div>
-        <button class="btn" style="background: var(--primary); color:#000; font-size: 1rem;" id="saveBtn" onclick="addJob()" disabled>TALLENNA KORTTI</button>
     </div>
 
-    <div id="historyList" class="card" style="padding:0; overflow:hidden;"></div>
+    <div id="historyList" class="card" style="padding:0; max-height:150px; overflow-y:auto;"></div>
+    
+    <button class="btn" style="background: transparent; color: var(--danger); border:1px solid var(--danger); width:100%; margin-top:5px; padding:8px;" onclick="resetPeriod()">NOLLAA JAKSO</button>
 </div>
 
 <script>
     let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, shiftLog: [] };
+    let periodDb = JSON.parse(localStorage.getItem('sarmays_period_data')) || { totalMins: 0, totalCards: 0, totalWorkTimeMs: 0 };
     let html5QrCode = null;
     let manualMode = false;
-    let effTick = 0;
-    let scannerCallback = null;
 
-    // ÄÄNIMERKIT
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function beep(freq, dur) {
         try {
@@ -114,166 +116,147 @@
         } catch(e) {}
     }
 
+    function calculateStats() {
+        let sMins = 0, sCards = 0;
+        db.shiftLog.forEach(i => { if(i.type==='JOB') { sMins += (i.s + i.t + i.m); sCards++; } });
+        
+        let sTimeMin = db.isRunning ? (Date.now() - db.startTime) / 60000 : 0;
+        let sEff = sTimeMin > 0.5 ? (sMins / sTimeMin) : 0;
+        
+        const sEffEl = document.getElementById('shiftEff');
+        sEffEl.innerText = sEff > 0 ? sEff.toFixed(2) : "-";
+        sEffEl.className = 'stat-value ' + (sEff >= 1.0 ? 'eff-good' : (sEff > 0 ? 'eff-bad' : ''));
+        
+        document.getElementById('shiftMins').innerText = Math.round(sMins);
+        document.getElementById('shiftCount').innerText = sCards;
+
+        let pTimeMin = (periodDb.totalWorkTimeMs + (db.isRunning ? (Date.now() - db.startTime) : 0)) / 60000;
+        let pMinsDone = periodDb.totalMins + sMins;
+        let pEff = pTimeMin > 0.5 ? (pMinsDone / pTimeMin) : 0;
+
+        const pEffEl = document.getElementById('periodEff');
+        pEffEl.innerText = pEff > 0 ? pEff.toFixed(2) : "-";
+        pEffEl.className = 'stat-value ' + (pEff >= 1.0 ? 'eff-good' : (pEff > 0 ? 'eff-bad' : ''));
+        
+        document.getElementById('periodMins').innerText = Math.round(pMinsDone);
+        document.getElementById('periodCount').innerText = periodDb.totalCards + sCards;
+    }
+
+    function toggleShift() {
+        if(!db.isRunning) {
+            let t = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
+            if(!t) return;
+            db.startTime = Date.now(); db.isRunning = true; db.shiftLog = [];
+            beep(800, 0.1);
+        } else {
+            periodDb.totalMins += db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
+            periodDb.totalCards += db.shiftLog.filter(i => i.type==='JOB').length;
+            periodDb.totalWorkTimeMs += (Date.now() - db.startTime);
+            localStorage.setItem('sarmays_period_data', JSON.stringify(periodDb));
+            db.isRunning = false;
+        }
+        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+        updateUI(); calculateStats(); renderHistory();
+    }
+
     function validateID(el) {
         el.value = el.value.replace(/\D/g, '').substring(0, 6);
-        if (el.value.length === 6) {
-            beep(400, 0.05);
-            if (document.getElementById('in_laji').value !== "") {
-                document.getElementById('in_s').focus();
-            } else {
-                startScanner('in_laji', (text) => {
-                    document.getElementById('in_laji').value = text;
-                });
-            }
+        if (el.value.length === 6) { beep(400, 0.05); document.getElementById('in_laji').focus(); }
+        document.getElementById('saveBtn').disabled = el.value.length !== 6;
+    }
+
+    function addJob() {
+        db.shiftLog.push({ 
+            id: document.getElementById('in_id').value, 
+            laji: document.getElementById('in_laji').value,
+            type: 'JOB', s: parseFloat(document.getElementById('in_s').value)||0, 
+            t: parseFloat(document.getElementById('in_t').value)||0, 
+            m: parseFloat(document.getElementById('in_m').value)||0,
+            timestamp: Date.now()
+        });
+        ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
+        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+        beep(440, 0.1); calculateStats(); renderHistory(); document.getElementById('saveBtn').disabled = true;
+    }
+
+    function handleManualEntry(type) {
+        if (type === 'PROTO') {
+            startScanner((text) => completeEntry(type, text));
+            document.getElementById('cancel-scan').onclick = () => { stopScanner(); let r = prompt("Lajimerkki:"); if(r) completeEntry(type, r); };
+        } else {
+            let reason = prompt("Häiriön syy?"); if(reason) completeEntry(type, reason);
         }
-        checkInput();
+    }
+
+    function completeEntry(type, id) {
+        let t = new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+        let s = prompt("Alku?", t); let e = prompt("Loppu?", t);
+        if(id && s && e) {
+            db.shiftLog.push({ id: id, type: type, timestamp: Date.now(), manualTime: s + "-" + e });
+            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+            renderHistory(); calculateStats();
+        }
+    }
+
+    function resetPeriod() {
+        if(confirm("Haluatko varmasti nollata koko jakson historian?")) {
+            periodDb = { totalMins: 0, totalCards: 0, totalWorkTimeMs: 0 };
+            localStorage.setItem('sarmays_period_data', JSON.stringify(periodDb));
+            db = { isRunning: false, startTime: null, shiftLog: [] };
+            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+            location.reload();
+        }
     }
 
     function handleInputFocus(id) {
         if (!manualMode && db.isRunning) {
-            startScanner(id, (text) => {
-                let cleaned = id === 'in_id' ? text.replace(/\D/g, '').substring(0, 6) : text;
-                document.getElementById(id).value = cleaned;
-                if (id === 'in_id') validateID(document.getElementById('in_id'));
+            startScanner((text) => {
+                document.getElementById(id).value = id === 'in_id' ? text.replace(/\D/g, '').substring(0, 6) : text;
+                if (id === 'in_id') validateID(document.getElementById(id));
             });
         }
         manualMode = false;
     }
 
-    async function startScanner(targetId, callback) {
+    async function startScanner(callback) {
         const container = document.getElementById('reader-container');
         container.style.display = 'flex';
-        scannerCallback = callback;
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
         try {
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
-                if(scannerCallback) scannerCallback(text);
-                stopScanner();
-                checkInput();
-            });
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => { callback(text); stopScanner(); });
         } catch (err) { stopScanner(); }
     }
 
     function stopScanner() {
         if (html5QrCode) html5QrCode.stop().catch(() => {});
         document.getElementById('reader-container').style.display = 'none';
-        manualMode = true;
-    }
-
-    function startProtoSequence() {
-        startScanner('proto_laji', (text) => {
-            completeProto(text);
-        });
-        setTimeout(() => {
-            const cancelBtn = document.querySelector('#reader-container button');
-            const originalClick = cancelBtn.onclick;
-            cancelBtn.onclick = () => {
-                stopScanner();
-                let laji = prompt("Syötä lajimerkki käsin:");
-                if(laji) completeProto(laji);
-                cancelBtn.onclick = originalClick;
-            }
-        }, 100);
-    }
-
-    function completeProto(laji) {
-        let startT = prompt("Alku (HH:MM)?", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
-        let endT = prompt("Loppu (HH:MM)?", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
-        if(!laji) return;
-        const lastTs = db.shiftLog.length > 0 ? db.shiftLog[db.shiftLog.length-1].timestamp : db.startTime;
-        db.shiftLog.push({ id: laji, type: 'PROTO', timestamp: Date.now(), durMs: Date.now() - lastTs, manualTime: startT + "-" + endT });
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        renderHistory();
-        calculateStats();
-    }
-
-    function calculateStats() {
-        if (!db.isRunning) return;
-        let calc = 0, real = (Date.now() - db.startTime) / 60000;
-        let count = 0;
-        db.shiftLog.forEach(i => { 
-            if(i.type==='JOB') { calc += (i.s + i.t + i.m); count++; }
-        });
-        document.getElementById('shiftEff').innerText = real > 0.1 ? (calc / real).toFixed(2) : "0.00";
-        document.getElementById('shiftMins').innerText = Math.round(calc);
-        document.getElementById('shiftCount').innerText = count;
-    }
-
-    function toggleShift() {
-        if(!db.isRunning) {
-            let t = prompt("Aloitus (HH:MM):", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
-            if(!t) return;
-            db.startTime = Date.now(); db.isRunning = true; db.shiftLog = [];
-            beep(880, 0.1);
-        } else {
-            db.isRunning = false;
-        }
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        updateUI(); renderHistory(); calculateStats();
-    }
-
-    function addJob() {
-        const lastTs = db.shiftLog.length > 0 ? db.shiftLog[db.shiftLog.length-1].timestamp : db.startTime;
-        db.shiftLog.push({ 
-            id: document.getElementById('in_id').value, 
-            laji: document.getElementById('in_laji').value,
-            type: 'JOB', 
-            s: parseFloat(document.getElementById('in_s').value)||0, 
-            t: parseFloat(document.getElementById('in_t').value)||0, 
-            m: parseFloat(document.getElementById('in_m').value)||0,
-            timestamp: Date.now(), durMs: Date.now() - lastTs
-        });
-        ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        beep(440, 0.1);
-        checkInput(); renderHistory(); calculateStats();
-    }
-
-    function askModeData(type) {
-        let reason = prompt(type === 'FAIL' ? "Häiriön syy?" : "Lajimerkki?");
-        if(!reason) return;
-        const lastTs = db.shiftLog.length > 0 ? db.shiftLog[db.shiftLog.length-1].timestamp : db.startTime;
-        db.shiftLog.push({ id: reason, type: type, timestamp: Date.now(), durMs: Date.now() - lastTs });
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        renderHistory(); calculateStats();
-    }
-
-    function checkInput() {
-        const r = db.isRunning;
-        ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).disabled = !r);
-        document.getElementById('saveBtn').disabled = document.getElementById('in_id').value.length !== 6;
     }
 
     function updateUI() {
         document.getElementById('shiftBtn').innerText = db.isRunning ? "LOPPU" : "ALKU";
         document.getElementById('shiftBtn').style.background = db.isRunning ? "var(--danger)" : "var(--accent)";
-        document.getElementById('failBtn').disabled = !db.isRunning; 
-        document.getElementById('protoBtn').disabled = !db.isRunning;
-        checkInput();
+        ['in_id','in_laji','in_s','in_t','in_m','failBtn','protoBtn'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.disabled = !db.isRunning;
+        });
     }
 
     function renderHistory() {
         const c = document.getElementById('historyList'); c.innerHTML = "";
         db.shiftLog.slice().reverse().forEach(item => {
-            let div = document.createElement('div'); div.style.padding = "12px"; div.style.borderBottom = "1px solid #222";
-            let timeDisp = item.manualTime ? item.manualTime : new Date(item.durMs).toISOString().substr(11, 8);
-            let label = item.type === 'PROTO' ? `<span style="color:var(--proto)">PROTO: ${item.id}</span>` : 
-                        item.type === 'FAIL' ? `<span style="color:var(--warn)">HÄIRIÖ: ${item.id}</span>` :
-                        `<b>#${item.id}</b> ${item.laji || ""}`;
-            div.innerHTML = `<div style="display:flex; justify-content:space-between"><span>${label}</span><span style="font-family:monospace">${timeDisp}</span></div>`;
+            let div = document.createElement('div'); div.className = "history-item";
+            let label = item.type === 'PROTO' ? `P: ${item.id}` : item.type === 'FAIL' ? `H: ${item.id}` : `#${item.id}`;
+            div.innerHTML = `<span>${label}</span><span style="font-family:monospace">${item.manualTime || new Date(item.timestamp).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})}</span>`;
             c.appendChild(div);
         });
     }
 
     setInterval(() => {
-        if(db.isRunning) {
-            document.getElementById('mainClock').innerText = new Date(Date.now() - db.startTime).toISOString().substr(11, 8);
-            effTick++;
-            if (effTick >= 10) { calculateStats(); effTick = 0; }
-        }
+        if(db.isRunning) document.getElementById('mainClock').innerText = new Date(Date.now() - db.startTime).toISOString().substr(11, 8);
+        calculateStats();
     }, 1000);
 
-    updateUI(); renderHistory(); calculateStats();
+    updateUI(); calculateStats(); renderHistory();
 </script>
 </body>
 </html>
