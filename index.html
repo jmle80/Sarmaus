@@ -1,203 +1,212 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SärmäysPro – VAMM Steel</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SärmäysPro - VAMM Steel</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root { 
+            --vamm-yellow: #fecb00; 
+            --bg: #000000;
+            --card: #1a1a1a;
+            --text: #ffffff;
+        }
+        * { box-sizing: border-box; touch-action: manipulation; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        
+        .version-header { color: var(--vamm-yellow); font-weight: 900; font-size: 0.8rem; text-align: center; margin-bottom: 5px; }
+        
+        .logo-box { text-align: center; padding: 10px 0; border-bottom: 2px solid var(--vamm-yellow); margin-bottom: 15px; }
+        .logo-vamm { font-weight: 900; font-size: 1.8rem; color: var(--vamm-yellow); }
+        .logo-steel { font-weight: 300; font-size: 1.8rem; color: #fff; }
 
-<style>
-:root {
-    --vamm-yellow:#fecb00;
-    --bg:#000;
-    --card:#1a1a1a;
-    --text:#fff;
-}
-*{box-sizing:border-box}
-body{
-    margin:0;
-    padding:10px;
-    background:var(--bg);
-    color:var(--text);
-    font-family:sans-serif;
-}
-.logo-box{
-    text-align:center;
-    padding:15px;
-    border-bottom:3px solid var(--vamm-yellow);
-}
-.logo-vamm{font-weight:900;color:var(--vamm-yellow);font-size:2rem}
-.logo-steel{font-weight:300;font-size:2rem}
-.card{
-    background:var(--card);
-    padding:20px;
-    border-radius:15px;
-    margin:15px 0;
-    text-align:center;
-}
-.timer-val{
-    font-size:4rem;
-    color:var(--vamm-yellow);
-    font-family:monospace;
-}
-.stats-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-}
-.stat-item{
-    background:#000;
-    padding:10px;
-    border-radius:10px;
-}
-.stat-nro{font-weight:900;font-size:1.2rem}
-.stat-txt{font-size:.6rem;color:#aaa}
-.btn-large{
-    width:100%;
-    height:70px;
-    border:none;
-    border-radius:12px;
-    font-size:1.2rem;
-    font-weight:900;
-    margin:8px 0;
-}
-.btn-start{background:var(--vamm-yellow);color:#000}
-.btn-stop{background:#c11226;color:#fff}
-input{
-    width:100%;
-    padding:15px;
-    margin:6px 0;
-    background:#000;
-    border:1px solid #444;
-    border-radius:10px;
-    color:#fff;
-    font-size:1.1rem;
-    text-align:center;
-}
-.log-item{
-    background:#111;
-    padding:12px;
-    border-radius:8px;
-    margin-top:6px;
-    display:flex;
-    justify-content:space-between;
-    border-left:4px solid var(--vamm-yellow);
-}
-</style>
+        .card { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 10px; text-align: center; border: 1px solid #333; }
+        .timer-val { font-size: 4.5rem; font-family: monospace; color: var(--vamm-yellow); font-weight: 900; margin: 5px 0; line-height: 1; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .stat-item { background: #000; padding: 10px 2px; border-radius: 10px; border: 1px solid #222; }
+        .stat-nro { font-size: 1.2rem; font-weight: 900; display: block; }
+        .stat-txt { font-size: 0.6rem; color: #888; text-transform: uppercase; }
+
+        .btn-large { border: none; border-radius: 12px; font-weight: 900; font-size: 1.2rem; height: 70px; width: 100%; cursor: pointer; text-transform: uppercase; margin-bottom: 8px; }
+        .btn-start { background: var(--vamm-yellow); color: #000; }
+        .btn-stop { background: #ce1126; color: #fff; }
+
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid #444; border-radius: 10px; color: #fff; font-size: 1.2rem; margin-bottom: 8px; text-align: center; }
+        
+        /* SKANNERIN ERIKOISMÄÄRITYKSET */
+        #scanner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; }
+        #reader { width: 100% !important; flex: 1; }
+        #reader__scan_region { background: #000; }
+        #reader video { object-fit: cover !important; }
+
+        .log-item { display: flex; justify-content: space-between; padding: 12px; background: #111; margin-top: 4px; border-radius: 8px; border-left: 4px solid var(--vamm-yellow); font-size: 0.9rem; }
+    </style>
 </head>
-
 <body>
 
-<div class="logo-box">
-    <span class="logo-vamm">VAMM</span><span class="logo-steel">STEEL</span>
-</div>
-
-<div class="card">
-    <div id="kello" class="timer-val">00:00:00</div>
-    <div class="stats-grid">
-        <div class="stat-item"><span id="eff_nyt" class="stat-nro">0.00</span><span class="stat-txt">EFF</span></div>
-        <div class="stat-item"><span id="min_nyt" class="stat-nro">0</span><span class="stat-txt">MIN</span></div>
-        <div class="stat-item" onclick="naytaArkisto()"><span id="eff_jakso" class="stat-nro" style="color:var(--vamm-yellow)">0.00</span><span class="stat-txt">JAKSO</span></div>
+<div class="container">
+    <div class="version-header">VERSION v5.4.0</div>
+    
+    <div class="logo-box">
+        <span class="logo-vamm">VAMM</span><span class="logo-steel">STEEL</span>
     </div>
+
+    <div class="card">
+        <div id="kello" class="timer-val">00:00:00</div>
+        <div class="stats-grid">
+            <div class="stat-item"><span id="eff_nyt" class="stat-nro">0.00</span><span class="stat-txt">EFF</span></div>
+            <div class="stat-item"><span id="min_nyt" class="stat-nro">0</span><span class="stat-txt">MIN</span></div>
+            <div class="stat-item" onclick="naytaArkisto()"><span id="eff_jakso" class="stat-nro" style="color:var(--vamm-yellow)">0.00</span><span class="stat-txt">JAKSO</span></div>
+        </div>
+    </div>
+
+    <button id="mainBtn" class="btn-large btn-start" onclick="hallitseVuoroa()">ALOITA VUORO</button>
+
+    <div id="inputArea" style="display:none">
+        <input type="text" id="in_id" placeholder="TYÖNUMERO (Skannaa)" readonly onclick="startScan('in_id')">
+        <input type="text" id="in_laji" placeholder="LAJIMERKKI (Skannaa)" readonly onclick="startScan('in_laji')">
+        <div class="stats-grid">
+            <input type="number" id="in_s" placeholder="ASET" oninput="tarkistaTallennus()">
+            <input type="number" id="in_t" placeholder="TAIV" oninput="tarkistaTallennus()">
+            <input type="number" id="in_m" placeholder="MUUT" oninput="tarkistaTallennus()">
+        </div>
+    </div>
+
+    <div id="lista"></div>
 </div>
 
-<button id="paNappi" class="btn-large btn-start" onclick="hallitseVuoroa()">ALOITA VUORO</button>
-
-<div id="tyoAlue" style="display:none">
-    <input id="tyo_id" placeholder="TYÖNUMERO">
-    <input id="tyo_laji" placeholder="LAJIMERKKI">
-    <input id="tyo_s" type="number" placeholder="ASET">
-    <input id="tyo_t" type="number" placeholder="TAIV">
-    <input id="tyo_m" type="number" placeholder="MUUT">
-    <button class="btn-large btn-start" onclick="tallennaTyo()">TALLENNA TYÖ</button>
+<div id="scanner-overlay">
+    <div id="reader"></div>
+    <button class="btn-large btn-stop" style="border-radius:0;" onclick="stopScan()">SULJE SKANNERI</button>
 </div>
 
-<div id="lista"></div>
-
-<!-- ARKISTO -->
-<div id="arkisto" style="display:none;position:fixed;inset:0;background:#000;padding:20px;z-index:1000;overflow:auto">
-<button onclick="suljeArkisto()" style="float:right;font-size:2rem;background:none;border:none;color:white">✕</button>
-<h2 style="color:var(--vamm-yellow)">HISTORIA</h2>
-<div id="arkistoSisalto"></div>
-<button class="btn-large btn-stop" onclick="nollaaKaikki()">NOLLAA KAIKKI</button>
+<div id="arkistoRuutu" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:1000; display:none; padding:20px; overflow-y:auto;">
+    <button onclick="suljeArkisto()" style="float:right; color:white; background:none; border:none; font-size:2.5rem">✕</button>
+    <h2 style="color:var(--vamm-yellow)">HISTORIA</h2>
+    <div id="arkistoSisältö"></div>
+    <button onclick="nollaaKaikki()" class="btn-large btn-stop" style="margin-top:20px">NOLLAA JAKSO HISTORIA</button>
 </div>
 
 <script>
-let muisti = JSON.parse(localStorage.getItem("vamm_data")) || {kaynnissa:false,alku:0,tyot:[]};
-let arkisto = JSON.parse(localStorage.getItem("vamm_arkisto")) || [];
+    let db = JSON.parse(localStorage.getItem('vamm_v14_data')) || { active: false, start: 0, log: [] };
+    let arch = JSON.parse(localStorage.getItem('vamm_v14_arch')) || [];
+    let scanner = null;
 
-function tallenna(){
-    localStorage.setItem("vamm_data",JSON.stringify(muisti));
-    localStorage.setItem("vamm_arkisto",JSON.stringify(arkisto));
-}
+    function save() {
+        localStorage.setItem('vamm_v14_data', JSON.stringify(db));
+        localStorage.setItem('vamm_v14_arch', JSON.stringify(arch));
+    }
 
-function hallitseVuoroa(){
-    if(!muisti.kaynnissa){
-        muisti.alku=Date.now();
-        muisti.kaynnissa=true;
-        muisti.tyot=[];
-    }else{
-        if(confirm("Lopetetaanko vuoro?")){
-            arkisto.push(...muisti.tyot);
-            muisti={kaynnissa:false,alku:0,tyot:[]};
+    function hallitseVuoroa() {
+        if (!db.active) {
+            let t = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
+            if(!t) return;
+            let [h, m] = t.split(':');
+            let d = new Date(); d.setHours(h, m, 0, 0);
+            db.start = d.getTime();
+            db.active = true;
+            db.log = [];
+            try { new AudioContext().resume(); } catch(e){} 
+        } else {
+            if(confirm("Lopetetaanko vuoro?")) {
+                db.log.forEach(x => arch.push(x));
+                db.active = false;
+                db.start = 0;
+            }
+        }
+        save();
+        paivitaUI();
+    }
+
+    function startScan(targetId) {
+        document.getElementById('scanner-overlay').style.display = 'flex';
+        scanner = new Html5Qrcode("reader");
+        const config = { 
+            fps: 20, 
+            qrbox: { width: 300, height: 120 }, // VIIVAKOODILLE SOPIVA ETSIN
+            aspectRatio: 1.0 
+        };
+        
+        scanner.start({ facingMode: "environment" }, config, (text) => {
+            document.getElementById(targetId).value = text.trim();
+            stopScan();
+        }).catch(() => {});
+    }
+
+    function stopScan() {
+        if(scanner) {
+            scanner.stop().then(() => {
+                document.getElementById('scanner-overlay').style.display = 'none';
+                scanner = null;
+            });
         }
     }
-    tallenna();
-    paivitaNakyma();
-}
 
-function kello(){
-    if(muisti.kaynnissa){
-        let ms=Date.now()-muisti.alku;
-        let h=Math.floor(ms/3600000);
-        let m=Math.floor(ms%3600000/60000);
-        let s=Math.floor(ms%60000/1000);
-        kelloEl.innerText=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-        let tmins=muisti.tyot.reduce((a,b)=>a+b.s+b.t+b.m,0);
-        min_nyt.innerText=tmins;
-        eff_nyt.innerText=(ms>60000?(tmins/(ms/60000)).toFixed(2):"0.00");
-        let jakso=arkisto.reduce((a,b)=>a+b.s+b.t+b.m,0)+tmins;
-        eff_jakso.innerText=(jakso/480).toFixed(2);
+    function tarkistaTallennus() {
+        const id = document.getElementById('in_id').value;
+        const laji = document.getElementById('in_laji').value;
+        const s = document.getElementById('in_s').value;
+        const t = document.getElementById('in_t').value;
+        const m = document.getElementById('in_m').value || 0;
+
+        if (id.length >= 3 && laji && s !== "" && t !== "") {
+            db.log.push({ id, laji, s: Number(s), t: Number(t), m: Number(m) });
+            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => document.getElementById(k).value = "");
+            save();
+            renderLista();
+        }
     }
-    requestAnimationFrame(kello);
-}
 
-function tallennaTyo(){
-    let id=tyo_id.value.trim();
-    let laji=tyo_laji.value.trim();
-    let s=+tyo_s.value,t=+tyo_t.value,m=+tyo_m.value||0;
-    if(!id||!laji||!s||!t) return;
-    muisti.tyot.push({id,laji,s,t,m});
-    tyo_id.value=tyo_laji.value=tyo_s.value=tyo_t.value=tyo_m.value="";
-    tallenna(); paivitaLista();
-}
+    function pyoraKello() {
+        if (db.active && db.start > 0) {
+            let diff = Date.now() - db.start;
+            if (diff < 0) diff = 0;
+            let h = Math.floor(diff / 3600000);
+            let m = Math.floor((diff % 3600000) / 60000);
+            let s = Math.floor((diff % 60000) / 1000);
+            document.getElementById('kello').innerText = (h<10?"0"+h:h)+":"+(m<10?"0"+m:m)+":"+(s<10?"0"+s:s);
+            
+            let mins = db.log.reduce((a, b) => a + (b.s+b.t+b.m), 0);
+            let kulunut = diff / 60000;
+            document.getElementById('eff_nyt').innerText = kulunut > 0.5 ? (mins / kulunut).toFixed(2) : "0.00";
+            document.getElementById('min_nyt').innerText = Math.round(mins);
+            let jMins = arch.reduce((a, b) => a + (b.s+b.t+b.m), 0) + mins;
+            document.getElementById('eff_jakso').innerText = (jMins / 480).toFixed(2);
+        } else {
+            document.getElementById('kello').innerText = "00:00:00";
+        }
+        requestAnimationFrame(pyoraKello);
+    }
 
-function paivitaLista(){
-    lista.innerHTML="";
-    [...muisti.tyot].reverse().forEach(t=>{
-        lista.innerHTML+=`<div class="log-item"><b>${t.id}</b><span>${t.laji}</span><b>${t.s+t.t+t.m} min</b></div>`;
-    });
-}
+    function renderLista() {
+        let l = document.getElementById('lista');
+        l.innerHTML = "";
+        [...db.log].reverse().forEach(x => {
+            l.innerHTML += `<div class="log-item"><b>#${x.id}</b> <span>${x.laji}</span> <b>${x.s+x.t+x.m} min</b></div>`;
+        });
+    }
 
-function paivitaNakyma(){
-    paNappi.innerText=muisti.kaynnissa?"LOPETA VUORO":"ALOITA VUORO";
-    paNappi.className="btn-large "+(muisti.kaynnissa?"btn-stop":"btn-start");
-    tyoAlue.style.display=muisti.kaynnissa?"block":"none";
-    paivitaLista();
-}
+    function paivitaUI() {
+        const r = db.active;
+        document.getElementById('mainBtn').innerText = r ? "LOPETA VUORO" : "ALOITA VUORO";
+        document.getElementById('mainBtn').className = r ? "btn-large btn-stop" : "btn-large btn-start";
+        document.getElementById('inputArea').style.display = r ? "block" : "none";
+        renderLista();
+    }
 
-function naytaArkisto(){
-    arkistoSisalto.innerHTML="";
-    arkisto.forEach(t=>{
-        arkistoSisalto.innerHTML+=`<div class="log-item"><b>${t.id}</b><span>${t.laji}</span><b>${t.s+t.t+t.m} min</b></div>`;
-    });
-    arkisto.style.display="block";
-}
-function suljeArkisto(){arkisto.style.display="none";}
-function nollaaKaikki(){if(confirm("VARMA?")){localStorage.clear();location.reload();}}
+    function nollaaKaikki() {
+        if (confirm("Haluatko varmasti nollata koko jakson historian")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
 
-const kelloEl=document.getElementById("kello");
-window.onload=()=>{paivitaNakyma();kello();}
+    function naytaArkisto() { document.getElementById('arkistoRuutu').style.display='block'; }
+    function suljeArkisto() { document.getElementById('arkistoRuutu').style.display='none'; }
+
+    window.onload = () => { paivitaUI(); pyoraKello(); };
 </script>
-
 </body>
 </html>
