@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="https://via.placeholder.com/192/f58220/ffffff?text=S">
     <link rel="manifest" href='data:application/json,{"name":"SärmäysPro","short_name":"Särmäys","start_url":".","display":"standalone","background_color":"#0a0a0a","theme_color":"#f58220"}'>
 
-    <title>SärmäysPro v4.9.3</title>
+    <title>SärmäysPro v4.9.4</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -21,7 +21,7 @@
             --primary: #f58220; --accent: #22c55e; 
             --danger: #ef4444; --warn: #fbbf24; --proto: #a855f7; 
             --gray: #262626; --light-gray: #737373;
-            --version-color: #4ade80;
+            --version-color: #facc15;
         }
         * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         
@@ -52,14 +52,20 @@
         }
         input:focus { border-color: var(--accent); outline: none; background: #050505; }
         
+        /* HISTORIA SARAKKEET */
+        .history-header { display: flex; padding: 5px 10px; font-size: 0.65rem; color: var(--light-gray); font-weight: 900; text-transform: uppercase; border-bottom: 1px solid var(--gray); }
+        .history-row { display: flex; padding: 12px 10px; border-bottom: 1px solid #222; align-items: center; font-size: 0.85rem; }
+        .col-id { flex: 2; font-family: 'SF Mono', monospace; font-weight: bold; }
+        .col-laji { flex: 3; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 5px; }
+        .col-aika { flex: 1.5; text-align: right; font-family: 'SF Mono', monospace; font-weight: 900; color: var(--accent); }
+
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 10000; display: none; flex-direction: column; padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom) 15px; }
+        .date-header { background: var(--gray); padding: 8px 12px; font-size: 0.8rem; font-weight: 900; color: var(--primary); margin-top: 12px; border-radius: 8px; }
         
-        /* ETSIMEN PIENENNYS JA MUOTOILU */
         #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #reader { width: 260px; height: 260px; border-radius: 24px; border: 4px solid var(--accent); overflow: hidden; background: #000; }
         .manual-trigger { color: var(--danger); font-weight: 900; margin-bottom: 20px; font-size: 1.4rem; cursor: pointer; text-decoration: underline; background: rgba(255,255,255,0.1); padding: 12px 40px; border-radius: 12px; }
         
-        .history-row { display: flex; padding: 14px 10px; border-bottom: 1px solid #222; align-items: center; font-size: 0.9rem; }
         .btn-main { border: none; border-radius: 14px; font-weight: 900; font-size: 1.1rem; transition: transform 0.1s; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
@@ -77,12 +83,15 @@
         <button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:3rem; line-height: 1;">×</button>
     </div>
     <input type="text" id="period_search" placeholder="Hae historiasta..." oninput="renderPeriodHistory()" style="text-align:left;">
+    <div class="history-header">
+        <span class="col-id">ID</span><span class="col-laji">Lajimerkki</span><span class="col-aika">Aika</span>
+    </div>
     <div id="periodContent" style="flex:1; overflow-y:auto;"></div>
     <button onclick="resetPeriod()" class="btn-main" style="background:var(--danger); color:white; padding:20px; margin-top:10px;">NOLLAA JAKSO</button>
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v4.9.3</div>
+    <div class="version-header">VERSION v4.9.4</div>
     <div class="header-box"><span style="font-weight:900; font-size:1.4rem; color:var(--accent)"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
     
     <div class="card">
@@ -111,7 +120,10 @@
     </div>
 
     <div class="card" style="padding:10px;">
-        <div id="currentShiftList" style="max-height: 200px; overflow-y: auto;"></div>
+        <div class="history-header">
+            <span class="col-id">ID</span><span class="col-laji">Lajimerkki</span><span class="col-aika">Aika</span>
+        </div>
+        <div id="currentShiftList" style="max-height: 250px; overflow-y: auto;"></div>
     </div>
 </div>
 
@@ -178,9 +190,7 @@
         document.getElementById('reader-container').style.display = 'flex';
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
         html5QrCode.start({ facingMode: "environment" }, { 
-            fps: 30, 
-            qrbox: { width: 220, height: 220 }, // Pienennetty etsimen osumalaatikko
-            aspectRatio: 1.0
+            fps: 30, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0
         }, (text) => {
             document.getElementById(id).value = text;
             hapticInput(); stopScanner();
@@ -252,8 +262,10 @@
     function renderHistory() {
         const c = document.getElementById('currentShiftList'); c.innerHTML = "";
         db.shiftLog.slice().reverse().forEach(i => {
-            c.innerHTML += `<div class="history-row" onclick="alert('S: ${i.s} T: ${i.t} M: ${i.m}')">
-                <div style="flex:2.5; font-weight:bold;">#${i.id}</div><div style="flex:3.5; color:var(--light-gray);">${i.laji}</div><div style="flex:1.5; text-align:right; font-weight:900; color:var(--accent);">${(i.s+i.t+i.m).toFixed(1)}m</div>
+            c.innerHTML += `<div class="history-row" onclick="alert('Asetus: ${i.s}m\\nTaivutus: ${i.t}m\\nMuut: ${i.m}m')">
+                <div class="col-id">#${i.id}</div>
+                <div class="col-laji">${i.laji}</div>
+                <div class="col-aika">${(i.s+i.t+i.m).toFixed(1)}m</div>
             </div>`;
         });
     }
@@ -268,7 +280,9 @@
             if (i.id.toLowerCase().includes(f) || i.laji.toLowerCase().includes(f) || dateStr.includes(f)) {
                 if (dateStr !== lastDate) { c.innerHTML += `<div class="date-header">${dateStr}</div>`; lastDate = dateStr; }
                 c.innerHTML += `<div class="history-row">
-                    <div style="flex:2.5; font-weight:bold;">#${i.id}</div><div style="flex:3.5; color:var(--light-gray);">${i.laji}</div><div style="flex:1.5; text-align:right; font-weight:900; color:var(--accent);">${(i.s+i.t+i.m).toFixed(1)}m</div>
+                    <div class="col-id">#${i.id}</div>
+                    <div class="col-laji">${i.laji}</div>
+                    <div class="col-aika">${(i.s+i.t+i.m).toFixed(1)}m</div>
                 </div>`;
             }
         });
