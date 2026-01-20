@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SärmäysPro v3.0.7</title>
+    <title>SärmäysPro v3.0.9</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -24,63 +24,60 @@
         .timer-val { font-size: 3.5rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; }
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         
-        input { padding: 18px; background: #000; border: 2px solid var(--gray); border-radius: 12px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 10px; caret-color: var(--primary); }
-        input:focus { border-color: var(--accent); outline: none; background: #050505; }
+        .stat-box { text-align: center; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--gray); }
+        .stat-val { font-size: 1.2rem; font-weight: 900; color: var(--accent); display: block; }
+        .stat-label { font-size: 0.6rem; color: var(--light-gray); text-transform: uppercase; font-weight: bold; }
+
+        input { padding: 18px; background: #000; border: 2px solid var(--gray); border-radius: 12px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 10px; }
+        input:focus { border-color: var(--accent); outline: none; }
         input:disabled { opacity: 0.2; }
         
         .btn { border: none; border-radius: 12px; padding: 18px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; display: block; width: 100%; }
-        .btn:active { opacity: 0.7; transform: scale(0.98); }
         .btn:disabled { background: var(--gray) !important; color: #444; pointer-events: none; }
         
         #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #reader { width: 90%; max-width: 400px; border-radius: 20px; overflow: hidden; border: 4px solid var(--accent); }
-        .scan-cancel { margin-top: 20px; background: var(--danger); color: white; padding: 15px 40px; border-radius: 50px; font-weight: bold; border: none; }
         
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #222; font-size: 0.9rem; }
-        
-        #modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); border: 2px solid var(--primary); padding: 20px; border-radius: 16px; z-index: 3000; width: 90%; max-width: 350px; }
-        #modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 2999; }
     </style>
 </head>
 <body>
 
 <div id="reader-container">
     <div id="reader"></div>
-    <button class="scan-cancel" onclick="stopScanner()">PERUUTA (KIRJOITA KÄSIN)</button>
-</div>
-
-<div id="modal-overlay" onclick="closeModal()"></div>
-<div id="modal">
-    <h3 id="modal-title" style="color:var(--primary); margin-top:0;"></h3>
-    <div id="modal-content"></div>
-    <button class="btn" style="background:var(--gray); margin-top:15px;" onclick="closeModal()">SULJE</button>
+    <button class="btn" style="background:var(--danger); width:auto; padding: 15px 30px; margin-top:20px;" onclick="stopScanner()">PERUUTA</button>
 </div>
 
 <div class="container">
     <div class="header-box">
         <span class="logo-text"><span style="color:var(--primary)">VAMM</span> Steel Oy</span>
-        <div class="version-tag">SärmäysPro v3.0.7</div>
+        <div class="version-tag">SärmäysPro v3.0.9</div>
     </div>
     
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
-        <div class="grid" style="margin-top: 15px;">
-            <button class="btn" style="background: var(--accent)" id="shiftBtn" onclick="toggleShift()">ALKU</button>
-            <button class="btn" style="background: var(--warn); color: #000;" id="failBtn" onclick="askModeData('FAIL')" disabled>HÄIRIÖ</button>
-            <button class="btn" style="background: var(--proto);" id="protoBtn" onclick="askModeData('PROTO')" disabled>PROTO</button>
+        <div class="grid">
+            <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">VUORO EFF</span></div>
+            <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">VUORO MIN</span></div>
+            <div class="stat-box"><span id="shiftCount" class="stat-val">0</span><span class="stat-label">KORTIT (V)</span></div>
         </div>
     </div>
 
+    <div class="grid" style="margin-bottom: 12px;">
+        <button class="btn" style="background: var(--accent)" id="shiftBtn" onclick="toggleShift()">ALKU</button>
+        <button class="btn" style="background: var(--warn); color: #000;" id="failBtn" onclick="askModeData('FAIL')" disabled>HÄIRIÖ</button>
+        <button class="btn" style="background: var(--proto);" id="protoBtn" onclick="askModeData('PROTO')" disabled>PROTO</button>
+    </div>
+
     <div class="card">
-        <input type="text" id="in_id" placeholder="KORTIN NRO" inputmode="numeric" maxlength="8" onfocus="handleInputFocus('in_id')" oninput="checkInput()" disabled>
-        <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" oninput="checkInput()" disabled>
-        
+        <input type="text" id="in_id" placeholder="KORTIN NRO (6 numeroa)" inputmode="numeric" maxlength="6" onfocus="handleInputFocus('in_id')" oninput="validateAndCheck('in_id')" disabled>
+        <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" oninput="validateAndCheck('in_laji')" disabled>
         <div class="grid">
-            <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" oninput="checkInput()" disabled>
-            <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" oninput="checkInput()" disabled>
-            <input type="number" id="in_m" placeholder="MUUT" inputmode="decimal" oninput="checkInput()" disabled>
+            <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled>
+            <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" disabled>
+            <input type="number" id="in_m" placeholder="MUUT" inputmode="decimal" disabled>
         </div>
-        <button class="btn" style="background: var(--primary); color:#000; font-size: 1rem; margin-top: 5px;" id="saveBtn" onclick="addJob()" disabled>TALLENNA KORTTI</button>
+        <button class="btn" style="background: var(--primary); color:#000; font-size: 1rem;" id="saveBtn" onclick="addJob()" disabled>TALLENNA KORTTI</button>
     </div>
 
     <div id="historyList" class="card" style="padding:0; overflow:hidden;"></div>
@@ -92,15 +89,8 @@
     let html5QrCode = null;
     let manualMode = false;
 
-    function save() {
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        localStorage.setItem('sarmays_history', JSON.stringify(history));
-    }
-
     function handleInputFocus(id) {
-        if (!manualMode && db.isRunning) {
-            startScanner(id);
-        }
+        if (!manualMode && db.isRunning) startScanner(id);
         manualMode = false;
     }
 
@@ -108,19 +98,12 @@
         const container = document.getElementById('reader-container');
         container.style.display = 'flex';
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        
         try {
-            await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: {width: 250, height: 150} }, (text) => {
-                document.getElementById(targetId).value = text;
+            await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
+                let cleaned = targetId === 'in_id' ? text.replace(/\D/g, '').substring(0, 6) : text;
+                document.getElementById(targetId).value = cleaned;
                 stopScanner();
-                
-                // Automaattinen hyppy
-                if (targetId === 'in_id') {
-                    setTimeout(() => startScanner('in_laji'), 500);
-                } else if (targetId === 'in_laji' && document.getElementById('in_id').value === "") {
-                    setTimeout(() => startScanner('in_id'), 500);
-                }
-                checkInput();
+                validateAndCheck(targetId);
             });
         } catch (err) { stopScanner(); }
     }
@@ -128,7 +111,24 @@
     function stopScanner() {
         if (html5QrCode) html5QrCode.stop().catch(() => {});
         document.getElementById('reader-container').style.display = 'none';
-        manualMode = true; // Sallii näppäimistön käytön peruutuksen jälkeen
+        manualMode = true;
+    }
+
+    function validateAndCheck(id) {
+        const idField = document.getElementById('in_id');
+        const lajiField = document.getElementById('in_laji');
+        
+        // Vain numerot ID-kenttään
+        if(id === 'in_id') idField.value = idField.value.replace(/\D/g, '');
+
+        // Automaattinen fokus ASET-kenttään kun molemmat ok
+        if(idField.value.length === 6 && lajiField.value.trim() !== "") {
+            document.getElementById('in_s').focus();
+        } else if (idField.value.length === 6 && id === 'in_id') {
+            startScanner('in_laji');
+        }
+        
+        checkInput();
     }
 
     function toggleShift() {
@@ -137,10 +137,12 @@
             if(!t) return;
             db.startTime = Date.now(); db.isRunning = true; db.shiftLog = [];
         } else {
-            history.push({ date: new Date().toLocaleDateString('fi-FI'), log: [...db.shiftLog] });
+            history.push({ date: new Date().toLocaleDateString('fi-FI'), log: [...db.shiftLog], totalMs: Date.now() - db.startTime });
             db.isRunning = false;
         }
-        save(); updateUI(); renderHistory();
+        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+        localStorage.setItem('sarmays_history', JSON.stringify(history));
+        updateUI(); renderHistory();
     }
 
     function addJob() {
@@ -152,51 +154,26 @@
             s: parseFloat(document.getElementById('in_s').value)||0, 
             t: parseFloat(document.getElementById('in_t').value)||0, 
             m: parseFloat(document.getElementById('in_m').value)||0,
-            timestamp: Date.now(),
-            durMs: Date.now() - lastTs
+            timestamp: Date.now(), durMs: Date.now() - lastTs
         });
         ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
-        save(); checkInput(); renderHistory();
+        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+        checkInput(); renderHistory();
     }
 
     function askModeData(type) {
         let reason = prompt(type === 'FAIL' ? "Häiriön syy?" : "Lajimerkki?");
         if(!reason) return;
-        db.shiftLog.push({ id: reason, type: type, timestamp: Date.now(), durMs: 0 });
-        save(); renderHistory();
+        const lastTs = db.shiftLog.length > 0 ? db.shiftLog[db.shiftLog.length-1].timestamp : db.startTime;
+        db.shiftLog.push({ id: reason, type: type, timestamp: Date.now(), durMs: Date.now() - lastTs });
+        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+        renderHistory();
     }
-
-    function renderHistory() {
-        const c = document.getElementById('historyList'); c.innerHTML = "";
-        db.shiftLog.slice().reverse().forEach(item => {
-            let div = document.createElement('div'); div.className = 'history-item';
-            let label = item.type === 'JOB' ? `<b>#${item.id}</b> ${item.laji}` : `<span style="color:var(--warn)">${item.id}</span>`;
-            let dur = item.durMs ? new Date(item.durMs).toISOString().substr(11, 8) : "--:--:--";
-            div.innerHTML = `<span>${label}</span><span style="font-family:monospace">${dur}</span>`;
-            div.onclick = () => showDetails(item);
-            c.appendChild(div);
-        });
-    }
-
-    function showDetails(item) {
-        if(item.type !== 'JOB') return;
-        document.getElementById('modal-title').innerText = "Kortti #" + item.id;
-        document.getElementById('modal-content').innerHTML = `
-            <p>Lajimerkki: ${item.laji}</p>
-            <p>Asetus: ${item.s} min | Taivutus: ${item.t} min</p>
-            <p>Todellinen aika: ${new Date(item.durMs).toISOString().substr(11, 8)}</p>
-        `;
-        document.getElementById('modal').style.display = 'block';
-        document.getElementById('modal-overlay').style.display = 'block';
-    }
-
-    function closeModal() { document.getElementById('modal').style.display = 'none'; document.getElementById('modal-overlay').style.display = 'none'; }
 
     function checkInput() {
         const r = db.isRunning;
         ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).disabled = !r);
-        let ok = document.getElementById('in_id').value.length >= 3;
-        document.getElementById('saveBtn').disabled = !ok;
+        document.getElementById('saveBtn').disabled = document.getElementById('in_id').value.length !== 6;
     }
 
     function updateUI() {
@@ -207,9 +184,24 @@
         checkInput();
     }
 
+    function renderHistory() {
+        const c = document.getElementById('historyList'); c.innerHTML = "";
+        db.shiftLog.slice().reverse().forEach(item => {
+            let div = document.createElement('div'); div.className = 'history-item';
+            div.innerHTML = `<span><b>#${item.id}</b> ${item.laji || ""}</span>
+                             <span style="font-family:monospace">${new Date(item.durMs).toISOString().substr(11, 8)}</span>`;
+            c.appendChild(div);
+        });
+    }
+
     setInterval(() => {
         if(db.isRunning) {
             document.getElementById('mainClock').innerText = new Date(Date.now() - db.startTime).toISOString().substr(11, 8);
+            let calc = 0, real = (Date.now() - db.startTime) / 60000;
+            db.shiftLog.forEach(i => { if(i.type==='JOB') calc += (i.s+i.t+i.m); });
+            document.getElementById('shiftEff').innerText = real > 0 ? (calc / real).toFixed(2) : "0.00";
+            document.getElementById('shiftMins').innerText = Math.round(calc);
+            document.getElementById('shiftCount').innerText = db.shiftLog.filter(i=>i.type==='JOB').length;
         }
     }, 1000);
 
