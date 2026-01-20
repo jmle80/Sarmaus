@@ -1,14 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <title>SärmäysPro v5.0.1</title>
+    <title>SärmäysPro v5.0.2</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -16,7 +12,7 @@
             --primary: #f58220; --accent: #22c55e; 
             --danger: #ef4444; --warn: #facc15; --proto: #a855f7; 
             --gray: #262626; --light-gray: #a3a3a3;
-            --version-color: #ef4444;
+            --version-color: #fb7185;
         }
         * { box-sizing: border-box; touch-action: manipulation; }
         
@@ -30,12 +26,12 @@
         .version-header { color: var(--version-color); font-weight: 900; font-size: 0.75rem; text-align: center; margin-bottom: 5px; }
         
         .card { background: var(--card); padding: 12px; border-radius: 16px; border: 1px solid var(--gray); margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .timer-val { font-size: 3rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; margin: 10px 0; }
+        .timer-val { font-size: 3rem; font-family: 'Courier New', monospace; text-align: center; color: var(--primary); font-weight: 900; margin: 10px 0; }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .stat-box { text-align: center; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid var(--gray); }
         .stat-val { font-size: 1.1rem; font-weight: 900; display: block; }
-        .stat-label { font-size: 0.6rem; color: var(--light-gray); font-weight: bold; }
+        .stat-label { font-size: 0.55rem; color: var(--light-gray); text-transform: uppercase; font-weight: bold; }
         
         input { 
             padding: 14px; background: #000; border: 2px solid var(--gray); border-radius: 10px; 
@@ -43,43 +39,41 @@
             margin-bottom: 8px;
         }
 
-        .btn-main { 
-            border: none; border-radius: 14px; font-weight: 900; font-size: 1.1rem; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
+        .btn-main { border: none; border-radius: 14px; font-weight: 900; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         /* MODAL */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 10000; display: none; flex-direction: column; padding: 20px; }
-        .archive-settings { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--gray); }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 10000; display: none; flex-direction: column; padding: 15px; }
+        .archive-settings { background: var(--card); padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--gray); }
         
-        /* SKANNERI */
+        /* HISTORIA SARAKKEET */
+        .history-header { display: flex; padding: 8px 5px; font-size: 0.65rem; color: var(--light-gray); font-weight: 900; text-transform: uppercase; border-bottom: 1px solid var(--gray); }
+        .history-row { display: flex; padding: 12px 5px; border-bottom: 1px solid #222; align-items: center; font-size: 0.85rem; }
+        .col-id { flex: 0 0 30%; font-family: monospace; font-weight: bold; overflow: hidden; text-overflow: ellipsis; }
+        .col-laji { flex: 0 0 45%; color: var(--warn); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 5px; }
+        .col-aika { flex: 0 0 25%; text-align: right; color: var(--accent); font-weight: 900; font-family: monospace; }
+
         #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #reader { width: 90%; max-width: 400px; border: 2px solid var(--accent); border-radius: 16px; overflow: hidden; }
-
-        .history-row { display: flex; padding: 12px 5px; border-bottom: 1px solid #222; align-items: center; font-size: 0.85rem; }
-        .col-id { flex: 0 0 25%; font-weight: bold; }
-        .col-laji { flex: 0 0 55%; color: var(--warn); overflow: hidden; }
-        .col-aika { flex: 0 0 20%; text-align: right; color: var(--accent); font-weight: 900; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="version-header">VERSION v5.0.1</div>
+    <div class="version-header">VERSION v5.0.2</div>
     
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
         <div class="grid" style="margin-bottom: 10px;">
             <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
             <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
-            <div id="openArchiveBtn" class="stat-box" style="border-color: var(--primary); cursor: pointer;" onclick="openPeriod()">
+            <div class="stat-box" style="border-color: var(--primary); cursor: pointer;" onclick="openPeriod()">
                 <span id="periodEff" class="stat-val" style="color:var(--primary)">0.00</span>
                 <span class="stat-label">JAKSO EFF</span>
             </div>
         </div>
         <div class="stat-box" style="width:100%; border-color:var(--proto);">
-            <span id="weekTotal" class="stat-val" style="color:var(--proto);">0h 0min</span>
-            <span class="stat-label">VIIKON TYÖTUNNIT YHTEENSÄ</span>
+            <span id="weekTotal" class="stat-val" style="color:var(--proto);">0h 0min 0s</span>
+            <span class="stat-label">VIIKON TYÖTUNNIT YHTEENSÄ (REAALIAIKA)</span>
         </div>
     </div>
 
@@ -99,29 +93,37 @@
         </div>
     </div>
 
-    <div class="card">
-        <div id="currentShiftList" style="max-height: 200px; overflow-y: auto;"></div>
+    <div class="card" style="padding:10px;">
+        <input type="text" id="shiftSearch" placeholder="Hae vuoron historiasta..." oninput="renderHistory()" style="font-size: 0.8rem; padding: 10px; margin-bottom: 5px; text-align: left;">
+        <div class="history-header">
+            <span class="col-id">ID</span><span class="col-laji">Lajimerkki</span><span class="col-aika">Aika</span>
+        </div>
+        <div id="currentShiftList" style="max-height: 180px; overflow-y: auto;"></div>
     </div>
 </div>
 
 <div id="periodModal" class="modal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-        <h2 style="color:var(--primary); margin:0;">ARKISTO</h2>
-        <button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:2rem;">✕</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+        <h2 style="color:var(--primary); margin:0; font-size: 1.2rem;">JAKSOHISTORIA</h2>
+        <button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:2.5rem;">✕</button>
     </div>
     <div class="archive-settings">
-        <div style="display:flex; gap:10px;">
-            <input type="date" id="p_start" onchange="updatePeriodRange()" style="padding:8px; font-size:0.8rem;">
-            <input type="date" id="p_end" onchange="updatePeriodRange()" style="padding:8px; font-size:0.8rem;">
+        <div style="display:flex; gap:8px;">
+            <input type="date" id="p_start" onchange="updatePeriodRange()" style="padding:8px; font-size:0.75rem;">
+            <input type="date" id="p_end" onchange="updatePeriodRange()" style="padding:8px; font-size:0.75rem;">
         </div>
-        <div id="period_summary_modal" style="text-align:center; color:var(--accent); font-weight:bold; margin-top:10px;">Tunnit: 0h 0min</div>
+        <div id="period_summary_modal" style="text-align:center; color:var(--accent); font-weight:bold; margin-top:8px; font-size: 0.9rem;">Tunnit: 0h 0min 0s</div>
+    </div>
+    <input type="text" id="periodSearch" placeholder="Hae arkistosta..." oninput="renderPeriodHistory()" style="font-size: 0.85rem; padding: 10px; margin-bottom: 5px; text-align: left;">
+    <div class="history-header">
+        <span class="col-id">ID</span><span class="col-laji">Lajimerkki</span><span class="col-aika">Aika</span>
     </div>
     <div id="periodContent" style="flex:1; overflow-y:auto;"></div>
     <button onclick="resetPeriod()" class="btn-main" style="background:var(--danger); color:white; padding:15px; margin-top:10px;">NOLLAA JAKSO</button>
 </div>
 
 <div id="reader-container">
-    <button onclick="switchToManual()" style="color:var(--danger); background:none; border:none; font-weight:900; margin-bottom:20px;">SYÖTÄ KÄSIN</button>
+    <button onclick="switchToManual()" style="color:var(--danger); background:none; border:none; font-weight:900; margin-bottom:20px; font-size: 1.2rem;">SYÖTÄ KÄSIN</button>
     <div id="reader"></div>
     <button onclick="stopScanner()" class="btn-main" style="background:var(--gray); color:white; padding:15px; margin-top:30px; width:60%;">SULJE</button>
 </div>
@@ -129,11 +131,10 @@
 <script>
     let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, shiftLog: [], activeManual: null };
     let periodData = JSON.parse(localStorage.getItem('sarmays_period_archive')) || [];
-    let periodStats = JSON.parse(localStorage.getItem('sarmays_period_stats')) || { totalMins: 0, totalWorkTimeMs: 0, weeklyLog: [] };
+    let periodStats = JSON.parse(localStorage.getItem('sarmays_period_stats')) || { weeklyLog: [] };
     let pSettings = JSON.parse(localStorage.getItem('sarmays_p_settings')) || { start: "", end: "" };
     
-    let html5QrCode = null;
-    let currentTargetField = null;
+    let html5QrCode = null, currentTargetField = null;
 
     function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
     function beep(f, d) { try { const a = new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(); const g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = f; g.gain.value = 0.08; o.start(); o.stop(a.currentTime + d); } catch(e){} }
@@ -143,10 +144,7 @@
         const sBtn = document.getElementById('shiftBtn');
         sBtn.innerText = r ? "LOPPU" : "ALKU";
         sBtn.style.background = r ? "var(--danger)" : "var(--accent)";
-        
-        ['failBtn', 'protoBtn', 'in_id', 'in_laji', 'in_s', 'in_t', 'in_m'].forEach(id => {
-            document.getElementById(id).disabled = !r;
-        });
+        ['failBtn', 'protoBtn', 'in_id', 'in_laji', 'in_s', 'in_t', 'in_m'].forEach(id => document.getElementById(id).disabled = !r);
         calculateWeeklyHours();
     }
 
@@ -156,90 +154,32 @@
             if(!t) return;
             let [h, m] = t.split(':'); let d = new Date(); d.setHours(h, m, 0, 0);
             db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
-            beep(660, 0.2); 
+            beep(880, 0.3); vibrate(100); // Aloitusääni ja värinä
         } else {
             if(confirm("Lopetetaanko vuoro?")) {
                 const duration = Date.now() - db.startTime;
-                if (!periodStats.weeklyLog) periodStats.weeklyLog = [];
                 periodStats.weeklyLog.push({ start: db.startTime, end: Date.now(), duration: duration });
                 db.shiftLog.forEach(i => periodData.push(i));
                 localStorage.setItem('sarmays_period_archive', JSON.stringify(periodData));
                 localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
-                db.isRunning = false;
-                db.startTime = null;
+                db.isRunning = false; db.startTime = null;
             }
         }
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
         updateUI(); renderHistory();
     }
 
-    function triggerField(id) {
-        currentTargetField = id;
-        document.getElementById('reader-container').style.display = 'flex';
-        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: { width: 300, height: 150 } }, (text) => {
-            document.getElementById(id).value = text;
-            stopScanner();
-            if (id === 'in_id') setTimeout(() => triggerField('in_laji'), 400);
-        }).catch(() => {});
-    }
-
-    function stopScanner() { 
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                document.getElementById('reader-container').style.display = 'none';
-            }).catch(() => {
-                document.getElementById('reader-container').style.display = 'none';
-            });
-        }
-    }
-
-    function switchToManual() {
-        stopScanner();
-        const el = document.getElementById(currentTargetField);
-        el.readOnly = false;
-        el.focus();
-    }
-
-    function handleInstantZero(el, nextId) {
-        if (el.value === "0") {
-            if (nextId) document.getElementById(nextId).focus();
-            else checkAutoSave();
-        } else {
-            checkAutoSave();
-        }
-    }
-
-    function checkAutoSave() {
-        const id = document.getElementById('in_id').value;
-        const laji = document.getElementById('in_laji').value;
-        const s = document.getElementById('in_s').value;
-        const t = document.getElementById('in_t').value;
-        if (id && laji && s !== "" && t !== "") {
-            db.shiftLog.push({ id, laji, s: parseFloat(s)||0, t: parseFloat(t)||0, m: parseFloat(document.getElementById('in_m').value)||0, timestamp: Date.now() });
-            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => {
-                const input = document.getElementById(k);
-                input.value = "";
-                if(k.includes('in_id') || k.includes('in_laji')) input.readOnly = true;
-            });
-            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-            vibrate(50);
-            renderHistory();
-        }
-    }
-
     function calculateWeeklyHours() {
-        const now = new Date();
         const startBound = pSettings.start ? new Date(pSettings.start).setHours(0,0,0,0) : 0;
         const endBound = pSettings.end ? new Date(pSettings.end).setHours(23,59,59,999) : Infinity;
         let weekMs = 0, pMs = 0, pMins = 0;
 
         if (periodStats.weeklyLog) {
             periodStats.weeklyLog.forEach(s => {
-                const sDate = new Date(s.end);
-                if (sDate >= startBound && sDate <= endBound) pMs += s.duration;
-                // Yksinkertaistettu viikkolasku
-                if (Date.now() - sDate.getTime() < 604800000) weekMs += s.duration;
+                const sEnd = new Date(s.end);
+                if (sEnd >= startBound && sEnd <= endBound) pMs += s.duration;
+                // Viimeiset 7 päivää rullaava
+                if (Date.now() - s.end < 604800000) weekMs += s.duration;
             });
         }
         if (db.isRunning && db.startTime) {
@@ -251,9 +191,73 @@
             if (i.timestamp >= startBound && i.timestamp <= endBound) pMins += (i.s + i.t + i.m);
         });
 
-        document.getElementById('weekTotal').innerText = Math.floor(weekMs/3600000) + "h " + Math.floor((weekMs%3600000)/60000) + "min";
-        document.getElementById('period_summary_modal').innerText = "Tunnit: " + Math.floor(pMs/3600000) + "h " + Math.floor((pMs%3600000)/60000) + "min";
+        const format = (ms) => {
+            let h = Math.floor(ms/3600000);
+            let m = Math.floor((ms%3600000)/60000);
+            let s = Math.floor((ms%60000)/1000);
+            return `${h}h ${m}min ${s}s`;
+        };
+
+        document.getElementById('weekTotal').innerText = format(weekMs);
+        document.getElementById('period_summary_modal').innerText = "Tunnit: " + format(pMs);
         document.getElementById('periodEff').innerText = (pMins / (pMs / 60000) || 0).toFixed(2);
+    }
+
+    function renderHistory() {
+        const query = document.getElementById('shiftSearch').value.toLowerCase();
+        const c = document.getElementById('currentShiftList'); c.innerHTML = "";
+        db.shiftLog.slice().reverse().forEach(i => {
+            if (i.id.toLowerCase().includes(query) || i.laji.toLowerCase().includes(query)) {
+                c.innerHTML += `<div class="history-row"><div class="col-id">#${i.id}</div><div class="col-laji">${i.laji}</div><div class="col-aika">${(i.s+i.t+i.m).toFixed(1)}m</div></div>`;
+            }
+        });
+    }
+
+    function renderPeriodHistory() {
+        const query = document.getElementById('periodSearch').value.toLowerCase();
+        const c = document.getElementById('periodContent'); c.innerHTML = "";
+        const startBound = pSettings.start ? new Date(pSettings.start).setHours(0,0,0,0) : 0;
+        const endBound = pSettings.end ? new Date(pSettings.end).setHours(23,59,59,999) : Infinity;
+        
+        const all = [...periodData, ...db.shiftLog].sort((a,b)=>b.timestamp-a.timestamp);
+        all.forEach(i => {
+            if (i.timestamp >= startBound && i.timestamp <= endBound) {
+                if (i.id.toLowerCase().includes(query) || i.laji.toLowerCase().includes(query)) {
+                    c.innerHTML += `<div class="history-row"><div class="col-id">#${i.id}</div><div class="col-laji">${i.laji}</div><div class="col-aika">${(i.s+i.t+i.m).toFixed(1)}m</div></div>`;
+                }
+            }
+        });
+    }
+
+    function triggerField(id) {
+        currentTargetField = id;
+        document.getElementById('reader-container').style.display = 'flex';
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: { width: 300, height: 150 }, videoConstraints: { zoom: 2.0 } }, (text) => {
+            document.getElementById(id).value = text;
+            stopScanner();
+            if (id === 'in_id') setTimeout(() => triggerField('in_laji'), 400);
+        }).catch(() => {});
+    }
+
+    function stopScanner() { if (html5QrCode) html5QrCode.stop().then(() => document.getElementById('reader-container').style.display = 'none').catch(() => document.getElementById('reader-container').style.display = 'none'); }
+    function switchToManual() { stopScanner(); const el = document.getElementById(currentTargetField); el.readOnly = false; el.focus(); }
+
+    function handleInstantZero(el, nextId) {
+        if (el.value === "0") {
+            if (nextId) document.getElementById(nextId).focus();
+            else checkAutoSave();
+        } else { checkAutoSave(); }
+    }
+
+    function checkAutoSave() {
+        const id = document.getElementById('in_id').value, laji = document.getElementById('in_laji').value, s = document.getElementById('in_s').value, t = document.getElementById('in_t').value;
+        if (id && laji && s !== "" && t !== "") {
+            db.shiftLog.push({ id, laji, s: parseFloat(s)||0, t: parseFloat(t)||0, m: parseFloat(document.getElementById('in_m').value)||0, timestamp: Date.now() });
+            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => { document.getElementById(k).value = ""; if(k.includes('in_id')||k.includes('in_laji')) document.getElementById(k).readOnly = true; });
+            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+            vibrate(50); renderHistory();
+        }
     }
 
     function openPeriod() { 
@@ -267,54 +271,38 @@
         pSettings.start = document.getElementById('p_start').value;
         pSettings.end = document.getElementById('p_end').value;
         localStorage.setItem('sarmays_p_settings', JSON.stringify(pSettings));
-        calculateWeeklyHours();
-        renderPeriodHistory();
+        calculateWeeklyHours(); renderPeriodHistory();
     }
 
-    function renderHistory() {
-        const c = document.getElementById('currentShiftList'); c.innerHTML = "";
-        db.shiftLog.slice().reverse().forEach(i => {
-            c.innerHTML += `<div class="history-row"><div class="col-id">#${i.id}</div><div class="col-laji">${i.laji}</div><div class="col-aika">${(i.s+i.t+i.m).toFixed(1)}m</div></div>`;
-        });
-    }
-
-    function renderPeriodHistory() {
-        const c = document.getElementById('periodContent'); c.innerHTML = "";
-        const all = [...periodData, ...db.shiftLog].sort((a,b)=>b.timestamp-a.timestamp);
-        all.forEach(i => {
-            c.innerHTML += `<div class="history-row"><div class="col-id">#${i.id}</div><div class="col-laji">${i.laji}</div><div class="col-aika">${(i.s+i.t+i.m).toFixed(1)}m</div></div>`;
-        });
+    function resetPeriod() {
+        if (confirm("Haluatko varmasti nollata koko jakson historian")) {
+            periodData = []; periodStats.weeklyLog = [];
+            localStorage.setItem('sarmays_period_archive', JSON.stringify([]));
+            localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
+            renderPeriodHistory(); updateUI();
+        }
     }
 
     function handleManualToggle(type) {
         if (db.activeManual === type) {
-            const laji = prompt(type + " päättyy. Syy/Lajimerkki:");
-            db.shiftLog.push({ id: "---", laji: laji || type, s:0, t:0, m:0, timestamp: Date.now() });
+            const val = prompt(type + " päättyy. Syy:");
+            db.shiftLog.push({ id: "---", laji: val || type, s:0, t:0, m:0, timestamp: Date.now() });
             db.activeManual = null;
         } else {
             alert(type + " aloitettu.");
             db.activeManual = type;
         }
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        renderHistory();
-    }
-
-    function resetPeriod() {
-        if (confirm("Haluatko varmasti nollata koko jakson historian")) {
-            periodData = [];
-            periodStats = { totalMins: 0, totalWorkTimeMs: 0, weeklyLog: [] };
-            localStorage.setItem('sarmays_period_archive', JSON.stringify([]));
-            localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
-            renderPeriodHistory();
-            updateUI();
-        }
+        localStorage.setItem('sarmays_current_shift', JSON.stringify(db)); renderHistory();
     }
 
     setInterval(() => {
         if(db.isRunning && db.startTime) {
             let diff = Date.now() - db.startTime;
             document.getElementById('mainClock').innerText = new Date(diff).toISOString().substr(11, 8);
-            calculateWeeklyHours();
+            let sMins = db.shiftLog.reduce((a, b) => a + (b.s+b.t+b.m || 0), 0);
+            document.getElementById('shiftEff').innerText = (sMins / (diff / 60000) || 0).toFixed(2);
+            document.getElementById('shiftMins').innerText = Math.round(sMins);
+            calculateWeeklyHours(); // Reaaliaikainen viikkotuntien päivitys
         }
     }, 1000);
 
