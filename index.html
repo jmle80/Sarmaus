@@ -3,99 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SärmäysPro - VAMM Steel Edition</title>
+    <title>SärmäysPro - VAMM Steel</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
-            /* VAMM Steel Brändivärit */
-            --vamm-dark: #1a1a1a; 
+            --vamm-yellow: #fecb00; 
             --vamm-steel: #333d47;
-            --vamm-yellow: #fecb00; /* Tyypillinen teollinen keltainen */
-            --vamm-accent: #f58220; /* Brändin korostus */
-            --bg: #0d0d0d;
+            --bg: #000000;
+            --card: #1a1a1a;
             --text: #ffffff;
-            --version-color: #fecb00;
         }
         * { box-sizing: border-box; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
-        .container { max-width: 450px; margin: auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         
-        .version-header { color: var(--version-color); font-weight: 900; font-size: 0.75rem; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        /* LOGO STYLE */
+        .vamm-logo { text-align: center; margin: 10px 0 20px 0; }
+        .vamm-logo svg { width: 180px; height: auto; }
         
-        .header-logo { text-align: center; margin-bottom: 15px; }
-        .header-logo h1 { margin: 0; font-size: 1.5rem; color: var(--vamm-yellow); letter-spacing: 2px; }
-        .header-logo span { font-size: 0.6rem; text-transform: uppercase; color: #888; display: block; }
-
-        .card { background: var(--vamm-dark); padding: 18px; border-radius: 12px; border-left: 5px solid var(--vamm-yellow); margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .version-header { color: var(--vamm-yellow); font-weight: 900; font-size: 0.7rem; text-align: center; margin-bottom: 5px; opacity: 0.8; }
         
-        .timer-val { font-size: 4.8rem; font-family: 'Courier New', monospace; text-align: center; color: var(--vamm-yellow); font-weight: 900; margin: 0; line-height: 1; text-shadow: 0 0 15px rgba(254, 203, 0, 0.3); }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; border-top: 4px solid var(--vamm-yellow); margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .stat-box { text-align: center; padding: 12px 5px; background: #000; border-radius: 8px; border: 1px solid #2a2a2a; }
+        .timer-val { font-size: 4.8rem; font-family: monospace; text-align: center; color: var(--vamm-yellow); font-weight: 900; margin: 0; letter-spacing: -2px; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .stat-box { text-align: center; padding: 12px 5px; background: #000; border-radius: 10px; border: 1px solid #333; }
         .stat-val { font-size: 1.4rem; font-weight: 900; display: block; color: #fff; }
-        .stat-label { font-size: 0.6rem; color: #777; text-transform: uppercase; margin-top: 4px; display: block; font-weight: bold; }
+        .stat-label { font-size: 0.6rem; color: #aaa; text-transform: uppercase; margin-top: 4px; display: block; }
 
-        input { padding: 18px; background: #000; border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 1.3rem; text-align: center; width: 100%; margin-bottom: 10px; font-weight: bold; transition: 0.2s; }
-        input:focus { border-color: var(--vamm-yellow); outline: none; background: #050505; }
-        input:disabled { opacity: 0.1; }
+        input { padding: 18px; background: #000; border: 1px solid #444; border-radius: 10px; color: #fff; font-size: 1.3rem; text-align: center; width: 100%; margin-bottom: 10px; font-weight: bold; }
+        input:focus { border-color: var(--vamm-yellow); outline: none; }
 
-        .btn-main { border: none; border-radius: 8px; font-weight: 900; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 75px; text-transform: uppercase; transition: 0.1s; }
-        .btn-main:active { transform: scale(0.97); filter: brightness(1.2); }
+        .btn-main { border: none; border-radius: 12px; font-weight: 900; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 75px; text-transform: uppercase; }
+        .btn-main:active { transform: scale(0.96); }
         
-        .btn-start { background: var(--vamm-yellow); color: #000; }
-        .btn-danger { background: #ce1126; color: #fff; }
+        .btn-start { background: var(--vamm-yellow); color: #000; width: 100%; }
+        .btn-danger { background: #ce1126; color: #fff; width: 100%; }
         .btn-gray { background: var(--vamm-steel); color: #fff; }
-        .btn-proto { background: #6b21a8; color: #fff; }
 
-        .history-row { display: flex; padding: 16px 10px; border-bottom: 1px solid #222; align-items: center; background: rgba(255,255,255,0.03); margin-bottom: 3px; border-radius: 6px; }
-        .col-id { flex: 0 0 30%; font-family: monospace; font-weight: bold; color: var(--vamm-yellow); }
-        .col-laji { flex: 0 0 45%; color: #ddd; font-weight: 600; }
-        .col-aika { flex: 0 0 25%; text-align: right; color: var(--vamm-accent); font-weight: 900; font-size: 1.1rem; }
+        .history-row { display: flex; padding: 15px 10px; border-bottom: 1px solid #333; align-items: center; background: #111; margin-bottom: 2px; border-radius: 5px; }
+        .col-id { flex: 0 0 30%; color: var(--vamm-yellow); font-family: monospace; font-weight: bold; }
+        .col-laji { flex: 0 0 45%; color: #eee; }
+        .col-aika { flex: 0 0 25%; text-align: right; color: #f58220; font-weight: 900; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: none; flex-direction: column; padding: 20px; }
     </style>
 </head>
 <body>
 
-<div id="shiftTypeModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:20000; display:none; align-items:center; justify-content:center;">
-    <div style="background:var(--vamm-dark); padding:30px; border-radius:15px; border:3px solid var(--vamm-yellow); width:90%; max-width:400px; text-align:center;">
-        <h2 style="color:var(--vamm-yellow); margin-bottom:25px;">VALITSE TYÖVUORO</h2>
-        <button onclick="startShiftWith('AAMU')" class="btn-main btn-start" style="width:100%; margin:10px 0; font-size:1.5rem;">AAMU</button>
-        <button onclick="startShiftWith('ILTA')" class="btn-main btn-gray" style="width:100%; margin:10px 0; font-size:1.5rem; background: #666;">ILTA</button>
-        <button onclick="startShiftWith('YÖ')" class="btn-main btn-gray" style="width:100%; margin:10px 0; font-size:1.5rem; background: #333;">YÖ</button>
-    </div>
-</div>
-
 <div class="container">
-    <div class="version-header">VERSION v5.2.2</div>
+    <div class="version-header">VERSION v5.2.3</div>
     
-    <div class="header-logo">
-        <h1>VAMM STEEL</h1>
-        <span>Components You Can Trust</span>
+    <div class="vamm-logo">
+        <svg viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
+            <text x="10" y="45" font-family="Arial Black, sans-serif" font-size="40" fill="#fecb00">VAMM</text>
+            <text x="155" y="45" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#ffffff">STEEL</text>
+            <rect x="10" y="52" width="280" height="4" fill="#fecb00"/>
+        </svg>
     </div>
 
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
-        <div class="grid" style="margin: 18px 0;">
-            <div class="stat-box"><span id="shiftEff" class="stat-val" style="color:var(--vamm-yellow)">0.00</span><span class="stat-label">EFFICIENY</span></div>
-            <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MINUUTIT</span></div>
-            <div class="stat-box" style="border-color:var(--vamm-accent);" onclick="openPeriod()">
-                <span id="periodEff" class="stat-val" style="color:var(--vamm-accent)">0.00</span><span class="stat-label">JAKSO EFF</span>
+        <div class="grid" style="margin: 15px 0;">
+            <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
+            <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
+            <div class="stat-box" style="border-color:var(--vamm-yellow);" onclick="openPeriod()">
+                <span id="periodEff" class="stat-val" style="color:var(--vamm-yellow)">0.00</span><span class="stat-label">JAKSO EFF</span>
             </div>
-        </div>
-        <div class="grid">
-            <div class="stat-box" style="grid-column: span 1.5; border-color: #333;"><span id="weekTotal" class="stat-val">0h 0m</span><span class="stat-label">VIIKKO YHTEENSÄ</span></div>
-            <div class="stat-box" style="grid-column: span 1.5; border-color: #333;"><span id="weekSaved" class="stat-val" style="color:var(--vamm-yellow)">0h 0m</span><span class="stat-label">PANKKIIN</span></div>
         </div>
     </div>
 
     <div class="grid" style="margin-bottom: 15px;">
-        <button id="shiftBtn" class="btn-main btn-start" onclick="handleShiftToggle()">ALKU</button>
+        <button id="shiftBtn" class="btn-main btn-start" onclick="handleShiftToggle()">ALOITA</button>
         <button id="failBtn" class="btn-main btn-gray" style="background:#ce1126" onclick="handleManualToggle('FAIL')" disabled>HÄIRIÖ</button>
-        <button id="protoBtn" class="btn-main btn-proto" onclick="handleManualToggle('PROTO')" disabled>PROTO</button>
+        <button id="protoBtn" class="btn-main btn-gray" style="background:#6b21a8" onclick="handleManualToggle('PROTO')" disabled>PROTO</button>
     </div>
 
-    <div class="card" style="border-left-color: var(--vamm-steel);">
+    <div class="card" style="border-top-color: #333;">
         <input type="text" id="in_id" placeholder="TYÖNUMERO" readonly onclick="triggerField('in_id')" disabled>
         <input type="text" id="in_laji" placeholder="LAJIMERKKI" readonly onclick="triggerField('in_laji')" disabled>
         <div class="grid">
@@ -105,105 +89,123 @@
         </div>
     </div>
     
-    <div style="background: #111; border-radius: 8px; padding: 5px;">
-        <div id="currentShiftList" style="max-height: 280px; overflow-y: auto;"></div>
-    </div>
+    <div id="currentShiftList" style="max-height: 250px; overflow-y: auto; background: #0a0a0a; border-radius: 10px;"></div>
 </div>
 
 <div id="periodModal" class="modal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;"><h2 style="color:var(--vamm-yellow)">ARKISTO</h2><button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:3.5rem;">✕</button></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;"><h2 style="color:var(--vamm-yellow)">ARKISTO</h2><button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:3rem;">✕</button></div>
     <div id="periodContent" style="flex:1; overflow-y:auto;"></div>
-    <button onclick="resetPeriod()" class="btn-main btn-danger" style="height:75px; margin-top:15px; width:100%;">NOLLAA JAKSO HISTORIA</button>
+    <button onclick="resetPeriod()" class="btn-main btn-danger">NOLLAA JAKSO HISTORIA</button>
 </div>
 
 <div id="reader-container" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:30000; display:none; flex-direction:column; align-items:center; justify-content:center;">
-    <button onclick="switchToManual()" style="color:var(--vamm-yellow); background:none; border:2px solid var(--vamm-yellow); border-radius:8px; padding:20px 40px; font-weight:900; margin-bottom:30px; font-size:1.2rem;">SYÖTÄ KÄSIN</button>
-    <div id="reader" style="width:90%; border:2px solid #333;"></div>
+    <button onclick="switchToManual()" style="color:var(--vamm-yellow); background:none; border:2px solid var(--vamm-yellow); border-radius:10px; padding:20px 40px; font-weight:900; margin-bottom:30px;">KÄSIN SYÖTTÖ</button>
+    <div id="reader" style="width:90%;"></div>
     <button onclick="stopScanner()" class="btn-main btn-gray" style="margin-top:40px; width:75%;">SULJE</button>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('vamm_shift')) || { isRunning: false, startTime: 0, shiftLog: [] };
-    let periodStats = JSON.parse(localStorage.getItem('vamm_stats')) || { weeklyLog: [] };
-    let periodData = JSON.parse(localStorage.getItem('vamm_archive')) || [];
+    let db = JSON.parse(localStorage.getItem('vamm_db')) || { isRunning: false, startTime: 0, shiftLog: [] };
+    let archive = JSON.parse(localStorage.getItem('vamm_archive')) || [];
     let html5QrCode = null, currentTargetField = null;
 
     function save() {
-        localStorage.setItem('vamm_shift', JSON.stringify(db));
-        localStorage.setItem('vamm_stats', JSON.stringify(periodStats));
-        localStorage.setItem('vamm_archive', JSON.stringify(periodData));
+        localStorage.setItem('vamm_db', JSON.stringify(db));
+        localStorage.setItem('vamm_archive', JSON.stringify(archive));
     }
 
-    function beep(f, d) { 
-        try { 
-            const a = new (window.AudioContext || window.webkitAudioContext)(); 
-            const o = a.createOscillator(); 
-            const g = a.createGain(); 
-            o.connect(g); g.connect(a.destination); 
-            o.frequency.value = f; 
-            g.gain.value = 0.1; 
-            o.start(); o.stop(a.currentTime + d); 
-        } catch(e){} 
-    }
+    function beep() { try { const a = new AudioContext(); const o = a.createOscillator(); const g = a.createGain(); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.2); } catch(e){} }
 
     function handleShiftToggle() {
-        if (!db.isRunning) { document.getElementById('shiftTypeModal').style.display = 'flex'; }
-        else { if(confirm("Lopetetaanko vuoro ja tallennetaanko tiedot?")) {
-            const now = Date.now();
-            const dur = now - Number(db.startTime);
-            periodStats.weeklyLog.push({ start: db.startTime, end: now, duration: dur });
-            db.shiftLog.forEach(i => periodData.push(i));
-            db.isRunning = false; db.startTime = 0; db.shiftLog = [];
-            save(); updateUI();
-        }}
-    }
-
-    function startShiftWith(type) {
-        let t = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
-        if(!t) return;
-        const [h, m] = t.split(':'); const d = new Date(); d.setHours(parseInt(h), parseInt(m), 0, 0);
-        db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
-        document.getElementById('shiftTypeModal').style.display = 'none';
-        save(); beep(700, 0.3); updateUI();
+        if (!db.isRunning) {
+            let t = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
+            if(!t) return;
+            const [h, m] = t.split(':'); const d = new Date(); d.setHours(parseInt(h), parseInt(m), 0, 0);
+            db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
+            save(); beep(); updateUI();
+        } else {
+            if(confirm("Lopetetaanko vuoro?")) {
+                db.shiftLog.forEach(i => archive.push(i));
+                db.isRunning = false; db.startTime = 0; db.shiftLog = [];
+                save(); updateUI();
+            }
+        }
     }
 
     function refreshClock() {
-        if(!db.isRunning || !db.startTime || db.startTime === 0) {
+        if(!db.isRunning || !db.startTime) {
             document.getElementById('mainClock').innerText = "00:00:00";
             return;
         }
-        const now = Date.now();
-        const diffMs = now - Number(db.startTime);
-        if(diffMs < 0) return;
-
-        const secTotal = Math.floor(diffMs / 1000);
-        const hh = Math.floor(secTotal / 3600);
-        const mm = Math.floor((secTotal % 3600) / 60);
-        const ss = secTotal % 60;
-        document.getElementById('mainClock').innerText = `${hh.toString().padStart(2,'0')}:${mm.toString().padStart(2,'0')}:${ss.toString().padStart(2,'0')}`;
+        const diff = Date.now() - db.startTime;
+        const sec = Math.floor(diff / 1000);
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        document.getElementById('mainClock').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
         
-        const sMins = db.shiftLog.reduce((acc, i) => acc + (Number(i.s)+Number(i.t)+Number(i.m) || 0), 0);
-        const diffMins = diffMs / 60000;
-        document.getElementById('shiftEff').innerText = diffMins > 0.5 ? (sMins / diffMins).toFixed(2) : "0.00";
-        document.getElementById('shiftMins').innerText = Math.round(sMins);
-
-        // Viikko ja Jakso
-        let wMs = diffMs; periodStats.weeklyLog.forEach(x => wMs += x.duration);
-        let pMins = sMins; periodData.forEach(x => pMins += (Number(x.s)+Number(x.t)+Number(x.m) || 0));
+        const mins = db.shiftLog.reduce((acc, i) => acc + (Number(i.s)+Number(i.t)+Number(i.m)), 0);
+        document.getElementById('shiftEff').innerText = diff > 60000 ? (mins / (diff/60000)).toFixed(2) : "0.00";
+        document.getElementById('shiftMins').innerText = Math.round(mins);
         
-        document.getElementById('weekTotal').innerText = `${Math.floor(wMs/3600000)}h ${Math.floor((wMs%3600000)/60000)}m`;
-        document.getElementById('periodEff').innerText = wMs > 60000 ? (pMins / (wMs/60000)).toFixed(2) : "0.00";
-        
-        const std = 8 * 3600000; let saved = 0;
-        periodStats.weeklyLog.forEach(v => { if(v.duration > std) saved += (v.duration - std); });
-        if(diffMs > std) saved += (diffMs - std);
-        document.getElementById('weekSaved').innerText = `${Math.floor(saved/3600000)}h ${Math.floor((saved%3600000)/60000)}m`;
+        const archMins = archive.reduce((acc, i) => acc + (Number(i.s)+Number(i.t)+Number(i.m)), 0) + mins;
+        document.getElementById('periodEff').innerText = (archMins / 4800).toFixed(2); // Esimerkki jaksoeff
     }
 
-    function editRow(index, isArchive = false) {
-        const list = isArchive ? periodData : db.shiftLog;
-        const item = list[index];
-        const currentSum = (Number(item.s) + Number(item.t) + Number(item.m));
-        const newVal = prompt(`MUOKKAA TYÖTÄ #${item.id}\nSyötä uusi yhteisaika (min):`, currentSum);
-        if (newVal !== null && !isNaN(newVal)) {
-            item.s = Number(newVal); item
+    function renderHistory() {
+        const c = document.getElementById('currentShiftList'); c.innerHTML = "";
+        db.shiftLog.slice().reverse().forEach((i, idx) => {
+            const realIdx = db.shiftLog.length - 1 - idx;
+            c.innerHTML += `<div class="history-row" onclick="editRow(${realIdx})"><div class="col-id">#${i.id}</div><div class="col-laji">${i.laji}</div><div class="col-aika">${(Number(i.s)+Number(i.t)+Number(i.m)).toFixed(1)}m</div></div>`;
+        });
+    }
+
+    function editRow(idx) {
+        const i = db.shiftLog[idx];
+        const n = prompt("Uusi aika (min):", (Number(i.s)+Number(i.t)+Number(i.m)));
+        if(n) { i.s = Number(n); i.t = 0; i.m = 0; save(); renderHistory(); }
+    }
+
+    function updateUI() {
+        const r = db.isRunning;
+        document.getElementById('shiftBtn').innerText = r ? "LOPETA" : "ALOITA";
+        document.getElementById('shiftBtn').className = r ? "btn-main btn-danger" : "btn-main btn-start";
+        ['failBtn','protoBtn','in_id','in_laji','in_s','in_t','in_m'].forEach(id => document.getElementById(id).disabled = !r);
+        renderHistory();
+    }
+
+    function triggerField(id) {
+        currentTargetField = id; document.getElementById('reader-container').style.display='flex';
+        if(!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({facingMode:"environment"}, {fps:20, qrbox:250}, (t)=>{
+            document.getElementById(id).value = t.trim(); stopScanner();
+            if(id === 'in_id') setTimeout(()=>triggerField('in_laji'), 300);
+        }).catch(()=>{});
+    }
+    function stopScanner() { if(html5QrCode) html5QrCode.stop().then(()=>document.getElementById('reader-container').style.display='none'); }
+    function switchToManual() { stopScanner(); document.getElementById(currentTargetField).readOnly = false; document.getElementById(currentTargetField).focus(); }
+    function handleInstantZero(el, next) { if(el.value === "0" && next) document.getElementById(next).focus(); checkAuto(); }
+    
+    function checkAuto() {
+        const id = document.getElementById('in_id').value, laji = document.getElementById('in_laji').value, s = document.getElementById('in_s').value, t = document.getElementById('in_t').value;
+        if(id.length >= 4 && laji && s !== "" && t !== "") {
+            db.shiftLog.push({id, laji, s:Number(s), t:Number(t), m:Number(document.getElementById('in_m').value)||0});
+            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => { document.getElementById(k).value=""; document.getElementById(k).readOnly=true; });
+            save(); renderHistory();
+        }
+    }
+
+    function handleManualToggle(type) {
+        const v = prompt(type + " syy:");
+        if(v) { db.shiftLog.push({id:"---", laji:type+": "+v, s:0, t:0, m:0}); save(); renderHistory(); }
+    }
+
+    function resetPeriod() { if(confirm("Haluatko varmasti nollata koko jakson historian")) { localStorage.clear(); location.reload(); } }
+    function openPeriod() { document.getElementById('periodModal').style.display='flex'; }
+    function closePeriod() { document.getElementById('periodModal').style.display='none'; }
+
+    setInterval(refreshClock, 1000);
+    updateUI();
+</script>
+</body>
+</html>
