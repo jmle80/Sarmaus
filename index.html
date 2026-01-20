@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>SärmäysPro v4.6.7</title>
+    <title>SärmäysPro v4.6.9</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -25,26 +25,31 @@
         .stat-box { text-align: center; padding: 6px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--gray); }
         .stat-val { font-size: 1.1rem; font-weight: 900; display: block; }
         .stat-label { font-size: 0.55rem; color: var(--light-gray); text-transform: uppercase; }
+        
         input { padding: 12px; background: #000; border: 2px solid var(--gray); border-radius: 10px; color: #fff; font-size: 16px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 8px; }
         input:focus { border-color: var(--accent); outline: none; }
-        input.error-glow { border-color: var(--danger) !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        
         .btn { border: none; border-radius: 10px; padding: 15px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; color: white; width: 100%; display: block; }
         .btn:disabled { background: var(--gray) !important; color: #444; cursor: not-allowed; }
+        
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         .active-mode { background: var(--danger) !important; animation: blink 0.8s infinite !important; border: 2px solid white; }
-        #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        #reader { width: 85%; max-width: 350px; border-radius: 15px; border: 3px solid var(--accent); }
+        
+        #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #reader { width: 85%; max-width: 350px; border-radius: 15px; border: 3px solid var(--accent); overflow: hidden; }
+        .manual-trigger { color: var(--danger); font-weight: 900; margin-top: 25px; font-size: 1.2rem; cursor: pointer; text-decoration: underline; padding: 10px; }
     </style>
 </head>
 <body>
 
 <div id="reader-container">
     <div id="reader"></div>
-    <button class="btn" onclick="stopScanner()" style="background:var(--danger); width:auto; padding: 12px 25px; margin-top:15px;">PERUUTA</button>
+    <div class="manual-trigger" onclick="switchToManual()">SYÖTÄ KÄSIN</div>
+    <button class="btn" onclick="stopScanner()" style="background:var(--gray); width:auto; padding: 10px 30px; margin-top:30px;">PERUUTA</button>
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v4.6.7</div>
+    <div class="version-header">VERSION v4.6.9</div>
     <div class="header-box"><span style="font-weight:900; font-size:1.3rem; color:var(--accent)"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
     
     <div class="card">
@@ -63,8 +68,8 @@
     </div>
 
     <div class="card">
-        <input type="text" id="in_id" placeholder="TYÖ ID (6nro)" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateIDManual(this)" disabled>
-        <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" disabled>
+        <input type="text" id="in_id" placeholder="TYÖ ID (6nro)" inputmode="numeric" readonly onclick="triggerField('in_id')" oninput="validateIDLive(this)" disabled>
+        <input type="text" id="in_laji" placeholder="LAJIMERKKI" readonly onclick="triggerField('in_laji')" disabled>
         
         <div class="grid">
             <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled onkeydown="if(event.key==='Enter') document.getElementById('in_t').focus()">
@@ -81,6 +86,7 @@
     let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, shiftLog: [], activeManual: null };
     let periodStats = JSON.parse(localStorage.getItem('sarmays_period_stats')) || { totalMins: 0, totalWorkTimeMs: 0 };
     let html5QrCode = null;
+    let currentTargetField = null;
 
     function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
     function beep(f, d) { try { const a=new(window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(); const g=a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value=f; g.gain.value=0.05; o.start(); o.stop(a.currentTime+d); } catch(e){} }
@@ -90,15 +96,12 @@
         sBtn.innerText = db.isRunning ? "LOPPU" : "ALKU";
         sBtn.style.background = db.isRunning ? "var(--danger)" : "var(--accent)";
         ['failBtn', 'protoBtn', 'in_id', 'in_laji', 'in_s', 'in_t', 'in_m'].forEach(id => document.getElementById(id).disabled = !db.isRunning);
-        document.getElementById('failBtn').classList.toggle('active-mode', db.activeManual?.type === 'FAIL');
-        document.getElementById('protoBtn').classList.toggle('active-mode', db.activeManual?.type === 'PROTO');
         document.getElementById('saveBtn').disabled = !db.isRunning || document.getElementById('in_id').value.length !== 6;
     }
 
     function toggleShift() {
-        let nowStr = new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'});
         if(!db.isRunning) {
-            let t = prompt("Aloitusaika:", nowStr);
+            let t = prompt("Aloitusaika:", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
             if(!t) return;
             let [h, m] = t.split(':'); let d = new Date(); d.setHours(h, m, 0);
             db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
@@ -109,125 +112,70 @@
                 periodStats.totalMins += sMins;
                 periodStats.totalWorkTimeMs += (Date.now() - db.startTime);
                 localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
-                db.isRunning = false; db.activeManual = null;
+                db.isRunning = false;
             }
         }
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
         updateUI(); renderHistory();
     }
 
-    // SKANNERI LOGIIKKA (Vain ID ja Lajimerkki)
-    function handleScannerResult(id, text) {
-        const cleanText = text.trim();
-        const inputEl = document.getElementById(id);
+    // KENTÄN AKTIVOINTI (SKANNAUS TAI KÄSIN)
+    function triggerField(id) {
+        if (!db.isRunning) return;
+        currentTargetField = id;
+        startScanner((text) => handleResult(id, text));
+    }
 
+    function switchToManual() {
+        if (!currentTargetField) return;
+        stopScanner();
+        const el = document.getElementById(currentTargetField);
+        el.readOnly = false;
+        el.focus();
+        vibrate(30);
+    }
+
+    function handleResult(id, text) {
+        const cleanText = text.trim();
+        const el = document.getElementById(id);
         if (id === 'in_id') {
             if (cleanText.length === 6 && /^\d+$/.test(cleanText)) {
-                inputEl.value = cleanText;
+                el.value = cleanText;
                 vibrate(50); beep(400, 0.05);
-                document.getElementById('in_laji').focus();
-            } else {
-                inputEl.value = "";
-                inputEl.classList.add('error-glow');
-                vibrate(250); beep(150, 0.3);
-                setTimeout(() => inputEl.classList.remove('error-glow'), 1000);
-            }
-        } else if (id === 'in_laji') {
-            inputEl.value = cleanText;
+                triggerField('in_laji');
+            } else { vibrate(250); beep(150, 0.3); alert("ID:n oltava tasan 6 numeroa!"); }
+        } else {
+            el.value = cleanText;
             vibrate(30);
-            document.getElementById('in_s').focus(); // Siirtyy numeroihin
+            document.getElementById('in_s').focus();
         }
         updateUI();
     }
 
-    function validateIDManual(el) {
-        el.value = el.value.replace(/\D/g, '').substring(0,6); 
-        if (el.value.length === 6) {
-            vibrate(30); beep(400, 0.05);
+    function validateIDLive(el) {
+        el.value = el.value.replace(/\D/g, '').substring(0,6);
+        if(el.value.length === 6) {
+            el.readOnly = true;
+            vibrate(30);
             document.getElementById('in_laji').focus();
         }
         updateUI();
     }
 
-    function handleInputFocus(id) {
-        if (!db.isRunning) return;
-        // Skanneri vain ID ja Lajimerkki kentille
-        if (id === 'in_id' || id === 'in_laji') {
-            startScanner((text) => handleScannerResult(id, text));
-        }
-    }
-
     async function startScanner(callback) {
         document.getElementById('reader-container').style.display = 'flex';
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 220 }, (text) => {
+        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (text) => {
             callback(text); stopScanner();
         }).catch(() => stopScanner());
     }
 
     function stopScanner() {
-        if (html5QrCode) html5QrCode.stop().finally(() => { document.getElementById('reader-container').style.display = 'none'; });
-    }
-
-    function handleManualToggle(type) {
-        let nowStr = new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'});
-        if (db.activeManual && db.activeManual.type === type) {
-            let endStr = prompt(type + " päättyy:", nowStr);
-            if (!endStr) return;
-            const finalize = (info) => {
-                db.shiftLog.push({ id: info || "Nimetön", type: type, timestamp: Date.now(), manualTime: db.activeManual.startStr + "-" + endStr });
-                db.activeManual = null;
-                localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-                updateUI(); renderHistory();
-            };
-            if (type === 'PROTO') {
-                if (confirm("Skannataanko lajimerkki?")) startScanner((text) => finalize(text));
-                else finalize(prompt("Syötä lajimerkki:"));
-            } else finalize(prompt("Häiriön syy:"));
+        if (html5QrCode) {
+            html5QrCode.stop().finally(() => {
+                document.getElementById('reader-container').style.display = 'none';
+            });
         } else {
-            let startStr = prompt(type + " alkaa:", nowStr);
-            if (!startStr) return;
-            db.activeManual = { type: type, startStr: startStr };
-            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-            updateUI();
+            document.getElementById('reader-container').style.display = 'none';
         }
     }
-
-    function addJob() {
-        db.shiftLog.push({ 
-            id: document.getElementById('in_id').value, laji: document.getElementById('in_laji').value,
-            type: 'JOB', s: parseFloat(document.getElementById('in_s').value)||0, 
-            t: parseFloat(document.getElementById('in_t').value)||0, m: parseFloat(document.getElementById('in_m').value)||0,
-            timestamp: Date.now()
-        });
-        ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        vibrate([50, 30, 50]); updateUI(); renderHistory();
-        document.getElementById('in_id').focus();
-    }
-
-    function renderHistory() {
-        const c = document.getElementById('currentShiftList'); c.innerHTML = "";
-        db.shiftLog.slice().reverse().forEach(item => {
-            let div = document.createElement('div'); div.style.padding = "8px"; div.style.borderBottom = "1px solid #222";
-            div.innerHTML = `<div style="display:flex; justify-content:space-between; font-size:0.7rem;"><span>#${item.id} ${item.type}</span><span>${item.manualTime || new Date(item.timestamp).toLocaleTimeString('fi-FI')}</span></div>`;
-            c.appendChild(div);
-        });
-    }
-
-    setInterval(() => {
-        if(db.isRunning) {
-            let diffMs = Date.now() - db.startTime;
-            document.getElementById('mainClock').innerText = new Date(diffMs).toISOString().substr(11, 8);
-            let sMins = db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
-            document.getElementById('shiftEff').innerText = (sMins / (diffMs / 60000) || 0).toFixed(2);
-            document.getElementById('shiftMins').innerText = Math.round(sMins);
-            let pTime = (periodStats.totalWorkTimeMs / 60000) + (diffMs / 60000);
-            document.getElementById('periodEff').innerText = ((periodStats.totalMins + sMins) / pTime || 0).toFixed(2);
-        }
-    }, 1000);
-
-    updateUI(); renderHistory();
-</script>
-</body>
-</html>
