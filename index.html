@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SärmäysPro v4.3.0</title>
+    <title>SärmäysPro v4.5.0</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -16,47 +16,65 @@
         * { box-sizing: border-box; touch-action: manipulation; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 12px; min-height: 100vh; }
         .container { max-width: 450px; margin: auto; }
-        .version-header { color: var(--version-color); font-weight: 900; font-size: 0.9rem; text-align: center; margin-bottom: 5px; letter-spacing: 1px; }
+        .version-header { color: var(--version-color); font-weight: 900; font-size: 0.9rem; text-align: center; margin-bottom: 5px; }
         .header-box { text-align: center; margin-bottom: 10px; padding: 10px; border-bottom: 2px solid var(--accent); background: var(--card); border-radius: 16px; }
-        .logo-text { font-weight: 900; font-size: 1.6rem; color: var(--accent); }
         
         .card { background: var(--card); padding: 15px; border-radius: 16px; border: 1px solid var(--gray); margin-bottom: 12px; }
-        .timer-val { font-size: 3.5rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; margin-bottom: 10px; }
+        .timer-val { font-size: 3.5rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; }
         
         .section-title { font-size: 0.8rem; font-weight: 800; color: var(--light-gray); text-transform: uppercase; margin-bottom: 10px; border-left: 4px solid var(--primary); padding-left: 10px; }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .stat-box { text-align: center; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--gray); }
-        
-        .eff-good { color: var(--accent) !important; text-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
-        .eff-bad { color: var(--danger) !important; }
-        
-        .stat-val { font-size: 1.1rem; font-weight: 900; color: var(--text); display: block; }
+        .stat-val { font-size: 1.1rem; font-weight: 900; display: block; }
         .stat-label { font-size: 0.6rem; color: var(--light-gray); text-transform: uppercase; }
 
         input { padding: 16px; background: #000; border: 2px solid var(--gray); border-radius: 12px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 10px; }
         input:focus { border-color: var(--accent); outline: none; }
-        
-        .btn { border: none; border-radius: 12px; padding: 18px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; display: block; width: 100%; text-align: center; }
-        .btn:disabled { background: var(--gray) !important; color: #444; pointer-events: none; animation: none !important; }
+        input.invalid { border-color: var(--danger) !important; }
+
+        .btn { border: none; border-radius: 12px; padding: 18px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; width: 100%; }
+        .btn:disabled { background: var(--gray) !important; color: #444; }
 
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         .blink-btn { animation: blink 2s infinite ease-in-out; }
+        .active-mode { background: var(--danger) !important; animation: blink 0.8s infinite !important; border: 2px solid white; }
+
+        /* Historia-overlay */
+        #history-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 3000; display: none; padding: 15px; overflow-y: auto; }
+        .day-group { margin-bottom: 20px; border: 1px solid var(--gray); border-radius: 12px; overflow: hidden; }
+        .day-header { background: var(--gray); padding: 8px 12px; font-size: 0.8rem; font-weight: bold; color: var(--primary); }
         
-        #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        #reader { width: 90%; max-width: 400px; border-radius: 20px; overflow: hidden; border: 4px solid var(--accent); }
+        #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #reader { width: 90%; max-width: 400px; border-radius: 20px; border: 4px solid var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="reader-container">
     <div id="reader"></div>
-    <button id="cancel-scan" class="btn" style="background:var(--danger); width:auto; padding: 15px 30px; margin-top:20px;">PERUUTA</button>
+    <button class="btn" onclick="stopScanner()" style="background:var(--danger); width:auto; padding: 15px 30px; margin-top:20px;">PERUUTA</button>
+</div>
+
+<div id="history-view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 style="margin:0; color:var(--accent)">Jakson Historia</h2>
+        <button class="btn" style="width:auto; padding:10px 20px; background:var(--gray)" onclick="toggleHistoryView()">SULJE</button>
+    </div>
+    
+    <div class="card" style="padding:10px;">
+        <input type="text" id="histSearch" placeholder="HAE (SKANNAA TAI KIRJOITA)" oninput="renderPeriodHistory()">
+        <button class="btn" style="background:var(--primary); color:#000; margin-bottom:10px;" onclick="startSearchScan()">SKANNAA HAKU</button>
+    </div>
+
+    <div id="periodLogContent"></div>
+    
+    <button class="btn" style="background: var(--danger); margin-top: 30px; opacity: 0.5;" onclick="resetPeriod()">NOLLAA KOKO JAKSO</button>
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v4.3.0</div>
-    <div class="header-box"><span class="logo-text"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
+    <div class="version-header">VERSION v4.5.0</div>
+    <div class="header-box"><span style="font-weight:900; font-size:1.6rem; color:var(--accent)"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
     
     <div class="card">
         <div class="section-title">Vuoro</div>
@@ -64,27 +82,21 @@
         <div class="grid">
             <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
             <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
-            <div class="stat-box"><span id="shiftCount" class="stat-val">0</span><span class="stat-label">KORTIT</span></div>
-        </div>
-    </div>
-
-    <div class="card" style="border-color: var(--primary);">
-        <div class="section-title" style="border-color: var(--accent);">Jakso</div>
-        <div class="grid">
-            <div class="stat-box"><span id="periodEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
-            <div class="stat-box"><span id="periodMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
-            <div class="stat-box"><span id="periodCount" class="stat-val">0</span><span class="stat-label">KORTIT</span></div>
+            <button class="stat-box" onclick="toggleHistoryView()" style="border:1px solid var(--primary); cursor:pointer;">
+                <span id="periodEff" class="stat-val" style="color:var(--primary)">0.00</span>
+                <span class="stat-label">JAKSO EFF</span>
+            </button>
         </div>
     </div>
 
     <div class="grid" style="margin-bottom: 12px;">
         <button class="btn" style="background: var(--accent)" id="shiftBtn" onclick="toggleShift()">ALKU</button>
-        <button class="btn blink-btn" style="background: var(--warn); color: #000;" onclick="handleManualEntry('FAIL')" id="failBtn" disabled>HÄIRIÖ</button>
-        <button class="btn blink-btn" style="background: var(--proto);" onclick="handleManualEntry('PROTO')" id="protoBtn" disabled>PROTO</button>
+        <button class="btn blink-btn" style="background: var(--warn); color: #000;" onclick="handleManualToggle('FAIL')" id="failBtn" disabled>HÄIRIÖ</button>
+        <button class="btn blink-btn" style="background: var(--proto);" onclick="handleManualToggle('PROTO')" id="protoBtn" disabled>PROTO</button>
     </div>
 
     <div class="card">
-        <input type="text" id="in_id" placeholder="KORTIN NRO" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateID(this)" disabled>
+        <input type="text" id="in_id" placeholder="KORTIN NRO (6 numeroa)" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateID(this)" disabled>
         <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" disabled>
         <div class="grid">
             <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled>
@@ -94,16 +106,16 @@
         <button class="btn" style="background: var(--primary); color:#000; font-size: 1rem;" id="saveBtn" onclick="addJob()" disabled>TALLENNA KORTTI</button>
     </div>
 
-    <div id="historyList" class="card" style="padding:0; overflow:hidden;"></div>
-    
-    <button class="btn" style="background: var(--danger); margin-top: 10px; opacity: 0.6;" onclick="resetPeriod()">NOLLAA JAKSO</button>
+    <div class="section-title">Vuoron tapahtumat</div>
+    <div id="currentShiftList" class="card" style="padding:0; overflow:hidden; min-height:100px;"></div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, shiftLog: [] };
-    let periodDb = JSON.parse(localStorage.getItem('sarmays_period_data')) || { totalMins: 0, totalCards: 0, totalWorkTimeMs: 0 };
+    let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, shiftLog: [], activeManual: null };
+    let periodDb = JSON.parse(localStorage.getItem('sarmays_period_history')) || [];
+    let periodStats = JSON.parse(localStorage.getItem('sarmays_period_stats')) || { totalMins: 0, totalWorkTimeMs: 0 };
+    
     let html5QrCode = null;
-    let manualMode = false;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function beep(freq, dur) {
@@ -116,60 +128,48 @@
         } catch(e) {}
     }
 
-    function formatDuration(mins) {
-        if (!mins || mins <= 0) return "";
-        let h = Math.floor(mins / 60);
-        let m = Math.round(mins % 60);
-        return (h > 0 ? h + "h " : "") + m + "m";
-    }
-
-    function updateEffColor(elementId, value) {
-        const el = document.getElementById(elementId);
-        if (value >= 1.0) el.className = 'stat-val eff-good';
-        else if (value > 0.1) el.className = 'stat-val eff-bad';
-        else el.className = 'stat-val';
-    }
-
-    function calculateStats() {
-        let sMins = 0, sCards = 0;
-        db.shiftLog.forEach(i => { if(i.type==='JOB') { sMins += (i.s + i.t + i.m); sCards++; } });
-        let sTimeMin = db.isRunning ? (Date.now() - db.startTime) / 60000 : 0;
-        let sEff = sTimeMin > 0.1 ? (sMins / sTimeMin) : 0;
-        document.getElementById('shiftEff').innerText = sEff.toFixed(2);
-        document.getElementById('shiftMins').innerText = Math.round(sMins);
-        document.getElementById('shiftCount').innerText = sCards;
-        updateEffColor('shiftEff', sEff);
-
-        let totalActiveMs = periodDb.totalWorkTimeMs + (db.isRunning ? (Date.now() - db.startTime) : 0);
-        let totalActiveMin = totalActiveMs / 60000;
-        let totalMinsDone = periodDb.totalMins + sMins;
-        let pEff = totalActiveMin > 0.1 ? (totalMinsDone / totalActiveMin) : 0;
-        document.getElementById('periodEff').innerText = pEff.toFixed(2);
-        document.getElementById('periodMins').innerText = Math.round(totalMinsDone);
-        document.getElementById('periodCount').innerText = periodDb.totalCards + sCards;
-        updateEffColor('periodEff', pEff);
+    function toggleHistoryView() {
+        const view = document.getElementById('history-view');
+        view.style.display = view.style.display === 'block' ? 'none' : 'block';
+        if(view.style.display === 'block') renderPeriodHistory();
     }
 
     function toggleShift() {
+        let now = new Date();
         if(!db.isRunning) {
-            let t = prompt("Aloitus (HH:MM):", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
+            let t = prompt("Aloitus (HH:MM):", now.toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
             if(!t) return;
             let [h, m] = t.split(':'); let d = new Date(); d.setHours(h, m, 0);
             db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
             beep(880, 0.1);
         } else {
-            periodDb.totalMins += db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
-            periodDb.totalCards += db.shiftLog.filter(i => i.type==='JOB').length;
-            periodDb.totalWorkTimeMs += (Date.now() - db.startTime);
-            localStorage.setItem('sarmays_period_data', JSON.stringify(periodDb));
+            let t = prompt("Lopetus (HH:MM):", now.toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
+            if(!t) return;
+            let [h, m] = t.split(':'); let d = new Date(); d.setHours(h, m, 0);
+            
+            // Siirretään vuoron kortit jaksoon
+            let shiftMins = 0;
+            db.shiftLog.forEach(item => {
+                if(item.type === 'JOB') {
+                    shiftMins += (item.s + item.t + item.m);
+                    periodDb.push({...item, date: new Date().toLocaleDateString('fi-FI')});
+                }
+            });
+            
+            periodStats.totalMins += shiftMins;
+            periodStats.totalWorkTimeMs += (d.getTime() - db.startTime);
+            
+            localStorage.setItem('sarmays_period_history', JSON.stringify(periodDb));
+            localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
             db.isRunning = false;
         }
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        updateUI(); renderHistory(); calculateStats();
+        updateUI(); renderHistory();
     }
 
     function validateID(el) {
         el.value = el.value.replace(/\D/g, '').substring(0, 6);
+        el.classList.toggle('invalid', el.value.length > 0 && el.value.length < 6);
         if (el.value.length === 6) { beep(400, 0.05); document.getElementById('in_laji').focus(); }
         checkInput();
     }
@@ -183,52 +183,82 @@
         });
         ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        beep(440, 0.1); checkInput(); renderHistory(); calculateStats();
+        beep(440, 0.1); checkInput(); renderHistory();
     }
 
-    function handleManualEntry(type) {
-        if (type === 'PROTO') {
-            startScanner((text) => completeEntry(type, text));
-            document.getElementById('cancel-scan').onclick = () => { stopScanner(); let r = prompt("Lajimerkki:"); if(r) completeEntry(type, r); };
+    function handleManualToggle(type) {
+        let now = new Date();
+        if (db.activeManual && db.activeManual.type === type) {
+            let endStr = prompt("Lopetusaika (HH:MM)?", now.toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
+            if (!endStr) return;
+            let id = type === 'PROTO' ? prompt("Lajimerkki / ID?") : prompt("Häiriön syy?");
+            if (id) {
+                db.shiftLog.push({ id: id, type: type, timestamp: Date.now(), manualTime: db.activeManual.startStr + "-" + endStr });
+                db.activeManual = null; beep(440, 0.2);
+            }
         } else {
-            let reason = prompt("Häiriön syy?"); if(reason) completeEntry(type, reason);
+            db.activeManual = { type: type, startTime: Date.now(), startStr: now.toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}) };
+            beep(660, 0.1);
         }
+        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
+        updateUI(); renderHistory();
     }
 
-    function completeEntry(type, id) {
-        let now = new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
-        let s = prompt("Alkamisaika (HH:MM)?", now);
-        let e = prompt("Lopetusaika (HH:MM)?", now);
-        if(id && s && e) {
-            db.shiftLog.push({ id: id, type: type, timestamp: Date.now(), manualTime: s + "-" + e });
-            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-            renderHistory(); calculateStats();
-        }
+    function renderHistory() {
+        const c = document.getElementById('currentShiftList'); c.innerHTML = "";
+        db.shiftLog.slice().reverse().forEach(item => {
+            let div = document.createElement('div'); div.style.padding = "10px"; div.style.borderBottom = "1px solid #222";
+            let time = item.manualTime || new Date(item.timestamp).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+            let label = item.type === 'JOB' ? `<b>#${item.id}</b> ${item.laji}` : `<span style="color:var(--warn)">${item.type}: ${item.id}</span>`;
+            let dur = item.type === 'JOB' ? (item.s + item.t + item.m) + "m" : "";
+            div.innerHTML = `<div style="display:flex; justify-content:space-between; font-size:0.8rem;"><span>${label}</span><span style="color:var(--accent)">${dur}</span><span style="color:var(--light-gray)">${time}</span></div>`;
+            c.appendChild(div);
+        });
     }
 
-    function resetPeriod() {
-        if(confirm("Haluatko varmasti nollata koko jakson historian")) {
-            periodDb = { totalMins: 0, totalCards: 0, totalWorkTimeMs: 0 };
-            localStorage.setItem('sarmays_period_data', JSON.stringify(periodDb));
-            db = { isRunning: false, startTime: null, shiftLog: [] };
-            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-            location.reload();
-        }
+    function renderPeriodHistory() {
+        const query = document.getElementById('histSearch').value.toLowerCase();
+        const container = document.getElementById('periodLogContent');
+        container.innerHTML = "";
+
+        const grouped = periodDb.reduce((acc, item) => {
+            if (item.id.toLowerCase().includes(query) || item.laji.toLowerCase().includes(query)) {
+                if (!acc[item.date]) acc[item.date] = [];
+                acc[item.date].push(item);
+            }
+            return acc;
+        }, {});
+
+        Object.keys(grouped).reverse().forEach(date => {
+            let groupDiv = document.createElement('div');
+            groupDiv.className = "day-group";
+            groupDiv.innerHTML = `<div class="day-header">${date}</div>`;
+            grouped[date].reverse().forEach(item => {
+                let row = document.createElement('div');
+                row.style.padding = "8px 12px"; row.style.borderBottom = "1px solid #222"; row.style.fontSize = "0.85rem";
+                row.innerHTML = `<div style="display:flex; justify-content:space-between;"><span><b>#${item.id}</b> ${item.laji}</span><span style="color:var(--accent)">${item.s+item.t+item.m}m</span></div>`;
+                groupDiv.appendChild(row);
+            });
+            container.appendChild(groupDiv);
+        });
+    }
+
+    function startSearchScan() {
+        startScanner((text) => {
+            document.getElementById('histSearch').value = text;
+            renderPeriodHistory();
+        });
     }
 
     function handleInputFocus(id) {
-        if (!manualMode && db.isRunning) {
-            startScanner((text) => {
-                document.getElementById(id).value = id === 'in_id' ? text.replace(/\D/g, '').substring(0, 6) : text;
-                if (id === 'in_id') validateID(document.getElementById(id));
-            });
-        }
-        manualMode = false;
+        if (db.isRunning) startScanner((text) => {
+            document.getElementById(id).value = id === 'in_id' ? text.replace(/\D/g, '').substring(0, 6) : text;
+            if (id === 'in_id') validateID(document.getElementById(id));
+        });
     }
 
     async function startScanner(callback) {
-        const container = document.getElementById('reader-container');
-        container.style.display = 'flex';
+        document.getElementById('reader-container').style.display = 'flex';
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
         try {
             await html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => { callback(text); stopScanner(); });
@@ -243,42 +273,47 @@
     function checkInput() {
         const r = db.isRunning;
         ['in_id','in_laji','in_s','in_t','in_m'].forEach(id => document.getElementById(id).disabled = !r);
-        document.getElementById('saveBtn').disabled = document.getElementById('in_id').value.length !== 6;
+        document.getElementById('saveBtn').disabled = !r || document.getElementById('in_id').value.length !== 6;
     }
 
     function updateUI() {
-        document.getElementById('shiftBtn').innerText = db.isRunning ? "LOPPU" : "ALKU";
-        document.getElementById('shiftBtn').style.background = db.isRunning ? "var(--danger)" : "var(--accent)";
-        document.getElementById('failBtn').disabled = !db.isRunning; 
+        const sBtn = document.getElementById('shiftBtn');
+        sBtn.innerText = db.isRunning ? "LOPETA VUORO" : "ALOITA VUORO";
+        sBtn.style.background = db.isRunning ? "var(--danger)" : "var(--accent)";
+        document.getElementById('failBtn').disabled = !db.isRunning;
         document.getElementById('protoBtn').disabled = !db.isRunning;
+        
+        const fBtn = document.getElementById('failBtn');
+        const pBtn = document.getElementById('protoBtn');
+        fBtn.classList.toggle('active-mode', db.activeManual?.type === 'FAIL');
+        pBtn.classList.toggle('active-mode', db.activeManual?.type === 'PROTO');
         checkInput();
     }
 
-    function renderHistory() {
-        const c = document.getElementById('historyList'); c.innerHTML = "";
-        db.shiftLog.slice().reverse().forEach(item => {
-            let div = document.createElement('div'); div.style.padding = "10px"; div.style.borderBottom = "1px solid #222";
-            let timeDisp = item.manualTime || new Date(item.timestamp).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
-            let label = item.type === 'JOB' ? `<b>#${item.id}</b> ${item.laji || ""}` : 
-                        `<span style="color:${item.type==='PROTO'?'var(--proto)':'var(--warn)'}">${item.type}: ${item.id}</span>`;
-            let dur = item.type === 'JOB' ? formatDuration(item.s + item.t + item.m) : "";
-
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem; align-items:center;">
-                    <span style="flex:2;">${label}</span>
-                    <span style="flex:1; text-align:right; color:var(--accent); font-weight:bold;">${dur}</span>
-                    <span style="flex:1; text-align:right; font-family:monospace; color:var(--light-gray);">${timeDisp}</span>
-                </div>`;
-            c.appendChild(div);
-        });
+    function resetPeriod() {
+        if(confirm("Haluatko varmasti nollata koko jakson historian")) {
+            localStorage.clear();
+            location.reload();
+        }
     }
 
     setInterval(() => {
-        if(db.isRunning) document.getElementById('mainClock').innerText = new Date(Date.now() - db.startTime).toISOString().substr(11, 8);
-        calculateStats();
+        if(db.isRunning) {
+            let diff = Date.now() - db.startTime;
+            document.getElementById('mainClock').innerText = new Date(diff).toISOString().substr(11, 8);
+            
+            let sMins = db.shiftLog.reduce((a, b) => a + (b.type==='JOB' ? (b.s+b.t+b.m) : 0), 0);
+            let sEff = (sMins / (diff / 60000)) || 0;
+            document.getElementById('shiftEff').innerText = sEff.toFixed(2);
+            document.getElementById('shiftMins').innerText = Math.round(sMins);
+
+            let pTimeTotal = periodStats.totalWorkTimeMs + diff;
+            let pMinsTotal = periodStats.totalMins + sMins;
+            document.getElementById('periodEff').innerText = (pMinsTotal / (pTimeTotal / 60000) || 0).toFixed(2);
+        }
     }, 1000);
 
-    updateUI(); renderHistory(); calculateStats();
+    updateUI(); renderHistory();
 </script>
 </body>
 </html>
