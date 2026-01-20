@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <title>SärmäysPro v5.0.2</title>
+    <title>SärmäysPro v5.0.3</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -12,7 +12,7 @@
             --primary: #f58220; --accent: #22c55e; 
             --danger: #ef4444; --warn: #facc15; --proto: #a855f7; 
             --gray: #262626; --light-gray: #a3a3a3;
-            --version-color: #fb7185;
+            --version-color: #00e5ff;
         }
         * { box-sizing: border-box; touch-action: manipulation; }
         
@@ -41,11 +41,9 @@
 
         .btn-main { border: none; border-radius: 14px; font-weight: 900; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        /* MODAL */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 10000; display: none; flex-direction: column; padding: 15px; }
         .archive-settings { background: var(--card); padding: 12px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--gray); }
         
-        /* HISTORIA SARAKKEET */
         .history-header { display: flex; padding: 8px 5px; font-size: 0.65rem; color: var(--light-gray); font-weight: 900; text-transform: uppercase; border-bottom: 1px solid var(--gray); }
         .history-row { display: flex; padding: 12px 5px; border-bottom: 1px solid #222; align-items: center; font-size: 0.85rem; }
         .col-id { flex: 0 0 30%; font-family: monospace; font-weight: bold; overflow: hidden; text-overflow: ellipsis; }
@@ -59,7 +57,7 @@
 <body>
 
 <div class="container">
-    <div class="version-header">VERSION v5.0.2</div>
+    <div class="version-header">VERSION v5.0.3</div>
     
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
@@ -71,9 +69,9 @@
                 <span class="stat-label">JAKSO EFF</span>
             </div>
         </div>
-        <div class="stat-box" style="width:100%; border-color:var(--proto);">
-            <span id="weekTotal" class="stat-val" style="color:var(--proto);">0h 0min 0s</span>
-            <span class="stat-label">VIIKON TYÖTUNNIT YHTEENSÄ (REAALIAIKA)</span>
+        <div class="stat-box" style="width:100%; border-color:var(--accent);">
+            <span id="weekTotal" class="stat-val" style="color:var(--accent);">0h 0min 0s</span>
+            <span class="stat-label">VIIKON TYÖTUNNIT (KÄYNNISSÄ)</span>
         </div>
     </div>
 
@@ -104,7 +102,7 @@
 
 <div id="periodModal" class="modal">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-        <h2 style="color:var(--primary); margin:0; font-size: 1.2rem;">JAKSOHISTORIA</h2>
+        <h2 style="color:var(--primary); margin:0; font-size: 1.2rem;">ARKISTO</h2>
         <button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:2.5rem;">✕</button>
     </div>
     <div class="archive-settings">
@@ -145,7 +143,7 @@
         sBtn.innerText = r ? "LOPPU" : "ALKU";
         sBtn.style.background = r ? "var(--danger)" : "var(--accent)";
         ['failBtn', 'protoBtn', 'in_id', 'in_laji', 'in_s', 'in_t', 'in_m'].forEach(id => document.getElementById(id).disabled = !r);
-        calculateWeeklyHours();
+        calculateStats();
     }
 
     function toggleShift() {
@@ -154,11 +152,13 @@
             if(!t) return;
             let [h, m] = t.split(':'); let d = new Date(); d.setHours(h, m, 0, 0);
             db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
-            beep(880, 0.3); vibrate(100); // Aloitusääni ja värinä
+            beep(880, 0.3); vibrate(100); 
         } else {
             if(confirm("Lopetetaanko vuoro?")) {
-                const duration = Date.now() - db.startTime;
-                periodStats.weeklyLog.push({ start: db.startTime, end: Date.now(), duration: duration });
+                const now = Date.now();
+                const duration = now - db.startTime;
+                if(!periodStats.weeklyLog) periodStats.weeklyLog = [];
+                periodStats.weeklyLog.push({ start: db.startTime, end: now, duration: duration });
                 db.shiftLog.forEach(i => periodData.push(i));
                 localStorage.setItem('sarmays_period_archive', JSON.stringify(periodData));
                 localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
@@ -169,24 +169,31 @@
         updateUI(); renderHistory();
     }
 
-    function calculateWeeklyHours() {
+    function calculateStats() {
+        const now = Date.now();
         const startBound = pSettings.start ? new Date(pSettings.start).setHours(0,0,0,0) : 0;
         const endBound = pSettings.end ? new Date(pSettings.end).setHours(23,59,59,999) : Infinity;
+        
         let weekMs = 0, pMs = 0, pMins = 0;
 
+        // 1. Laske menneet vuorot arkistosta
         if (periodStats.weeklyLog) {
             periodStats.weeklyLog.forEach(s => {
-                const sEnd = new Date(s.end);
-                if (sEnd >= startBound && sEnd <= endBound) pMs += s.duration;
-                // Viimeiset 7 päivää rullaava
-                if (Date.now() - s.end < 604800000) weekMs += s.duration;
+                // Viikkolaskenta (viimeiset 7 päivää)
+                if (now - s.end < 604800000) weekMs += s.duration;
+                // Palkkajaksolaskenta
+                if (s.end >= startBound && s.end <= endBound) pMs += s.duration;
             });
         }
+
+        // 2. Lisää käynnissä oleva vuoro reaaliajassa
         if (db.isRunning && db.startTime) {
-            const cur = Date.now() - db.startTime;
-            weekMs += cur;
-            if (Date.now() >= startBound && Date.now() <= endBound) pMs += cur;
+            const currentDuration = now - db.startTime;
+            weekMs += currentDuration;
+            if (now >= startBound && now <= endBound) pMs += currentDuration;
         }
+
+        // 3. Laske tuotetut minuutit EFF:iä varten
         [...periodData, ...db.shiftLog].forEach(i => {
             if (i.timestamp >= startBound && i.timestamp <= endBound) pMins += (i.s + i.t + i.m);
         });
@@ -203,6 +210,7 @@
         document.getElementById('periodEff').innerText = (pMins / (pMs / 60000) || 0).toFixed(2);
     }
 
+    // Skanneri, haku ja tallennus logiikka (v5.0.2 mukaiset)
     function renderHistory() {
         const query = document.getElementById('shiftSearch').value.toLowerCase();
         const c = document.getElementById('currentShiftList'); c.innerHTML = "";
@@ -218,7 +226,6 @@
         const c = document.getElementById('periodContent'); c.innerHTML = "";
         const startBound = pSettings.start ? new Date(pSettings.start).setHours(0,0,0,0) : 0;
         const endBound = pSettings.end ? new Date(pSettings.end).setHours(23,59,59,999) : Infinity;
-        
         const all = [...periodData, ...db.shiftLog].sort((a,b)=>b.timestamp-a.timestamp);
         all.forEach(i => {
             if (i.timestamp >= startBound && i.timestamp <= endBound) {
@@ -233,7 +240,7 @@
         currentTargetField = id;
         document.getElementById('reader-container').style.display = 'flex';
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: { width: 300, height: 150 }, videoConstraints: { zoom: 2.0 } }, (text) => {
+        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: { width: 320, height: 160 }, videoConstraints: { zoom: 2.0 } }, (text) => {
             document.getElementById(id).value = text;
             stopScanner();
             if (id === 'in_id') setTimeout(() => triggerField('in_laji'), 400);
@@ -243,12 +250,7 @@
     function stopScanner() { if (html5QrCode) html5QrCode.stop().then(() => document.getElementById('reader-container').style.display = 'none').catch(() => document.getElementById('reader-container').style.display = 'none'); }
     function switchToManual() { stopScanner(); const el = document.getElementById(currentTargetField); el.readOnly = false; el.focus(); }
 
-    function handleInstantZero(el, nextId) {
-        if (el.value === "0") {
-            if (nextId) document.getElementById(nextId).focus();
-            else checkAutoSave();
-        } else { checkAutoSave(); }
-    }
+    function handleInstantZero(el, nextId) { if (el.value === "0") { if (nextId) document.getElementById(nextId).focus(); else checkAutoSave(); } else { checkAutoSave(); } }
 
     function checkAutoSave() {
         const id = document.getElementById('in_id').value, laji = document.getElementById('in_laji').value, s = document.getElementById('in_s').value, t = document.getElementById('in_t').value;
@@ -271,7 +273,7 @@
         pSettings.start = document.getElementById('p_start').value;
         pSettings.end = document.getElementById('p_end').value;
         localStorage.setItem('sarmays_p_settings', JSON.stringify(pSettings));
-        calculateWeeklyHours(); renderPeriodHistory();
+        calculateStats(); renderPeriodHistory();
     }
 
     function resetPeriod() {
@@ -295,14 +297,18 @@
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db)); renderHistory();
     }
 
+    // REAALIAIKAINEN PÄIVITYS SEKUNNEITTAIN
     setInterval(() => {
         if(db.isRunning && db.startTime) {
             let diff = Date.now() - db.startTime;
             document.getElementById('mainClock').innerText = new Date(diff).toISOString().substr(11, 8);
+            
+            // Laske EFF ja tunnit lennosta
             let sMins = db.shiftLog.reduce((a, b) => a + (b.s+b.t+b.m || 0), 0);
             document.getElementById('shiftEff').innerText = (sMins / (diff / 60000) || 0).toFixed(2);
             document.getElementById('shiftMins').innerText = Math.round(sMins);
-            calculateWeeklyHours(); // Reaaliaikainen viikkotuntien päivitys
+            
+            calculateStats(); // Tämä päivittää "Viikon työtunnit" reaaliajassa
         }
     }, 1000);
 
