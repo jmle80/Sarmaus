@@ -3,72 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SärmäysPro v5.1.9</title>
+    <title>SärmäysPro - VAMM Steel Edition</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
-            --bg: #000; --card: #111; --text: #fff; 
-            --primary: #fb923c; --accent: #22c55e; 
-            --danger: #ef4444; --warn: #fbbf24; --proto: #a855f7; 
-            --gray: #262626; --version-color: #ef4444;
+            /* VAMM Steel Brändivärit */
+            --vamm-dark: #1a1a1a; 
+            --vamm-steel: #333d47;
+            --vamm-yellow: #fecb00; /* Tyypillinen teollinen keltainen */
+            --vamm-accent: #f58220; /* Brändin korostus */
+            --bg: #0d0d0d;
+            --text: #ffffff;
+            --version-color: #fecb00;
         }
         * { box-sizing: border-box; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         .container { max-width: 450px; margin: auto; }
-        .version-header { color: var(--version-color); font-weight: 900; font-size: 0.8rem; text-align: center; margin-bottom: 5px; text-decoration: underline; }
-        .card { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--gray); margin-bottom: 12px; }
-        .timer-val { font-size: 4rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; margin: 0; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .stat-box { text-align: center; padding: 10px 5px; background: #000; border-radius: 12px; border: 1px solid #333; }
-        .stat-val { font-size: 1.2rem; font-weight: 900; display: block; }
-        .stat-label { font-size: 0.6rem; color: #888; text-transform: uppercase; }
-        input { padding: 16px; background: #000; border: 2px solid #333; border-radius: 12px; color: #fff; font-size: 1.1rem; text-align: center; width: 100%; margin-bottom: 10px; }
-        input:focus { border-color: var(--primary); outline: none; }
-        .btn-main { border: none; border-radius: 16px; font-weight: 900; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 70px; }
-        .history-row { display: flex; padding: 15px 5px; border-bottom: 1px solid #222; align-items: center; cursor: pointer; }
-        .history-row:active { background: #222; }
-        .col-id { flex: 0 0 30%; font-family: monospace; font-weight: bold; }
-        .col-laji { flex: 0 0 45%; color: var(--warn); }
-        .col-aika { flex: 0 0 25%; text-align: right; color: var(--accent); font-weight: 900; }
+        
+        .version-header { color: var(--version-color); font-weight: 900; font-size: 0.75rem; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .header-logo { text-align: center; margin-bottom: 15px; }
+        .header-logo h1 { margin: 0; font-size: 1.5rem; color: var(--vamm-yellow); letter-spacing: 2px; }
+        .header-logo span { font-size: 0.6rem; text-transform: uppercase; color: #888; display: block; }
+
+        .card { background: var(--vamm-dark); padding: 18px; border-radius: 12px; border-left: 5px solid var(--vamm-yellow); margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        
+        .timer-val { font-size: 4.8rem; font-family: 'Courier New', monospace; text-align: center; color: var(--vamm-yellow); font-weight: 900; margin: 0; line-height: 1; text-shadow: 0 0 15px rgba(254, 203, 0, 0.3); }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .stat-box { text-align: center; padding: 12px 5px; background: #000; border-radius: 8px; border: 1px solid #2a2a2a; }
+        .stat-val { font-size: 1.4rem; font-weight: 900; display: block; color: #fff; }
+        .stat-label { font-size: 0.6rem; color: #777; text-transform: uppercase; margin-top: 4px; display: block; font-weight: bold; }
+
+        input { padding: 18px; background: #000; border: 1px solid #444; border-radius: 8px; color: #fff; font-size: 1.3rem; text-align: center; width: 100%; margin-bottom: 10px; font-weight: bold; transition: 0.2s; }
+        input:focus { border-color: var(--vamm-yellow); outline: none; background: #050505; }
+        input:disabled { opacity: 0.1; }
+
+        .btn-main { border: none; border-radius: 8px; font-weight: 900; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 75px; text-transform: uppercase; transition: 0.1s; }
+        .btn-main:active { transform: scale(0.97); filter: brightness(1.2); }
+        
+        .btn-start { background: var(--vamm-yellow); color: #000; }
+        .btn-danger { background: #ce1126; color: #fff; }
+        .btn-gray { background: var(--vamm-steel); color: #fff; }
+        .btn-proto { background: #6b21a8; color: #fff; }
+
+        .history-row { display: flex; padding: 16px 10px; border-bottom: 1px solid #222; align-items: center; background: rgba(255,255,255,0.03); margin-bottom: 3px; border-radius: 6px; }
+        .col-id { flex: 0 0 30%; font-family: monospace; font-weight: bold; color: var(--vamm-yellow); }
+        .col-laji { flex: 0 0 45%; color: #ddd; font-weight: 600; }
+        .col-aika { flex: 0 0 25%; text-align: right; color: var(--vamm-accent); font-weight: 900; font-size: 1.1rem; }
+
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: none; flex-direction: column; padding: 20px; }
     </style>
 </head>
 <body>
 
 <div id="shiftTypeModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:20000; display:none; align-items:center; justify-content:center;">
-    <div style="background:var(--card); padding:30px; border-radius:30px; border:2px solid var(--primary); width:85%; text-align:center;">
-        <h2 style="margin-bottom:20px;">VALITSE VUORO</h2>
-        <button onclick="startShiftWith('AAMU')" style="width:100%; padding:20px; margin:10px 0; border-radius:15px; background:var(--accent); color:white; font-weight:900; font-size:1.3rem; border:none;">AAMU</button>
-        <button onclick="startShiftWith('ILTA')" style="width:100%; padding:20px; margin:10px 0; border-radius:15px; background:var(--primary); color:white; font-weight:900; font-size:1.3rem; border:none;">ILTA</button>
-        <button onclick="startShiftWith('YÖ')" style="width:100%; padding:20px; margin:10px 0; border-radius:15px; background:var(--proto); color:white; font-weight:900; font-size:1.3rem; border:none;">YÖ</button>
+    <div style="background:var(--vamm-dark); padding:30px; border-radius:15px; border:3px solid var(--vamm-yellow); width:90%; max-width:400px; text-align:center;">
+        <h2 style="color:var(--vamm-yellow); margin-bottom:25px;">VALITSE TYÖVUORO</h2>
+        <button onclick="startShiftWith('AAMU')" class="btn-main btn-start" style="width:100%; margin:10px 0; font-size:1.5rem;">AAMU</button>
+        <button onclick="startShiftWith('ILTA')" class="btn-main btn-gray" style="width:100%; margin:10px 0; font-size:1.5rem; background: #666;">ILTA</button>
+        <button onclick="startShiftWith('YÖ')" class="btn-main btn-gray" style="width:100%; margin:10px 0; font-size:1.5rem; background: #333;">YÖ</button>
     </div>
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v5.1.9</div>
+    <div class="version-header">VERSION v5.2.2</div>
+    
+    <div class="header-logo">
+        <h1>VAMM STEEL</h1>
+        <span>Components You Can Trust</span>
+    </div>
+
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
-        <div class="grid" style="margin: 15px 0;">
-            <div class="stat-box"><span id="shiftEff" class="stat-val">0.00</span><span class="stat-label">EFF</span></div>
-            <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MIN</span></div>
-            <div class="stat-box" style="border-color:var(--primary);" onclick="openPeriod()">
-                <span id="periodEff" class="stat-val" style="color:var(--primary)">0.00</span><span class="stat-label">JAKSO EFF</span>
+        <div class="grid" style="margin: 18px 0;">
+            <div class="stat-box"><span id="shiftEff" class="stat-val" style="color:var(--vamm-yellow)">0.00</span><span class="stat-label">EFFICIENY</span></div>
+            <div class="stat-box"><span id="shiftMins" class="stat-val">0</span><span class="stat-label">MINUUTIT</span></div>
+            <div class="stat-box" style="border-color:var(--vamm-accent);" onclick="openPeriod()">
+                <span id="periodEff" class="stat-val" style="color:var(--vamm-accent)">0.00</span><span class="stat-label">JAKSO EFF</span>
             </div>
         </div>
         <div class="grid">
-            <div class="stat-box" style="border-color:var(--accent); grid-column: span 1.5;"><span id="weekTotal" class="stat-val" style="color:var(--accent);">0h 0m</span><span class="stat-label">VIIKON TUNNIT</span></div>
-            <div class="stat-box" style="border-color:var(--proto); grid-column: span 1.5;"><span id="weekSaved" class="stat-val" style="color:var(--proto);">0h 0m</span><span class="stat-label">SISÄÄN TEHDYT</span></div>
+            <div class="stat-box" style="grid-column: span 1.5; border-color: #333;"><span id="weekTotal" class="stat-val">0h 0m</span><span class="stat-label">VIIKKO YHTEENSÄ</span></div>
+            <div class="stat-box" style="grid-column: span 1.5; border-color: #333;"><span id="weekSaved" class="stat-val" style="color:var(--vamm-yellow)">0h 0m</span><span class="stat-label">PANKKIIN</span></div>
         </div>
     </div>
 
-    <div class="grid" style="margin-bottom: 12px;">
-        <button id="shiftBtn" class="btn-main" style="background:var(--accent); color:white;" onclick="handleShiftToggle()">ALKU</button>
-        <button id="failBtn" class="btn-main" style="background:var(--warn); color:black;" onclick="handleManualToggle('FAIL')" disabled>HÄIRIÖ</button>
-        <button id="protoBtn" class="btn-main" style="background:var(--proto); color:white;" onclick="handleManualToggle('PROTO')" disabled>PROTO</button>
+    <div class="grid" style="margin-bottom: 15px;">
+        <button id="shiftBtn" class="btn-main btn-start" onclick="handleShiftToggle()">ALKU</button>
+        <button id="failBtn" class="btn-main btn-gray" style="background:#ce1126" onclick="handleManualToggle('FAIL')" disabled>HÄIRIÖ</button>
+        <button id="protoBtn" class="btn-main btn-proto" onclick="handleManualToggle('PROTO')" disabled>PROTO</button>
     </div>
 
-    <div class="card">
-        <input type="text" id="in_id" placeholder="TYÖ ID" readonly onclick="triggerField('in_id')" disabled>
+    <div class="card" style="border-left-color: var(--vamm-steel);">
+        <input type="text" id="in_id" placeholder="TYÖNUMERO" readonly onclick="triggerField('in_id')" disabled>
         <input type="text" id="in_laji" placeholder="LAJIMERKKI" readonly onclick="triggerField('in_laji')" disabled>
         <div class="grid">
             <input type="number" id="in_s" placeholder="ASET" inputmode="decimal" disabled oninput="handleInstantZero(this, 'in_t')">
@@ -76,156 +104,106 @@
             <input type="number" id="in_m" placeholder="MUUT" inputmode="decimal" disabled oninput="handleInstantZero(this, null)">
         </div>
     </div>
-    <div class="card" style="padding:5px;"><div id="currentShiftList" style="max-height: 250px; overflow-y: auto;"></div></div>
+    
+    <div style="background: #111; border-radius: 8px; padding: 5px;">
+        <div id="currentShiftList" style="max-height: 280px; overflow-y: auto;"></div>
+    </div>
 </div>
 
 <div id="periodModal" class="modal">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;"><h2>ARKISTO</h2><button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:3rem;">✕</button></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;"><h2 style="color:var(--vamm-yellow)">ARKISTO</h2><button onclick="closePeriod()" style="background:none; border:none; color:white; font-size:3.5rem;">✕</button></div>
     <div id="periodContent" style="flex:1; overflow-y:auto;"></div>
-    <button onclick="resetPeriod()" class="btn-main" style="background:var(--danger); color:white; height:70px; margin-top:15px;">NOLLAA JAKSO HISTORIA</button>
+    <button onclick="resetPeriod()" class="btn-main btn-danger" style="height:75px; margin-top:15px; width:100%;">NOLLAA JAKSO HISTORIA</button>
 </div>
 
 <div id="reader-container" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:30000; display:none; flex-direction:column; align-items:center; justify-content:center;">
-    <button onclick="switchToManual()" style="color:var(--primary); background:none; border:2px solid var(--primary); border-radius:15px; padding:15px 30px; font-weight:900; margin-bottom:30px;">SYÖTÄ KÄSIN</button>
-    <div id="reader" style="width:90%;"></div>
-    <button onclick="stopScanner()" class="btn-main" style="background:var(--gray); color:white; margin-top:40px; width:70%;">SULJE</button>
+    <button onclick="switchToManual()" style="color:var(--vamm-yellow); background:none; border:2px solid var(--vamm-yellow); border-radius:8px; padding:20px 40px; font-weight:900; margin-bottom:30px; font-size:1.2rem;">SYÖTÄ KÄSIN</button>
+    <div id="reader" style="width:90%; border:2px solid #333;"></div>
+    <button onclick="stopScanner()" class="btn-main btn-gray" style="margin-top:40px; width:75%;">SULJE</button>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, shiftLog: [], type: "" };
-    let periodStats = JSON.parse(localStorage.getItem('sarmays_period_stats')) || { weeklyLog: [] };
-    let periodData = JSON.parse(localStorage.getItem('sarmays_period_archive')) || [];
+    let db = JSON.parse(localStorage.getItem('vamm_shift')) || { isRunning: false, startTime: 0, shiftLog: [] };
+    let periodStats = JSON.parse(localStorage.getItem('vamm_stats')) || { weeklyLog: [] };
+    let periodData = JSON.parse(localStorage.getItem('vamm_archive')) || [];
     let html5QrCode = null, currentTargetField = null;
 
     function save() {
-        localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        localStorage.setItem('sarmays_period_stats', JSON.stringify(periodStats));
-        localStorage.setItem('sarmays_period_archive', JSON.stringify(periodData));
+        localStorage.setItem('vamm_shift', JSON.stringify(db));
+        localStorage.setItem('vamm_stats', JSON.stringify(periodStats));
+        localStorage.setItem('vamm_archive', JSON.stringify(periodData));
     }
 
-    function beep(f, d) { try { const a = new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(); const g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = f; g.gain.value = 0.1; o.start(); o.stop(a.currentTime + d); } catch(e){} }
+    function beep(f, d) { 
+        try { 
+            const a = new (window.AudioContext || window.webkitAudioContext)(); 
+            const o = a.createOscillator(); 
+            const g = a.createGain(); 
+            o.connect(g); g.connect(a.destination); 
+            o.frequency.value = f; 
+            g.gain.value = 0.1; 
+            o.start(); o.stop(a.currentTime + d); 
+        } catch(e){} 
+    }
 
     function handleShiftToggle() {
         if (!db.isRunning) { document.getElementById('shiftTypeModal').style.display = 'flex'; }
-        else { if(confirm("Lopetetaanko vuoro?")) {
+        else { if(confirm("Lopetetaanko vuoro ja tallennetaanko tiedot?")) {
             const now = Date.now();
-            const dur = now - parseInt(db.startTime);
-            periodStats.weeklyLog.push({ start: db.startTime, end: now, duration: dur, type: db.type });
+            const dur = now - Number(db.startTime);
+            periodStats.weeklyLog.push({ start: db.startTime, end: now, duration: dur });
             db.shiftLog.forEach(i => periodData.push(i));
-            db.isRunning = false; db.startTime = null; db.shiftLog = [];
+            db.isRunning = false; db.startTime = 0; db.shiftLog = [];
             save(); updateUI();
         }}
     }
 
     function startShiftWith(type) {
-        let t = prompt("Vahvista aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
+        let t = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
         if(!t) return;
         const [h, m] = t.split(':'); const d = new Date(); d.setHours(parseInt(h), parseInt(m), 0, 0);
-        db.startTime = d.getTime(); db.type = type; db.isRunning = true; db.shiftLog = [];
+        db.startTime = d.getTime(); db.isRunning = true; db.shiftLog = [];
         document.getElementById('shiftTypeModal').style.display = 'none';
-        save(); beep(600, 0.2); updateUI();
+        save(); beep(700, 0.3); updateUI();
     }
 
     function refreshClock() {
-        if(!db.isRunning || !db.startTime) {
+        if(!db.isRunning || !db.startTime || db.startTime === 0) {
             document.getElementById('mainClock').innerText = "00:00:00";
             return;
         }
         const now = Date.now();
-        const diff = now - parseInt(db.startTime);
-        const secTotal = Math.floor(diff / 1000);
+        const diffMs = now - Number(db.startTime);
+        if(diffMs < 0) return;
+
+        const secTotal = Math.floor(diffMs / 1000);
+        const hh = Math.floor(secTotal / 3600);
+        const mm = Math.floor((secTotal % 3600) / 60);
+        const ss = secTotal % 60;
+        document.getElementById('mainClock').innerText = `${hh.toString().padStart(2,'0')}:${mm.toString().padStart(2,'0')}:${ss.toString().padStart(2,'0')}`;
         
-        if (secTotal >= 0) {
-            const h = Math.floor(secTotal / 3600);
-            const m = Math.floor((secTotal % 3600) / 60);
-            const s = secTotal % 60;
-            document.getElementById('mainClock').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-            
-            const sMins = db.shiftLog.reduce((acc, i) => acc + (parseFloat(i.s)+parseFloat(i.t)+parseFloat(i.m) || 0), 0);
-            const diffMins = diff / 60000;
-            document.getElementById('shiftEff').innerText = diffMins > 0.1 ? (sMins / diffMins).toFixed(2) : "0.00";
-            document.getElementById('shiftMins').innerText = Math.round(sMins);
-            
-            // Viikkotunnit
-            let wMs = diff;
-            periodStats.weeklyLog.forEach(x => wMs += x.duration);
-            const wh = Math.floor(wMs/3600000); const wm = Math.floor((wMs%3600000)/60000);
-            document.getElementById('weekTotal').innerText = `${wh}h ${wm}m`;
-            
-            // Jakso EFF
-            let pMins = sMins;
-            periodData.forEach(x => pMins += (parseFloat(x.s)+parseFloat(x.t)+parseFloat(x.m)));
-            document.getElementById('periodEff').innerText = wMs > 60000 ? (pMins / (wMs/60000)).toFixed(2) : "0.00";
-        }
+        const sMins = db.shiftLog.reduce((acc, i) => acc + (Number(i.s)+Number(i.t)+Number(i.m) || 0), 0);
+        const diffMins = diffMs / 60000;
+        document.getElementById('shiftEff').innerText = diffMins > 0.5 ? (sMins / diffMins).toFixed(2) : "0.00";
+        document.getElementById('shiftMins').innerText = Math.round(sMins);
+
+        // Viikko ja Jakso
+        let wMs = diffMs; periodStats.weeklyLog.forEach(x => wMs += x.duration);
+        let pMins = sMins; periodData.forEach(x => pMins += (Number(x.s)+Number(x.t)+Number(x.m) || 0));
+        
+        document.getElementById('weekTotal').innerText = `${Math.floor(wMs/3600000)}h ${Math.floor((wMs%3600000)/60000)}m`;
+        document.getElementById('periodEff').innerText = wMs > 60000 ? (pMins / (wMs/60000)).toFixed(2) : "0.00";
+        
+        const std = 8 * 3600000; let saved = 0;
+        periodStats.weeklyLog.forEach(v => { if(v.duration > std) saved += (v.duration - std); });
+        if(diffMs > std) saved += (diffMs - std);
+        document.getElementById('weekSaved').innerText = `${Math.floor(saved/3600000)}h ${Math.floor((saved%3600000)/60000)}m`;
     }
 
     function editRow(index, isArchive = false) {
         const list = isArchive ? periodData : db.shiftLog;
         const item = list[index];
-        const currentSum = (parseFloat(item.s) + parseFloat(item.t) + parseFloat(item.m));
-        const newVal = prompt(`Muokkaa työtä #${item.id}\nSyötä uusi kokonaisaika (minuuttia):`, currentSum);
-        if (newVal !== null) {
-            item.s = parseFloat(newVal); item.t = 0; item.m = 0; // Yksinkertaistetaan muokkaus asetukseen
-            save(); renderHistory(); if(isArchive) renderPeriodHistory();
-        }
-    }
-
-    function renderHistory() {
-        const c = document.getElementById('currentShiftList'); c.innerHTML = "";
-        [...db.shiftLog].reverse().forEach((i, idx) => {
-            const realIdx = db.shiftLog.length - 1 - idx;
-            c.innerHTML += `<div class="history-row" onclick="editRow(${realIdx})"><div class="col-id">#${i.id}</div><div class="col-laji">${i.laji}</div><div class="col-aika">${(parseFloat(i.s)+parseFloat(i.t)+parseFloat(i.m)).toFixed(1)}m</div></div>`;
-        });
-    }
-
-    function updateUI() {
-        const r = db.isRunning;
-        document.getElementById('shiftBtn').innerText = r ? "LOPPU" : "ALKU";
-        document.getElementById('shiftBtn').style.background = r ? "var(--danger)" : "var(--accent)";
-        ['failBtn', 'protoBtn', 'in_id', 'in_laji', 'in_s', 'in_t', 'in_m'].forEach(id => document.getElementById(id).disabled = !r);
-        refreshClock(); renderHistory();
-    }
-
-    function triggerField(id) {
-        currentTargetField = id; document.getElementById('reader-container').style.display = 'flex';
-        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (text) => {
-            document.getElementById(id).value = text.trim(); stopScanner();
-            if (id === 'in_id') setTimeout(() => triggerField('in_laji'), 300);
-        }).catch(()=>{});
-    }
-    function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => document.getElementById('reader-container').style.display='none').catch(()=>document.getElementById('reader-container').style.display='none'); }
-    function switchToManual() { stopScanner(); const el = document.getElementById(currentTargetField); el.readOnly = false; el.focus(); }
-    function handleInstantZero(el, nextId) { if(el.value === "0" && nextId) document.getElementById(nextId).focus(); checkAutoSave(); }
-
-    function checkAutoSave() {
-        const id = document.getElementById('in_id').value, laji = document.getElementById('in_laji').value, s = document.getElementById('in_s').value, t = document.getElementById('in_t').value;
-        if (id.length >= 4 && laji && s !== "" && t !== "") {
-            db.shiftLog.push({ id, laji, s: parseFloat(s)||0, t: parseFloat(t)||0, m: parseFloat(document.getElementById('in_m').value)||0 });
-            ['in_id','in_laji','in_s','in_t','in_m'].forEach(k => { document.getElementById(k).value = ""; document.getElementById(k).readOnly = true; });
-            save(); renderHistory();
-        }
-    }
-
-    function handleManualToggle(type) {
-        const val = prompt(type + " syy:");
-        if(val) { db.shiftLog.push({ id: "---", laji: type + ": " + val, s:0, t:0, m:0 }); save(); renderHistory(); }
-    }
-
-    function resetPeriod() { if (confirm("Haluatko varmasti nollata koko jakson historian")) { localStorage.clear(); location.reload(); } }
-    function openPeriod() { document.getElementById('periodModal').style.display = 'flex'; renderPeriodHistory(); }
-    function closePeriod() { document.getElementById('periodModal').style.display = 'none'; }
-    function renderPeriodHistory() {
-        const c = document.getElementById('periodContent'); c.innerHTML = "";
-        [...periodData].reverse().slice(0, 50).forEach((i, idx) => {
-            const realIdx = periodData.length - 1 - idx;
-            c.innerHTML += `<div class="history-row" onclick="editRow(${realIdx}, true)"><div class="col-id">#${i.id}</div><div class="col-laji">${i.laji}</div><div class="col-aika">${(parseFloat(i.s)+parseFloat(i.t)+parseFloat(i.m)).toFixed(1)}m</div></div>`;
-        });
-    }
-
-    setInterval(refreshClock, 1000);
-    updateUI();
-</script>
-</body>
-</html>
-
+        const currentSum = (Number(item.s) + Number(item.t) + Number(item.m));
+        const newVal = prompt(`MUOKKAA TYÖTÄ #${item.id}\nSyötä uusi yhteisaika (min):`, currentSum);
+        if (newVal !== null && !isNaN(newVal)) {
+            item.s = Number(newVal); item
