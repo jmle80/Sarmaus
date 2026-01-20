@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>SärmäysPro v4.7.4</title>
+    <title>SärmäysPro v4.7.5</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -12,7 +12,7 @@
             --primary: #f58220; --accent: #22c55e; 
             --danger: #ef4444; --warn: #fbbf24; --proto: #a855f7; 
             --gray: #262626; --light-gray: #737373;
-            --version-color: #ff00ff;
+            --version-color: #00ffff;
         }
         * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 8px; min-height: 100vh; transition: background 0.2s; }
@@ -32,11 +32,13 @@
         input:disabled { opacity: 0.2; }
         
         .btn { border: none; border-radius: 10px; padding: 16px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; width: 100%; display: block; }
-        .btn:disabled { background: var(--gray) !important; color: #555 !important; }
         
         #reader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
         #reader { width: 90%; max-width: 350px; border-radius: 15px; border: 3px solid var(--accent); overflow: hidden; background: #000; }
         .manual-trigger { color: #ff4444; font-weight: 900; margin-top: 30px; font-size: 1.4rem; cursor: pointer; text-decoration: underline; padding: 15px; }
+        
+        .history-row { display: flex; justify-content: space-between; padding: 12px 8px; border-bottom: 1px solid #222; font-size: 0.85rem; cursor: pointer; }
+        .history-row:active { background: #222; }
     </style>
 </head>
 <body>
@@ -48,7 +50,7 @@
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v4.7.4</div>
+    <div class="version-header">VERSION v4.7.5</div>
     <div class="header-box"><span style="font-weight:900; font-size:1.3rem; color:var(--accent)"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
     
     <div class="card">
@@ -71,11 +73,10 @@
         <input type="text" id="in_laji" placeholder="LAJIMERKKI" readonly onclick="triggerField('in_laji')" disabled>
         
         <div class="grid">
-            <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled oninput="handleInputMove(this, 'in_t')" onkeydown="if(event.key==='Enter') { event.preventDefault(); document.getElementById('in_t').focus(); }">
-            <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" disabled oninput="handleInputMove(this, null)" onkeydown="if(event.key==='Enter') { event.preventDefault(); checkAutoSave(); }">
+            <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled oninput="handleInstantZero(this, 'in_t')" onkeydown="if(event.key==='Enter') { event.preventDefault(); document.getElementById('in_t').focus(); }">
+            <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" disabled oninput="handleInstantZero(this, null)" onkeydown="if(event.key==='Enter') { event.preventDefault(); checkAutoSave(); }">
             <input type="number" id="in_m" placeholder="MUUT" inputmode="decimal" disabled oninput="checkAutoSave()">
         </div>
-        <div style="text-align:center; font-size:0.6rem; color:var(--light-gray); text-transform:uppercase; letter-spacing:1px; margin-top:5px;">Automaattinen tallennus aktiivinen</div>
     </div>
 
     <div id="currentShiftList" class="card" style="padding:0; min-height:80px;"></div>
@@ -99,11 +100,17 @@
         });
     }
 
-    function handleInputMove(el, nextId) {
-        if (el.value === "0" && nextId) {
-            document.getElementById(nextId).focus();
+    // UUSI: Jos syötetään "0", siirry heti eteenpäin ilman Enteriä
+    function handleInstantZero(el, nextId) {
+        if (el.value === "0") {
+            if (nextId) {
+                document.getElementById(nextId).focus();
+            } else {
+                checkAutoSave();
+            }
+        } else {
+            checkAutoSave();
         }
-        checkAutoSave();
     }
 
     function checkAutoSave() {
@@ -111,8 +118,6 @@
         const laji = document.getElementById('in_laji').value;
         const sVal = document.getElementById('in_s').value;
         const tVal = document.getElementById('in_t').value;
-
-        // Tallennus heti kun vaaditut kentät on täytetty (arvo tai "0")
         if (id.length === 6 && laji !== "" && sVal !== "" && tVal !== "") {
             addJob();
         }
@@ -144,44 +149,25 @@
         startScanner((text) => handleResult(id, text));
     }
 
-    function switchToManual() {
-        if (!currentTargetField) return;
-        const target = currentTargetField;
-        stopScanner();
-        setTimeout(() => {
-            const el = document.getElementById(target);
-            el.readOnly = false; el.focus();
-            vibrate(30);
-        }, 150);
-    }
-
     function handleResult(id, text) {
         const cleanText = text.trim();
         const el = document.getElementById(id);
         if (id === 'in_id') {
             if (cleanText.length === 6 && /^\d+$/.test(cleanText)) {
-                el.value = cleanText;
-                vibrate(50); beep(400, 0.05);
-                triggerField('in_laji');
+                el.value = cleanText; vibrate(50); triggerField('in_laji');
             } else { vibrate(250); alert("ID 6 numeroa!"); }
         } else {
-            el.value = cleanText;
-            vibrate(30);
-            document.getElementById('in_s').focus();
+            el.value = cleanText; vibrate(30); document.getElementById('in_s').focus();
         }
         updateUI();
-        checkAutoSave();
     }
 
     function validateIDLive(el) {
         el.value = el.value.replace(/\D/g, '').substring(0,6);
         if(el.value.length === 6) {
-            el.readOnly = true;
-            vibrate(30);
-            document.getElementById('in_laji').focus();
+            el.readOnly = true; vibrate(30); document.getElementById('in_laji').focus();
         }
         updateUI();
-        checkAutoSave();
     }
 
     async function startScanner(callback) {
@@ -193,21 +179,27 @@
     }
 
     function stopScanner() {
-        if (html5QrCode) { html5QrCode.stop().finally(() => { document.getElementById('reader-container').style.display = 'none'; }); }
+        if (html5QrCode) html5QrCode.stop().finally(() => { document.getElementById('reader-container').style.display = 'none'; });
+    }
+
+    function switchToManual() {
+        if (!currentTargetField) return;
+        const target = currentTargetField;
+        stopScanner();
+        setTimeout(() => {
+            const el = document.getElementById(target);
+            el.readOnly = false; el.focus(); vibrate(30);
+        }, 150);
     }
 
     function addJob() {
         const idVal = document.getElementById('in_id').value;
         const lajiVal = document.getElementById('in_laji').value;
-        if (!idVal || !lajiVal) return;
+        const s = parseFloat(document.getElementById('in_s').value)||0;
+        const t = parseFloat(document.getElementById('in_t').value)||0;
+        const m = parseFloat(document.getElementById('in_m').value)||0;
 
-        db.shiftLog.push({ 
-            id: idVal, laji: lajiVal, type: 'JOB', 
-            s: parseFloat(document.getElementById('in_s').value)||0, 
-            t: parseFloat(document.getElementById('in_t').value)||0, 
-            m: parseFloat(document.getElementById('in_m').value)||0,
-            timestamp: Date.now()
-        });
+        db.shiftLog.push({ id: idVal, laji: lajiVal, type: 'JOB', s, t, m, timestamp: Date.now() });
         
         document.body.classList.add('save-flash');
         setTimeout(() => document.body.classList.remove('save-flash'), 300);
@@ -219,43 +211,30 @@
         });
         
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-        vibrate([50, 30, 50]); 
-        updateUI(); 
-        renderHistory();
-        
+        vibrate([50, 30, 50]); updateUI(); renderHistory();
         setTimeout(() => document.getElementById('in_id').click(), 400);
     }
 
-    function handleManualToggle(type) {
-        let nowStr = new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'});
-        if (db.activeManual && db.activeManual.type === type) {
-            let endStr = prompt(type + " päättyy:", nowStr);
-            if (!endStr) return;
-            const finalize = (info) => {
-                db.shiftLog.push({ id: info || "Muu", type: type, timestamp: Date.now(), manualTime: db.activeManual.startStr + "-" + endStr });
-                db.activeManual = null;
-                localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-                updateUI(); renderHistory();
-            };
-            if (type === 'PROTO') finalize(prompt("Lajimerkki:"));
-            else finalize(prompt("Syy:"));
-        } else {
-            let startStr = prompt(type + " alkaa:", nowStr);
-            if (!startStr) return;
-            db.activeManual = { type: type, startStr: startStr };
-            localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
-            updateUI();
-        }
+    function showDetails(index) {
+        const item = db.shiftLog.slice().reverse()[index];
+        if (item.type !== 'JOB') return;
+        alert(`ERITTELY:\nTyö: #${item.id}\nLaji: ${item.laji}\n----------\nAsetus: ${item.s} min\nTaivutus: ${item.t} min\nMuut: ${item.m} min\n----------\nYhteensä: ${item.s + item.t + item.m} min`);
     }
 
     function renderHistory() {
         const c = document.getElementById('currentShiftList'); c.innerHTML = "";
-        db.shiftLog.slice().reverse().forEach(item => {
-            let div = document.createElement('div'); div.style.padding = "8px"; div.style.borderBottom = "1px solid #222";
-            div.innerHTML = `<div style="display:flex; justify-content:space-between; font-size:0.7rem;">
-                <span>#${item.id} <span style="color:var(--light-gray)">[${item.type}]</span></span>
-                <span>${item.manualTime || new Date(item.timestamp).toLocaleTimeString('fi-FI')}</span>
-            </div>`;
+        db.shiftLog.slice().reverse().forEach((item, idx) => {
+            let div = document.createElement('div');
+            div.className = "history-row";
+            div.onclick = () => showDetails(idx);
+            
+            const total = item.type === 'JOB' ? (item.s + item.t + item.m) : '-';
+            const displayId = item.id.length > 8 ? item.id.substring(0,8)+'..' : item.id;
+            
+            div.innerHTML = `
+                <div style="flex:1"><b>#${displayId}</b> <span style="color:var(--light-gray); margin-left:8px;">${item.laji || '['+item.type+']'}</span></div>
+                <div style="font-weight:900; color:var(--accent)">${total} min</div>
+            `;
             c.appendChild(div);
         });
     }
