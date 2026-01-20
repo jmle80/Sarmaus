@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SärmäysPro v3.0.5</title>
+    <title>SärmäysPro v3.0.6</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -16,43 +16,50 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 12px; min-height: 100vh; }
         .container { max-width: 450px; margin: auto; }
         
-        #lock-warn { display: none; background: var(--danger); color: #fff; padding: 10px; text-align: center; font-weight: bold; border-radius: 8px; margin-bottom: 10px; font-size: 0.8rem; }
-
         .header-box { text-align: center; margin-bottom: 20px; padding: 20px 10px; border-bottom: 2px solid var(--accent); background: var(--card); border-radius: 16px; }
         .logo-text { font-weight: 900; font-size: 1.8rem; color: var(--accent); }
-        .user-info { font-size: 0.9rem; color: var(--text); font-weight: 900; margin-top: 8px; text-transform: uppercase; letter-spacing: 2px; }
         .version-tag { font-size: 0.7rem; color: var(--accent); margin-top: 4px; font-weight: bold; }
         
-        .card { background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid var(--gray); margin-bottom: 12px; }
-        .timer-val { font-size: 4rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .card { background: var(--card); padding: 15px; border-radius: 16px; border: 1px solid var(--gray); margin-bottom: 12px; }
+        .timer-val { font-size: 3.5rem; font-family: monospace; text-align: center; color: var(--primary); font-weight: 900; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         
-        input { padding: 16px; background: #000; border: 2px solid var(--gray); border-radius: 12px; color: #fff; font-size: 20px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 10px; }
+        input { padding: 14px; background: #000; border: 2px solid var(--gray); border-radius: 12px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; width: 100%; margin-bottom: 8px; }
+        input:focus { border-color: var(--primary); outline: none; }
         input:disabled { opacity: 0.2; }
         
-        .btn { border: none; border-radius: 12px; padding: 18px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; color: white; display: block; width: 100%; }
+        .btn { border: none; border-radius: 12px; padding: 16px 5px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; color: white; display: block; width: 100%; }
         .btn:active { opacity: 0.7; transform: scale(0.98); }
         .btn:disabled { background: var(--gray) !important; color: #444; pointer-events: none; }
         
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid var(--accent); }
-        .stat-box { text-align: center; padding: 12px; background: var(--card); border-radius: 12px; border: 1px solid var(--gray); }
-        .history-item { display: flex; justify-content: space-between; padding: 14px; border-bottom: 1px solid #1a1a1a; color: #ccc; font-size: 0.85rem; }
+        
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #222; font-size: 0.85rem; cursor: pointer; }
+        .history-item:active { background: #222; }
+
+        /* Modal / Ponnahdusikkuna */
+        #modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); border: 2px solid var(--primary); padding: 20px; border-radius: 16px; z-index: 1000; width: 90%; max-width: 350px; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        #modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 999; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="lock-warn">VAROITUS: Toinen ikkuna saattaa olla auki!</div>
+<div id="modal-overlay" onclick="closeModal()"></div>
+<div id="modal">
+    <h3 id="modal-title" style="color:var(--primary); margin-top:0;"></h3>
+    <div id="modal-content"></div>
+    <button class="btn" style="background:var(--gray); margin-top:15px;" onclick="closeModal()">SULJE</button>
+</div>
 
+<div class="container">
     <div class="header-box">
         <span class="logo-text"><span style="color:var(--primary)">VAMM</span> Steel Oy</span>
-        <div class="user-info">JUNNU</div>
-        <div class="version-tag">SärmäysPro v3.0.5</div>
+        <div class="version-tag">SärmäysPro v3.0.6</div>
     </div>
     
     <div class="card">
         <div id="mainClock" class="timer-val">00:00:00</div>
-        <div class="grid" style="margin-top: 20px;">
+        <div class="grid" style="margin-top: 15px;">
             <button class="btn" style="background: var(--accent)" id="shiftBtn" onclick="toggleShift()">ALKU</button>
             <button class="btn" style="background: var(--warn); color: #000;" id="failBtn" onclick="askModeData('FAIL')" disabled>HÄIRIÖ</button>
             <button class="btn" style="background: var(--proto);" id="protoBtn" onclick="askModeData('PROTO')" disabled>PROTO</button>
@@ -61,9 +68,13 @@
 
     <div class="card">
         <div id="reader"></div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:8px;">
             <input type="text" id="in_id" placeholder="KORTIN NRO" inputmode="numeric" maxlength="6" oninput="checkInput()" disabled>
-            <button id="scanBtn" class="btn" style="background:var(--gray); width:60px;" onclick="startScanner()" disabled>📷</button>
+            <button id="scanBtn1" class="btn" style="background:var(--gray); width:50px;" onclick="startScanner('in_id')" disabled>📷</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="in_laji" placeholder="LAJIMERKKI" oninput="checkInput()" disabled>
+            <button id="scanBtn2" class="btn" style="background:var(--gray); width:50px;" onclick="startScanner('in_laji')" disabled>📷</button>
         </div>
         <div class="grid">
             <input type="number" id="in_s" placeholder="ASET." oninput="checkInput()" disabled>
@@ -73,91 +84,112 @@
         <button class="btn" style="background: var(--primary); color:#000; font-size: 1rem;" id="saveBtn" onclick="addJob()" disabled>TALLENNA KORTTI</button>
     </div>
 
-    <div class="grid">
-        <div class="stat-box"><span id="totalEff" style="color:var(--accent); font-weight:900;">0.00</span><br><small>VUORO</small></div>
-        <div class="stat-box"><span id="periodEff" style="color:var(--accent); font-weight:900;">0.00</span><br><small>JAKSO</small></div>
-        <div class="stat-box" onclick="editGoal()" style="border-color:var(--accent);"><span id="target40h" style="color:var(--accent); font-weight:900;">40:00</span><br><small>SALDO</small></div>
-    </div>
-
-    <div id="historyList" style="margin-top: 20px;"></div>
-    <button class="btn" style="background: var(--danger); margin-top: 20px; opacity: 0.3;" onclick="resetPeriod()">NOLLAA JAKSO</button>
+    <div id="historyList" class="card" style="padding:0; overflow:hidden;"></div>
 </div>
 
 <script>
-    // --- LUKITUSVAROITUS (EI ESTÄ KÄYTTÖÄ) ---
-    const L_KEY = 'sp_lock_305';
-    function handleLock() {
-        const last = localStorage.getItem(L_KEY);
-        if (last && (Date.now() - last < 2500)) document.getElementById('lock-warn').style.display = 'block';
-        setInterval(() => localStorage.setItem(L_KEY, Date.now()), 1000);
-    }
-    handleLock();
-
-    // --- DATA ---
     let history = JSON.parse(localStorage.getItem('sarmays_history')) || [];
-    let currentWeekMins = parseFloat(localStorage.getItem('sarmays_mins')) || 2400;
     let db = JSON.parse(localStorage.getItem('sarmays_current_shift')) || { isRunning: false, startTime: null, lastUpdate: null, shiftLog: [] };
     let html5QrCode = null;
 
     function save() {
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
         localStorage.setItem('sarmays_history', JSON.stringify(history));
-        localStorage.setItem('sarmays_mins', currentWeekMins);
     }
 
-    function playAlert() {
-        try {
-            const a = new (window.AudioContext || window.webkitAudioContext)();
-            const o = a.createOscillator(); const g = a.createGain();
-            o.connect(g); g.connect(a.destination);
-            o.frequency.value = 880; g.gain.value = 0.05;
-            o.start(); o.stop(a.currentTime + 0.15);
-        } catch(e){}
-    }
-
-    async function startScanner() {
+    async function startScanner(targetId) {
         const r = document.getElementById('reader'); r.style.display = 'block';
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
         try {
             await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                document.getElementById('in_id').value = text.substring(0, 6);
+                document.getElementById(targetId).value = text;
                 html5QrCode.stop(); r.style.display = 'none'; checkInput();
             });
-        } catch (err) { alert("Salli kamera."); r.style.display = 'none'; }
+        } catch (err) { r.style.display = 'none'; }
     }
 
     function toggleShift() {
         if(!db.isRunning) {
             let t = prompt("Aloitus (HH:MM):", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
             if(!t) return;
-            playAlert();
-            db.startTime = Date.now(); db.lastUpdate = Date.now(); db.isRunning = true; db.shiftLog = [];
+            db.startTime = Date.now(); db.isRunning = true; db.shiftLog = [];
         } else {
-            history.push({ date: new Date().toLocaleDateString('fi-FI'), log: [...db.shiftLog], mins: (Date.now()-db.startTime)/60000 });
+            history.push({ date: new Date().toLocaleDateString('fi-FI'), log: [...db.shiftLog], totalMs: Date.now() - db.startTime });
             db.isRunning = false;
         }
         save(); updateUI(); renderHistory();
     }
 
-    function addJob() {
-        db.shiftLog.push({ id: document.getElementById('in_id').value, type: 'JOB', s: parseFloat(document.getElementById('in_s').value)||0, t: parseFloat(document.getElementById('in_t').value)||0, m: parseFloat(document.getElementById('in_m').value)||0 });
-        ['in_id','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
-        save(); checkInput(); renderHistory();
-    }
-
     function askModeData(type) {
-        let r = prompt(type + " syy?"); if(!r) return;
-        db.shiftLog.push({ id: type, type: type, reason: r, dur: 15 });
+        let reason = prompt(type === 'FAIL' ? "Häiriön syy?" : "Lajimerkki?");
+        if(!reason) return;
+        let startT = prompt("Alku (HH:MM)?", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
+        let endT = prompt("Loppu (HH:MM)?", new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}));
+        
+        db.shiftLog.push({ id: reason, type: type, time: startT + "-" + endT, dur: 0 });
         save(); renderHistory();
     }
 
+    function addJob() {
+        const durMs = Date.now() - (db.shiftLog.length > 0 ? db.shiftLog[db.shiftLog.length-1].timestamp : db.startTime);
+        db.shiftLog.push({ 
+            id: document.getElementById('in_id').value, 
+            laji: document.getElementById('in_laji').value,
+            type: 'JOB', 
+            s: parseFloat(document.getElementById('in_s').value)||0, 
+            t: parseFloat(document.getElementById('in_t').value)||0, 
+            m: parseFloat(document.getElementById('in_m').value)||0,
+            timestamp: Date.now(),
+            durMs: durMs
+        });
+        ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
+        save(); checkInput(); renderHistory();
+    }
+
+    function formatMs(ms) {
+        if(!ms) return "00:00:00";
+        return new Date(ms).toISOString().substr(11, 8);
+    }
+
+    function renderHistory() {
+        const c = document.getElementById('historyList'); c.innerHTML = "";
+        let log = db.shiftLog;
+        log.slice().reverse().forEach((item, index) => {
+            let div = document.createElement('div'); div.className = 'history-item';
+            let label = item.type === 'JOB' ? `<b>#${item.id}</b> ${item.laji}` : `<span style="color:var(--warn)">${item.id}</span>`;
+            let time = item.type === 'JOB' ? formatMs(item.durMs) : item.time;
+            div.innerHTML = `<span>${label}</span><span style="font-family:monospace">${time}</span>`;
+            div.onclick = () => showDetails(item);
+            c.appendChild(div);
+        });
+    }
+
+    function showDetails(item) {
+        if(item.type !== 'JOB') return;
+        document.getElementById('modal-title').innerText = "Kortti #" + item.id;
+        document.getElementById('modal-content').innerHTML = `
+            <p>Lajimerkki: ${item.laji}</p>
+            <p>Asetus: ${item.s} min</p>
+            <p>Taivutus: ${item.t} min</p>
+            <p>Muut: ${item.m} min</p>
+            <hr border="1">
+            <p>Yhteensä laskettu: ${item.s + item.t + item.m} min</p>
+            <p>Todellinen kesto: ${formatMs(item.durMs)}</p>
+        `;
+        document.getElementById('modal').style.display = 'block';
+        document.getElementById('modal-overlay').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+        document.getElementById('modal-overlay').style.display = 'none';
+    }
+
     function checkInput() {
-        const r = db.isRunning; 
-        document.getElementById('in_id').disabled = !r;
-        document.getElementById('scanBtn').disabled = !r;
-        let ok = document.getElementById('in_id').value.length === 6;
-        ['in_s','in_t','in_m'].forEach(i => document.getElementById(i).disabled = !r || !ok);
-        document.getElementById('saveBtn').disabled = !ok || !r;
+        const r = db.isRunning;
+        ['in_id','in_laji','scanBtn1','scanBtn2'].forEach(i => document.getElementById(i).disabled = !r);
+        let ok = document.getElementById('in_id').value.length >= 4;
+        ['in_s','in_t','in_m','saveBtn'].forEach(i => document.getElementById(i).disabled = !ok);
     }
 
     function updateUI() {
@@ -168,27 +200,9 @@
         checkInput();
     }
 
-    function renderHistory() {
-        const c = document.getElementById('historyList'); c.innerHTML = "";
-        let all = [...(db.isRunning ? [{date: "NYKYINEN", log: db.shiftLog}] : []), ...history.slice().reverse()];
-        all.forEach(s => {
-            let div = document.createElement('div'); div.className = 'card';
-            div.innerHTML = `<b>${s.date}</b>` + s.log.map(i => `<div class="history-item">${i.id}</div>`).join('');
-            c.appendChild(div);
-        });
-    }
-
-    function resetPeriod() {
-        if(confirm("Haluatko varmasti nollata koko jakson historian?")) {
-            history = []; currentWeekMins = 2400; save(); location.reload();
-        }
-    }
-
     setInterval(() => {
         if(db.isRunning) {
-            let now = Date.now(); currentWeekMins -= ((now - db.lastUpdate) / 60000); db.lastUpdate = now;
-            document.getElementById('target40h').innerText = Math.floor(currentWeekMins/60) + ":" + Math.floor(Math.abs(currentWeekMins)%60).toString().padStart(2,'0');
-            document.getElementById('mainClock').innerText = new Date(Math.floor((now - db.startTime) / 1000) * 1000).toISOString().substr(11, 8);
+            document.getElementById('mainClock').innerText = formatMs(Date.now() - db.startTime);
         }
     }, 1000);
 
