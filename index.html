@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>SärmäysPro v4.6.5</title>
+    <title>SärmäysPro v4.6.7</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root { 
@@ -44,7 +44,7 @@
 </div>
 
 <div class="container">
-    <div class="version-header">VERSION v4.6.5</div>
+    <div class="version-header">VERSION v4.6.7</div>
     <div class="header-box"><span style="font-weight:900; font-size:1.3rem; color:var(--accent)"><span style="color:var(--primary)">VAMM</span> Steel Oy</span></div>
     
     <div class="card">
@@ -63,11 +63,12 @@
     </div>
 
     <div class="card">
-        <input type="text" id="in_id" placeholder="TYÖ ID (Tasan 6nro)" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateIDManual(this)" onblur="finalValidateID(this)" disabled>
+        <input type="text" id="in_id" placeholder="TYÖ ID (6nro)" inputmode="numeric" onfocus="handleInputFocus('in_id')" oninput="validateIDManual(this)" disabled>
         <input type="text" id="in_laji" placeholder="LAJIMERKKI" onfocus="handleInputFocus('in_laji')" disabled>
+        
         <div class="grid">
-            <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled>
-            <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" disabled>
+            <input type="number" id="in_s" placeholder="ASET." inputmode="decimal" disabled onkeydown="if(event.key==='Enter') document.getElementById('in_t').focus()">
+            <input type="number" id="in_t" placeholder="TAIV." inputmode="decimal" disabled onkeydown="if(event.key==='Enter') document.getElementById('saveBtn').focus()">
             <input type="number" id="in_m" placeholder="MUUT" inputmode="decimal" disabled>
         </div>
         <button class="btn" id="saveBtn" style="background: var(--primary); color:#000;" onclick="addJob()" disabled>TALLENNA KORTTI</button>
@@ -115,7 +116,7 @@
         updateUI(); renderHistory();
     }
 
-    // SKANNERIN LOGIIKKA - TIUKKA 6 NUMEROA
+    // SKANNERI LOGIIKKA (Vain ID ja Lajimerkki)
     function handleScannerResult(id, text) {
         const cleanText = text.trim();
         const inputEl = document.getElementById(id);
@@ -123,25 +124,24 @@
         if (id === 'in_id') {
             if (cleanText.length === 6 && /^\d+$/.test(cleanText)) {
                 inputEl.value = cleanText;
-                inputEl.classList.remove('error-glow');
                 vibrate(50); beep(400, 0.05);
                 document.getElementById('in_laji').focus();
             } else {
-                // HYLKÄÄ KOKONAAN JOS EI OLE TASAN 6
                 inputEl.value = "";
                 inputEl.classList.add('error-glow');
                 vibrate(250); beep(150, 0.3);
                 setTimeout(() => inputEl.classList.remove('error-glow'), 1000);
             }
-        } else {
+        } else if (id === 'in_laji') {
             inputEl.value = cleanText;
             vibrate(30);
+            document.getElementById('in_s').focus(); // Siirtyy numeroihin
         }
         updateUI();
     }
 
     function validateIDManual(el) {
-        el.value = el.value.replace(/\D/g, ''); // Vain numerot
+        el.value = el.value.replace(/\D/g, '').substring(0,6); 
         if (el.value.length === 6) {
             vibrate(30); beep(400, 0.05);
             document.getElementById('in_laji').focus();
@@ -149,17 +149,12 @@
         updateUI();
     }
 
-    function finalValidateID(el) {
-        if (el.value.length > 0 && el.value.length !== 6) {
-            el.value = "";
-            vibrate(200);
-            updateUI();
-        }
-    }
-
     function handleInputFocus(id) {
         if (!db.isRunning) return;
-        startScanner((text) => handleScannerResult(id, text));
+        // Skanneri vain ID ja Lajimerkki kentille
+        if (id === 'in_id' || id === 'in_laji') {
+            startScanner((text) => handleScannerResult(id, text));
+        }
     }
 
     async function startScanner(callback) {
@@ -208,6 +203,7 @@
         ['in_id','in_laji','in_s','in_t','in_m'].forEach(i => document.getElementById(i).value="");
         localStorage.setItem('sarmays_current_shift', JSON.stringify(db));
         vibrate([50, 30, 50]); updateUI(); renderHistory();
+        document.getElementById('in_id').focus();
     }
 
     function renderHistory() {
