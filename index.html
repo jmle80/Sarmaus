@@ -3,31 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.7.1</title>
+    <title>Särmäys Pro v3.7.4</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.9rem; }
+        /* Vakioidaan ulkoasu kaikille näkymille */
+        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; }
         body { font-family: sans-serif; margin: 0; background: #f0f2f5; display: flex; justify-content: center; }
         #app-card { background: white; width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; box-sizing: border-box; text-align: center; position: relative; }
-        #tyoaika-kello { position: absolute; top: 10px; right: 10px; background: #222; color: #0f0; padding: 8px 15px; border-radius: 6px; font-family: monospace; font-size: 1.2rem; display: none; }
+        #tyoaika-kello { position: absolute; top: 10px; right: 10px; background: #222; color: #0f0; padding: 8px 15px; border-radius: 6px; font-family: monospace; font-size: 1.2rem; }
         
+        h2 { margin-top: 40px; color: #333; }
         button { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 10px; border: none; margin: 10px 0; font-weight: bold; cursor: pointer; }
-        .btn-start { background: #28a745; color: white; }
         .btn-action { background: #007bff; color: white; }
         .btn-end { background: #dc3545; color: white; }
         
+        /* Syöttökenttien yhtenäinen tyyli */
         input { width: 100%; padding: 15px; font-size: 1.4rem; border-radius: 8px; border: 2px solid #007bff; box-sizing: border-box; margin: 10px 0; text-align: center; }
 
-        #reader { width: 100%; margin: 10px auto; border-radius: 12px; overflow: hidden; border: 2px solid #ddd; background: #000; min-height: 200px; }
-        #reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; }
+        /* Skannerin koon vakiointi molempiin ikkunoihin */
+        #reader { 
+            width: 250px; 
+            height: 100px; 
+            margin: 15px auto; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            border: 2px solid #ddd; 
+            background: #000;
+        }
+        #reader video { 
+            object-fit: cover !important; 
+            width: 100% !important; 
+            height: 100% !important; 
+        }
+        /* Piilotetaan kirjaston omat elementit */
+        #reader__status_span, #reader__dashboard { display: none !important; }
     </style>
 </head>
 <body>
 
 <div id="app-card">
-    <div class="version-tag">Versio 3.7.1 🟠</div>
-    <div id="tyoaika-kello">00:00:00</div>
-    <div id="ui-content">Ladataan ohjelmaa...</div>
+    <div class="version-tag">Versio 3.7.4 🟠</div>
+    <div id="tyoaika-kello" style="display:none;">00:00:00</div>
+    <div id="ui-content">Ladataan...</div>
 </div>
 
 <script>
@@ -49,7 +66,7 @@ function naytaAloitus() {
     document.getElementById('tyoaika-kello').style.display = "none";
     document.getElementById('ui-content').innerHTML = `
         <h1>Särmäys Pro</h1>
-        <button class="btn-start" onclick="aloitaVuoro()">ALOITA TYÖVUORO 🚀</button>
+        <button style="background:#28a745; color:white;" onclick="aloitaVuoro()">ALOITA TYÖVUORO 🚀</button>
     `;
 }
 
@@ -62,81 +79,20 @@ function aloitaVuoro() {
     naytaSkannaus();
 }
 
+// Ensimmäinen ikkuna: ID-syöttö
 function naytaSkannaus() {
     document.getElementById('ui-content').innerHTML = `
         <h2>Syötä ID ⚡</h2>
         <div id="reader"></div>
         <input type="number" id="id-input" placeholder="Syötä 6 numeroa" 
-               oninput="tarkistaID(this)" onfocus="kaynnistaSkanneri()" autofocus>
+               oninput="tarkistaID(this)" onfocus="kaynnistaSkanneri('ID')" autofocus>
         <button class="btn-end" onclick="lopetaVuoro()">LOPETA VUORO 🏁</button>
     `;
 }
 
-function tarkistaID(el) {
-    if (el.value.length === 6) {
-        nykyinenID = el.value;
-        pysaytaSkanneri(naytaLajimerkki);
-    }
-}
-
+// Toinen ikkuna: Lajimerkki-syöttö (samalla tyylillä)
 function naytaLajimerkki() {
     document.getElementById('ui-content').innerHTML = `
         <h2>Syötä Lajimerkki 🏷️</h2>
-        <p>ID: ${nykyinenID}</p>
-        <input type="text" id="laji-input" placeholder="Kirjaimet ja numerot" autofocus>
-        <button class="btn-action" onclick="tallennaKaikki()">TALLENNA VAIHE ✅</button>
-    `;
-}
-
-function kaynnistaSkanneri() {
-    if (html5QrCode && html5QrCode.getState() === 2) return;
-    
-    html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        { fps: 20, qrbox: { width: 300, height: 120 }, aspectRatio: 1.777778 },
-        (txt) => { if(txt.length === 6) { nykyinenID = txt; pysaytaSkanneri(naytaLajimerkki); } }
-    ).catch(err => console.error("Kameraa ei voitu avata:", err));
-}
-
-function pysaytaSkanneri(callback) {
-    if (html5QrCode && html5QrCode.getState() === 2) {
-        html5QrCode.stop().then(callback).catch(() => callback());
-    } else {
-        callback();
-    }
-}
-
-function tallennaKaikki() {
-    const laji = document.getElementById('laji-input').value;
-    const kesto = document.getElementById('tyoaika-kello').innerText;
-    paivanKortit.push({ id: nykyinenID, laji: laji, kesto: kesto });
-    localStorage.setItem('sarmaus_historia', JSON.stringify(paivanKortit));
-    
-    alert("Tallennettu!");
-    naytaSkannaus();
-}
-
-function lopetaVuoro() {
-    if(confirm("Lopetetaanko vuoro?")) {
-        clearInterval(tyoaikaInterval);
-        localStorage.removeItem('aloitus_aikaleima');
-        aloitusAikaleima = null;
-        pysaytaSkanneri(naytaAloitus);
-    }
-}
-
-// Käynnistetään ohjelma vasta kun sivu on täysin latautunut
-window.onload = function() {
-    if (aloitusAikaleima) {
-        aloitusAikaleima = parseInt(aloitusAikaleima);
-        document.getElementById('tyoaika-kello').style.display = "block";
-        tyoaikaInterval = setInterval(paivitaKello, 1000);
-        naytaSkannaus();
-    } else {
-        naytaAloitus();
-    }
-};
-</script>
-</body>
-</html>
+        <div id="reader"></div>
+        <input type="text" id="laji-input" placeholder="
