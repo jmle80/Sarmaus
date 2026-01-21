@@ -3,113 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Työaikakirjaus v2.2.2</title>
+    <title>Työaikakirjaus v2.2.6</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
         #app-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: 100%; max-width: 450px; }
-        .version { color: #ff0000; font-weight: bold; font-size: 12px; }
-        h2 { color: #1a73e8; margin-top: 10px; }
-        .input-group { margin: 15px 0; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .version { color: #ff0000; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        .status-header { padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 1.2em; }
+        .off { background: #ffebee; color: #c62828; }
+        .on { background: #e8f5e9; color: #2e7d32; }
+        #main-ui { display: none; }
         button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #scan-btn { background: #28a745; color: white; }
-        #reset-btn { background: #dc3545; color: white; margin-top: 30px; }
+        #start-btn { background: #007bff; color: white; font-size: 1.2em; }
+        #scan-btn { background: #27ae60; color: white; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; margin-top: 5px; }
+        #timer-display { font-size: 1.5em; margin: 10px 0; color: #333; }
         #interactive { width: 100%; height: 250px; background: #000; display: none; border-radius: 8px; margin-top: 10px; }
-        video { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div class="version">v2.2.2</div>
-    <h2>Työaika & Tehokkuus</h2>
+    <div class="version">v2.2.6 (Shift Management)</div>
+    
+    <div id="status-bar" class="status-header off">VUORO: SULJETTU</div>
 
-    <div id="interactive"></div>
+    <button id="start-btn" onclick="activateShift()">▶ ALOITA TYÖVUORO</button>
 
-    <div class="input-group">
-        <label>Työkortin ID:</label>
-        <input type="text" id="work-card-id" oninput="autoSave()">
+    <div id="main-ui">
+        <div id="timer-display">Aika: 00:00:00</div>
+        
+        <div id="interactive"></div>
+
+        <div style="margin: 15px 0;">
+            <label><b>Työkortin ID (Skannaa):</b></label>
+            <input type="text" id="work-id" oninput="saveAll()">
+            <button id="scan-btn" onclick="toggleCam()">📷 AVAA KAMERA</button>
+        </div>
+
+        <div style="margin: 15px 0;">
+            <label><b>Valmistetut yksiköt:</b></label>
+            <input type="number" id="units" oninput="saveAll()" placeholder="0">
+        </div>
+
+        <button onclick="endShift()" style="background:#666; color:white;">Lopeta vuoro</button>
+        <button onclick="askReset()" style="color:#dc3545; background:none; border:1px solid #dc3545; margin-top:20px;">Nollaa historia</button>
     </div>
-
-    <button id="scan-btn" onclick="toggleScanner()">📷 AVAA / SULJE SKANNERI</button>
-
-    <div class="input-group">
-        <label>Yksiköt valmiina:</label>
-        <input type="number" id="units" oninput="autoSave()">
-    </div>
-
-    <button id="reset-btn" onclick="handleReset()">Nollaa koko historia</button>
 </div>
 
 <script>
-    let scannerIsRunning = false;
+    let startTime;
+    let timerInterval;
+    let camActive = false;
 
-    // 1. Työvuoron aloitusääni & tietojen lataus
-    window.onload = () => {
-        playStartSound();
-        const saved = localStorage.getItem('tyoData');
-        if (saved) {
-            const data = JSON.parse(saved);
-            document.getElementById('work-card-id').value = data.id || '';
-            document.getElementById('units').value = data.units || '';
-        }
-    };
-
-    function playStartSound() {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        osc.connect(ctx.destination);
-        osc.frequency.value = 600;
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
+    // 1. TYÖVUORON AKTIVOINTI
+    function activateShift() {
+        playBeep();
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('main-ui').style.display = 'block';
+        document.getElementById('status-bar').innerText = "VUORO: AKTIIVINEN";
+        document.getElementById('status-bar').className = "status-header on";
+        
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+        console.log("Vuoro käynnistetty.");
     }
 
-    // 2. Skannerin ohjaus
-    function toggleScanner() {
+    function playBeep() {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function updateTimer() {
+        const diff = Date.now() - startTime;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timer-display').innerText = 
+            `Aika: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // 2. KAMERA & SKANNERI
+    function toggleCam() {
         const div = document.getElementById('interactive');
-        if (scannerIsRunning) {
+        if (camActive) {
             Quagga.stop();
             div.style.display = 'none';
-            scannerIsRunning = false;
+            camActive = false;
         } else {
             div.style.display = 'block';
-            startQuagga();
+            Quagga.init({
+                inputStream: { name: "Live", type: "LiveStream", target: div, constraints: { facingMode: "environment" } },
+                decoder: { readers: ["code_128_reader", "ean_reader"] }
+            }, (err) => {
+                if(err) { alert("Kamera-error."); return; }
+                Quagga.start();
+                camActive = true;
+            });
         }
     }
 
-    function startQuagga() {
-        Quagga.init({
-            inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#interactive'), constraints: { facingMode: "environment" } },
-            decoder: { readers: ["code_128_reader", "ean_reader"] }
-        }, (err) => {
-            if (err) { alert("Kameravirhe: " + err); return; }
-            Quagga.start();
-            scannerIsRunning = true;
-        });
+    Quagga.onDetected((data) => {
+        document.getElementById('work-id').value = data.codeResult.code;
+        saveAll();
+        toggleCam();
+    });
 
-        Quagga.onDetected((res) => {
-            document.getElementById('work-card-id').value = res.codeResult.code;
-            autoSave();
-            toggleScanner();
-            alert("Koodi skannattu!");
-        });
+    // 3. TALLENNUS JA NOLLAUS
+    function saveAll() {
+        const d = { id: document.getElementById('work-id').value, units: document.getElementById('units').value };
+        localStorage.setItem('shift_save', JSON.stringify(d));
     }
 
-    // 3. Tallennus ja Nollaus
-    function autoSave() {
-        const data = {
-            id: document.getElementById('work-card-id').value,
-            units: document.getElementById('units').value
-        };
-        localStorage.setItem('tyoData', JSON.stringify(data));
-    }
-
-    function handleReset() {
+    function askReset() {
         if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
-            localStorage.removeItem('tyoData');
+            localStorage.removeItem('shift_save');
             location.reload();
         }
+    }
+
+    function endShift() {
+        clearInterval(timerInterval);
+        alert("Työvuoro päätetty.");
+        location.reload();
     }
 </script>
 
