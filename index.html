@@ -3,42 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.8.5</title>
+    <title>Särmäys Pro v3.8.6</title>
     <style>
-        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; }
+        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; }
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
+        #tyoaika-display { font-family: monospace; font-size: 2.5rem; margin: 20px 0; color: #333; display: none; }
         #paa-nappi { width: 100%; padding: 20px; font-size: 1.2rem; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
         .btn-aloita { background: #28a745; color: white; }
         .btn-lopeta { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
-    <div class="version-tag">Versio 3.8.5 🟠</div>
-    <h1>Särmäys Pro</h1>
+    <div class="version-tag">Versio 3.8.6 🟠</div>
+    <div id="tyoaika-display">00:00:00</div>
     <button id="paa-nappi" class="btn-aloita" onclick="nappiaPainettu()">ALOITA TYÖVUORO 🚀</button>
 
 <script>
-    let onkoKaynnissa = false;
+    let aloitusAikaleima = null;
+    let kelloInterval = null;
 
     function nappiaPainettu() {
         const nappi = document.getElementById('paa-nappi');
+        const naytto = document.getElementById('tyoaika-display');
         
-        if (!onkoKaynnissa) {
-            // Kysytään aikaa
-            let syote = prompt("Syötä aloitusaika (esim. 08:00) tai jätä tyhjäksi:", "");
-            if (syote === null) return; // Peruutettu
+        if (!aloitusAikaleima) {
+            let syote = prompt("Syötä aloitusaika (HH:MM) tai jätä tyhjäksi:", "");
+            if (syote === null) return;
 
-            onkoKaynnissa = true;
+            let nyt = new Date();
+            if (syote.trim() !== "") {
+                let osat = syote.split(/[:.]/);
+                if (osat.length >= 2) {
+                    nyt.setHours(parseInt(osat[0]), parseInt(osat[1]), 0, 0);
+                }
+            }
+            
+            aloitusAikaleima = nyt.getTime();
             nappi.innerText = "LOPETA VUORO 🏁";
             nappi.className = "btn-lopeta";
-            alert("Vuoro aloitettu!");
+            naytto.style.display = "block";
+            
+            // Käynnistetään kello
+            kelloInterval = setInterval(paivitaKello, 1000);
+            paivitaKello(); // Päivitetään heti
         } else {
             if (confirm("Lopetetaanko vuoro?")) {
-                onkoKaynnissa = false;
+                clearInterval(kelloInterval);
+                aloitusAikaleima = null;
                 nappi.innerText = "ALOITA TYÖVUORO 🚀";
                 nappi.className = "btn-aloita";
+                naytto.style.display = "none";
             }
         }
+    }
+
+    function paivitaKello() {
+        if (!aloitusAikaleima) return;
+        let nyt = new Date().getTime();
+        let erotus = Math.floor((nyt - aloitusAikaleima) / 1000);
+        
+        // Estetään negatiivinen aika, jos syötetty aika on tulevaisuudessa
+        if (erotus < 0) erotus = 0;
+
+        let h = Math.floor(erotus / 3600).toString().padStart(2, '0');
+        let m = Math.floor((erotus % 3600) / 60).toString().padStart(2, '0');
+        let s = (erotus % 60).toString().padStart(2, '0');
+        
+        document.getElementById('tyoaika-display').innerText = `${h}:${m}:${s}`;
     }
 </script>
 </body>
