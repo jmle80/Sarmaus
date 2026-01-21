@@ -8,227 +8,199 @@
     <style>
         :root { 
             --vamm-yellow: #fecb00; 
-            --vamm-steel: #333d47;
-            --bg: #121212;
-            --card: #1e1e1e;
+            --vamm-grey: #333d47;
+            --bg: #1a1a1a;
+            --card: #2d2d2d;
+            --input-bg: #000000;
             --text: #ffffff;
         }
         * { box-sizing: border-box; touch-action: manipulation; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         
-        /* VERSION NUMERO - ENSIMMÄINEN RIVI */
-        .version-tag { color: #ff4444; font-weight: 900; font-size: 0.8rem; text-align: center; margin-bottom: 5px; display: block; }
+        .version-row { color: #ff5555; font-weight: 900; font-size: 0.8rem; text-align: center; margin-bottom: 5px; }
         
-        .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--vamm-yellow); }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid var(--vamm-yellow); padding-bottom: 10px; }
         .logo-v { font-weight: 900; font-size: 2rem; color: var(--vamm-yellow); }
         .logo-s { font-weight: 300; font-size: 2rem; color: #fff; }
 
-        .main-card { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .clock { font-size: 4.5rem; font-family: 'Courier New', monospace; color: var(--vamm-yellow); font-weight: 900; margin: 10px 0; }
+        .main-display { background: var(--card); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #444; margin-bottom: 20px; }
+        .clock { font-size: 4.5rem; font-family: monospace; color: var(--vamm-yellow); font-weight: 900; margin: 10px 0; }
         
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .stat-box { background: rgba(0,0,0,0.3); padding: 12px 5px; border-radius: 12px; border: 1px solid #444; }
-        .stat-val { font-size: 1.4rem; font-weight: 900; display: block; color: #fff; }
-        .stat-lab { font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-top: 4px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .stat-item { background: rgba(0,0,0,0.4); padding: 12px 5px; border-radius: 12px; border: 1px solid #555; }
+        .stat-val { font-size: 1.4rem; font-weight: 900; display: block; }
+        .stat-lab { font-size: 0.65rem; color: #bbb; text-transform: uppercase; margin-top: 4px; }
 
-        .btn { border: none; border-radius: 15px; font-weight: 900; font-size: 1.3rem; height: 75px; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 15px; transition: 0.1s; }
+        .btn-action { border: none; border-radius: 15px; font-weight: 900; font-size: 1.3rem; height: 80px; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 15px; }
         .btn-start { background: var(--vamm-yellow); color: #000; }
-        .btn-stop { background: #ce1126; color: #fff; }
-        .btn-save { background: #2e7d32; color: #fff; height: 60px; font-size: 1.1rem; }
+        .btn-stop { background: #d32f2f; color: #fff; }
+        .btn-save { background: #388e3c; color: #fff; height: 65px; margin-top: 15px; font-size: 1.1rem; }
 
-        .work-area { margin-top: 20px; animation: fadeIn 0.3s; }
-        .input-group { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #444; }
-        input { width: 100%; padding: 15px; background: #000; border: 1px solid #555; border-radius: 12px; color: #fff; font-size: 1.2rem; margin-bottom: 10px; text-align: center; }
+        .input-card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #444; margin-top: 20px; }
+        input { width: 100%; padding: 15px; background: var(--input-bg); border: 1px solid #666; border-radius: 12px; color: #fff; font-size: 1.2rem; margin-bottom: 10px; text-align: center; }
         input:focus { border-color: var(--vamm-yellow); outline: none; }
 
-        #scanner-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: none; flex-direction: column; }
-        #reader { flex: 1; }
-
-        .history-list { margin-top: 15px; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #252525; margin-bottom: 8px; border-radius: 12px; border-left: 5px solid var(--vamm-yellow); }
+        .history-row { display: flex; justify-content: space-between; padding: 15px; background: #222; margin-top: 8px; border-radius: 12px; border-left: 5px solid var(--vamm-yellow); }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #scanner-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: none; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<span class="version-tag">VERSION v6.0.0</span>
+<div class="version-row">VERSION v6.1.0</div>
 
 <div class="header">
     <span class="logo-v">VAMM</span><span class="logo-s">STEEL</span>
 </div>
 
-<div class="main-card">
+<div class="main-display">
     <div id="kello" class="clock">00:00:00</div>
-    <div class="grid-stats">
-        <div class="stat-box"><span id="eff-nyt" class="stat-val">0.00</span><span class="stat-lab">EFF</span></div>
-        <div class="stat-box"><span id="min-nyt" class="stat-val">0</span><span class="stat-lab">MIN</span></div>
-        <div class="stat-box" onclick="naytaArkisto()" style="border-color: var(--vamm-yellow); cursor: pointer;">
-            <span id="eff-jakso" class="stat-val" style="color: var(--vamm-yellow);">0.00</span>
-            <span class="stat-lab">JAKSO</span>
+    <div class="stat-grid">
+        <div class="stat-item"><span id="eff_n" class="stat-val">0.00</span><span class="stat-lab">EFF</span></div>
+        <div class="stat-item"><span id="min_n" class="stat-val">0</span><span class="stat-lab">MIN</span></div>
+        <div class="stat-item" onclick="showHistory()" style="border-color: var(--vamm-yellow); cursor:pointer">
+            <span id="eff_j" class="stat-val" style="color:var(--vamm-yellow)">0.00</span><span class="stat-lab">JAKSO</span>
         </div>
     </div>
 </div>
 
-<button id="shiftBtn" class="btn btn-start" onclick="toggleShift()">ALOITA VUORO</button>
+<button id="shiftBtn" class="btn-action btn-start" onclick="toggleShift()">ALOITA VUORO</button>
 
-<div id="workArea" class="work-area" style="display:none">
-    <div class="input-group">
-        <input type="text" id="job-id" placeholder="TYÖNUMERO" onclick="startScan('job-id')" readonly>
-        <input type="text" id="job-laji" placeholder="LAJIMERKKI" onclick="startScan('job-laji')" readonly>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-            <input type="number" id="job-s" placeholder="ASET">
-            <input type="number" id="job-t" placeholder="TAIV">
-            <input type="number" id="job-m" placeholder="MUUT">
+<div id="workView" style="display:none">
+    <div class="input-card">
+        <input type="text" id="in_id" placeholder="TYÖNUMERO" onclick="openScanner('in_id')" readonly>
+        <input type="text" id="in_laji" placeholder="LAJIMERKKI" onclick="openScanner('in_laji')" readonly>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <input type="number" id="in_s" placeholder="ASET">
+            <input type="number" id="in_t" placeholder="TAIV">
+            <input type="number" id="in_m" placeholder="MUUT">
         </div>
-        <button class="btn btn-save" onclick="tallennaTyo()">TALLENNA TYÖ</button>
+        <button class="btn-action btn-save" onclick="saveJob()">TALLENNA TYÖ</button>
     </div>
-    <div id="logi" class="history-list"></div>
+    <div id="jobList" style="margin-top:15px;"></div>
 </div>
 
-<div id="scanner-view">
-    <div id="reader"></div>
-    <button class="btn btn-stop" style="margin:0; border-radius:0;" onclick="stopScan()">SULJE</button>
+<div id="scanner-modal">
+    <div id="reader" style="flex:1"></div>
+    <button class="btn-action btn-stop" style="border-radius:0; margin:0;" onclick="closeScanner()">SULJE</button>
 </div>
 
-<div id="archiveView" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#121212; z-index:9000; display:none; padding:20px; overflow-y:auto;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="color:var(--vamm-yellow); margin:0;">JAKSOHISTORIA</h2>
-        <button onclick="suljeArkisto()" style="background:none; border:none; color:#fff; font-size:2.5rem;">✕</button>
-    </div>
+<div id="archive-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:9000; display:none; padding:20px; overflow-y:auto;">
+    <button onclick="closeHistory()" style="float:right; background:none; border:none; color:#fff; font-size:3rem">✕</button>
+    <h2 style="color:var(--vamm-yellow)">HISTORIA</h2>
     <div id="archiveContent"></div>
-    <button onclick="nollaaKaikki()" class="btn btn-stop" style="margin-top:30px;">NOLLAA JAKSO HISTORIA</button>
+    <button onclick="resetApp()" class="btn-action btn-stop" style="margin-top:30px">NOLLAA JAKSO HISTORIA</button>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('vamm_v6_data')) || { active: false, start: 0, log: [] };
-    let archive = JSON.parse(localStorage.getItem('vamm_v6_arch')) || [];
-    let html5QrCode = null;
+    // Käytetään täysin uutta muistiavainta v61
+    let data = JSON.parse(localStorage.getItem('vamm_v61')) || { active: false, start: 0, jobs: [] };
+    let archive = JSON.parse(localStorage.getItem('vamm_v61_arch')) || [];
+    let qr = null;
 
-    function saveToDisk() {
-        localStorage.setItem('vamm_v6_data', JSON.stringify(db));
-        localStorage.setItem('vamm_v6_arch', JSON.stringify(archive));
-    }
-
-    function playSound() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            osc.connect(ctx.destination);
-            osc.frequency.value = 800;
-            osc.start(); osc.stop(ctx.currentTime + 0.15);
-        } catch(e) {}
+    function persist() {
+        localStorage.setItem('vamm_v61', JSON.stringify(data));
+        localStorage.setItem('vamm_v61_arch', JSON.stringify(archive));
     }
 
     function toggleShift() {
-        if (!db.active) {
+        if (!data.active) {
             let t = prompt("Aloitusaika (HH:MM):", new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}));
             if(!t) return;
             let [h, m] = t.split(':');
             let d = new Date(); d.setHours(h, m, 0, 0);
-            db.start = d.getTime();
-            db.active = true;
-            db.log = [];
-            playSound();
+            data.start = d.getTime();
+            data.active = true;
+            data.jobs = [];
+            // Äänimerkki
+            try { let ctx=new AudioContext(); let o=ctx.createOscillator(); o.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.1); } catch(e){}
         } else {
             if(confirm("Lopetetaanko vuoro?")) {
-                db.log.forEach(item => archive.push(item));
-                db.active = false;
-                db.start = 0;
+                data.jobs.forEach(j => archive.push(j));
+                data.active = false;
+                data.start = 0;
             }
         }
-        saveToDisk();
-        updateUI();
+        persist();
+        ui();
     }
 
-    function tallennaTyo() {
-        const id = document.getElementById('job-id').value;
-        const laji = document.getElementById('job-laji').value;
-        const s = document.getElementById('job-s').value;
-        const t = document.getElementById('job-t').value;
-        const m = document.getElementById('job-m').value || 0;
+    function saveJob() {
+        const id = document.getElementById('in_id').value;
+        const laji = document.getElementById('in_laji').value;
+        const s = document.getElementById('in_s').value;
+        const t = document.getElementById('in_t').value;
+        const m = document.getElementById('in_m').value || 0;
 
         if (id && laji && s !== "" && t !== "") {
-            db.log.push({ id, laji, s: Number(s), t: Number(t), m: Number(m), ts: Date.now() });
-            ['job-id','job-laji','job-s','job-t','job-m'].forEach(i => document.getElementById(i).value = "");
-            saveToDisk();
-            renderLog();
+            data.jobs.push({ id, laji, s: Number(s), t: Number(t), m: Number(m) });
+            ['in_id','in_laji','in_s','in_t','in_m'].forEach(el => document.getElementById(el).value = "");
+            persist();
+            renderList();
         } else {
-            alert("Täytä vähintään Työnumero, Lajimerkki, Aset ja Taiv!");
+            alert("Täytä tiedot!");
         }
     }
 
-    function startScan(target) {
-        document.getElementById('scanner-view').style.display = 'flex';
-        html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 20, qrbox: {width: 280, height: 150} }, (text) => {
-            document.getElementById(target).value = text;
-            stopScan();
-        }).catch(() => {});
+    function openScanner(tid) {
+        document.getElementById('scanner-modal').style.display = 'flex';
+        qr = new Html5Qrcode("reader");
+        qr.start({ facingMode: "environment" }, { fps: 20, qrbox: {width: 280, height: 140} }, (txt) => {
+            document.getElementById(tid).value = txt;
+            closeScanner();
+        }).catch(()=>{});
     }
 
-    function stopScan() {
-        if(html5QrCode) {
-            html5QrCode.stop().then(() => {
-                document.getElementById('scanner-view').style.display = 'none';
-                html5QrCode = null;
-            });
-        }
+    function closeScanner() {
+        if(qr) qr.stop().then(() => { document.getElementById('scanner-modal').style.display='none'; qr=null; });
     }
 
-    function engine() {
-        if (db.active && db.start > 0) {
-            let diff = Date.now() - db.start;
+    function run() {
+        if (data.active && data.start > 0) {
+            let diff = Date.now() - data.start;
             if (diff < 0) diff = 0;
-            let h = Math.floor(diff / 3600000);
-            let m = Math.floor((diff % 3600000) / 60000);
-            let s = Math.floor((diff % 60000) / 1000);
-            document.getElementById('kello').innerText = 
-                `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            let h = Math.floor(diff/3600000);
+            let m = Math.floor((diff%3600000)/60000);
+            let s = Math.floor((diff%60000)/1000);
+            document.getElementById('kello').innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
             
-            let workM = db.log.reduce((acc, curr) => acc + (curr.s + curr.t + curr.m), 0);
-            let elapsedM = diff / 60000;
-            document.getElementById('eff-nyt').innerText = elapsedM > 0.5 ? (workM / elapsedM).toFixed(2) : "0.00";
-            document.getElementById('min-nyt').innerText = Math.round(workM);
-            
-            let totalM = archive.reduce((acc, curr) => acc + (curr.s + curr.t + curr.m), 0) + workM;
-            document.getElementById('eff-jakso').innerText = (totalM / 480).toFixed(2);
+            let curM = data.jobs.reduce((a, b) => a + (b.s+b.t+b.m), 0);
+            document.getElementById('eff_n').innerText = (diff/60000) > 0.5 ? (curM / (diff/60000)).toFixed(2) : "0.00";
+            document.getElementById('min_n').innerText = Math.round(curM);
+            let totM = archive.reduce((a, b) => a + (b.s+b.t+b.m), 0) + curM;
+            document.getElementById('eff_j').innerText = (totM / 480).toFixed(2);
         } else {
             document.getElementById('kello').innerText = "00:00:00";
         }
-        requestAnimationFrame(engine);
+        requestAnimationFrame(run);
     }
 
-    function renderLog() {
-        const div = document.getElementById('logi');
-        div.innerHTML = "";
-        [...db.log].reverse().forEach(item => {
-            div.innerHTML += `
-                <div class="history-item">
-                    <div><b>#${item.id}</b><br><small>${item.laji}</small></div>
-                    <div style="color:var(--vamm-yellow); font-weight:900;">${item.s + item.t + item.m} min</div>
-                </div>`;
+    function renderList() {
+        let h = document.getElementById('jobList');
+        h.innerHTML = "";
+        [...data.jobs].reverse().forEach(j => {
+            h.innerHTML += `<div class="history-row"><b>#${j.id}</b> <span>${j.laji}</span> <b>${j.s+j.t+j.m} min</b></div>`;
         });
     }
 
-    function updateUI() {
-        document.getElementById('shiftBtn').innerText = db.active ? "LOPETA VUORO" : "ALOITA VUORO";
-        document.getElementById('shiftBtn').className = db.active ? "btn btn-stop" : "btn btn-start";
-        document.getElementById('workArea').style.display = db.active ? "block" : "none";
-        renderLog();
+    function ui() {
+        document.getElementById('shiftBtn').innerText = data.active ? "LOPETA VUORO" : "ALOITA VUORO";
+        document.getElementById('shiftBtn').className = "btn-action " + (data.active ? "btn-stop" : "btn-start");
+        document.getElementById('workView').style.display = data.active ? "block" : "none";
+        renderList();
     }
 
-    function nollaaKaikki() {
-        if (confirm("Haluatko varmasti nollata koko jakson historian")) {
+    function resetApp() {
+        if(confirm("Haluatko varmasti nollata koko jakson historian")) {
             localStorage.clear();
             location.reload();
         }
     }
 
-    function naytaArkisto() { document.getElementById('archiveView').style.display = 'block'; }
-    function suljeArkisto() { document.getElementById('archiveView').style.display = 'none'; }
+    function showHistory() { document.getElementById('archive-modal').style.display='block'; }
+    function closeHistory() { document.getElementById('archive-modal').style.display='none'; }
 
-    window.onload = () => { updateUI(); engine(); };
+    window.onload = () => { ui(); run(); };
 </script>
 </body>
 </html>
