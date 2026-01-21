@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.9.4</title>
+    <title>Särmäys Pro v3.9.5</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; }
@@ -26,7 +26,7 @@
     </style>
 </head>
 <body>
-    <div class="version-tag">Versio 3.9.4 🟠</div>
+    <div class="version-tag">Versio 3.9.5 🟠</div>
     <div id="tyoaika-display">00:00:00</div>
 
     <div id="skannaus-alue" style="display:none;">
@@ -54,15 +54,10 @@
 
         <div class="kentta-ryhma">
             <label>3. Muut työvaiheet:</label>
-            <select id="muu-vaihe-valikko" style="margin-bottom:10px;">
-                <option value="">Valitse vaihe...</option>
-                <option value="Hionta">Hionta</option>
-                <option value="Puhdistus">Puhdistus</option>
-                <option value="Pakkaus">Pakkaus</option>
-                <option value="Muu">Muu (kirjoita alle)</option>
-            </select>
-            <input type="text" id="muu-vaihe-nimi" placeholder="Vaiheen nimi (jos muu)" style="margin-bottom:10px;">
-            <input type="tel" id="muu-vaihe-aika" placeholder="Aika (min.sek)">
+            <select id="muu-vaihe-valikko" onchange="valikkoMuuttui()">
+                </select>
+            <input type="text" id="muu-vaihe-nimi" placeholder="Kirjoita uusi vaihe" style="margin-top:10px;" oninput="tekstiMuuttui()">
+            <input type="tel" id="muu-vaihe-aika" placeholder="Vaiheen aika (min.sek)" style="margin-top:10px;">
         </div>
 
         <button class="btn-tallenna" onclick="tallennaKaikki()">TALLENNA KORTTI ✅</button>
@@ -78,13 +73,55 @@
     let nykyinenID = "";
     let nykyinenLaji = "";
 
+    // Ladataan suosituimmat vaiheet muistista
+    let vaiheTilastot = JSON.parse(localStorage.getItem('sarmaysVaiheet')) || {
+        "Hionta": 1,
+        "Puhdistus": 1,
+        "Pakkaus": 1
+    };
+
+    function paivitaVaiheValikko() {
+        const valikko = document.getElementById('muu-vaihe-valikko');
+        valikko.innerHTML = '<option value="">Valitse suosituista...</option>';
+        
+        // Järjestetään vaiheet käytön mukaan
+        const jarjestetyt = Object.entries(vaiheTilastot)
+            .sort((a, b) => b[1] - a[1]);
+
+        jarjestetyt.forEach(([nimi, kerrat]) => {
+            const opt = document.createElement('option');
+            opt.value = nimi;
+            opt.innerText = nimi;
+            valikko.appendChild(opt);
+        });
+        
+        const muuOpt = document.createElement('option');
+        muuOpt.value = "KIRJOITA_UUSI";
+        muuOpt.innerText = "--- Kirjoita uusi ---";
+        valikko.appendChild(muuOpt);
+    }
+
+    function tekstiMuuttui() {
+        // Jos kirjoitetaan, nollataan valikko
+        document.getElementById('muu-vaihe-valikko').value = "";
+    }
+
+    function valikkoMuuttui() {
+        // Jos valitaan valikosta, tyhjennetään tekstikenttä
+        if (document.getElementById('muu-vaihe-valikko').value !== "KIRJOITA_UUSI") {
+            document.getElementById('muu-vaihe-nimi').value = "";
+        }
+    }
+
     function aloitaVuoro() {
         let syote = prompt("Aloitusaika (HH:MM):", "");
         if (syote === null) return;
-        aloitusAikaleima = new Date().getTime(); // Yksinkertaistettu tähän
+        new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{});
+        aloitusAikaleima = new Date().getTime();
         document.getElementById('aloita-nappi').style.display = "none";
         document.getElementById('skannaus-alue').style.display = "block";
         kelloInterval = setInterval(paivitaKello, 1000);
+        paivitaVaiheValikko();
         kaynnistaSkanneri();
     }
 
@@ -103,11 +140,9 @@
             document.getElementById('id-syotto').disabled = true;
             document.getElementById('laji-lisa-alue').style.display = "block";
             document.getElementById('ohje').innerText = "Skannaa tai syötä laji 🏷️";
-            new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{});
         }
     }
 
-    // Tähän tullaan kun ID on jo ja laji saadaan (skannerilla tai Enterillä)
     document.getElementById('laji-syotto').addEventListener('keydown', (e) => {
         if(e.key === 'Enter') siirryLomakkeeseen(e.target.value);
     });
@@ -115,41 +150,48 @@
     function siirryLomakkeeseen(laji) {
         if (!laji) return;
         nykyinenLaji = laji;
-        
-        // Piilotetaan skannaus ja näytetään lomake
         document.getElementById('skannaus-alue').style.display = "none";
         document.getElementById('vaihelomake').style.display = "block";
     }
 
     function tallennaKaikki() {
+        let valittuVaihe = document.getElementById('muu-vaihe-valikko').value;
+        let kirjoitettuVaihe = document.getElementById('muu-vaihe-nimi').value.trim();
+        let lopullinenVaihe = kirjoitettuVaihe || valittuVaihe;
+
+        if (lopullinenVaihe && lopullinenVaihe !== "KIRJOITA_UUSI") {
+            // Päivitetään tilastot
+            vaiheTilastot[lopullinenVaihe] = (vaiheTilastot[lopullinenVaihe] || 0) + 1;
+            localStorage.setItem('sarmaysVaiheet', JSON.stringify(vaiheTilastot));
+        }
+
         const data = {
             id: nykyinenID,
             laji: nykyinenLaji,
             asetus: document.getElementById('asetusaika').value,
             taivutus: document.getElementById('taivutusaika').value.replace(',', '.'),
-            muuVaihe: document.getElementById('muu-vaihe-valikko').value || document.getElementById('muu-vaihe-nimi').value,
+            muuVaihe: lopullinenVaihe,
             muuAika: document.getElementById('muu-vaihe-aika').value.replace(',', '.'),
             kello: new Date().toLocaleTimeString()
         };
 
         tehdytKortit.push(data);
         
-        // Nollaus ja paluu skannaukseen
+        // Nollaus
         nykyinenID = ""; nykyinenLaji = "";
         document.getElementById('id-syotto').value = "";
         document.getElementById('id-syotto').disabled = false;
         document.getElementById('laji-syotto').value = "";
         document.getElementById('laji-lisa-alue').style.display = "none";
         
-        // Tyhjennä lomake
         document.getElementById('asetusaika').value = "";
         document.getElementById('taivutusaika').value = "";
         document.getElementById('muu-vaihe-aika').value = "";
         document.getElementById('muu-vaihe-nimi').value = "";
 
+        paivitaVaiheValikko(); // Päivitetään lista uutta korttia varten
         document.getElementById('vaihelomake').style.display = "none";
         document.getElementById('skannaus-alue').style.display = "block";
-        document.getElementById('ohje').innerText = "Skannaa tai syötä ID 🔢";
     }
 
     function paivitaKello() {
