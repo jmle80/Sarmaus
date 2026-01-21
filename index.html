@@ -3,23 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.8.4</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>Särmäys Pro v3.8.5</title>
     <style>
-        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; text-align: left; }
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; display: flex; justify-content: center; }
-        #app-card { background: white; width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; box-sizing: border-box; text-align: center; position: relative; }
-        #tyoaika-kello { position: absolute; top: 10px; right: 10px; background: #222; color: #0f0; padding: 8px 15px; border-radius: 6px; font-family: monospace; font-size: 1.2rem; display: none; }
-        
-        button { width: 100%; padding: 18px; font-size: 1.2rem; border-radius: 12px; border: none; margin: 20px 0; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
+        #paa-nappi { width: 100%; padding: 20px; font-size: 1.2rem; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
         .btn-aloita { background: #28a745; color: white; }
         .btn-lopeta { background: #dc3545; color: white; }
-        
-        input { width: 100%; padding: 15px; font-size: 1.4rem; border-radius: 8px; border: 2px solid #007bff; box-sizing: border-box; margin: 10px 0; text-align: center; }
-        .virhe-teksti { color: #dc3545; font-weight: bold; margin-top: 5px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="version-tag">Versio 3.8.5 🟠</div>
+    <h1>Särmäys Pro</h1>
+    <button id="paa-nappi" class="btn-aloita" onclick="nappiaPainettu()">ALOITA TYÖVUORO 🚀</button>
 
-        #reader { 
-            width: 300px !important; 
-            height: 200px !important; 
-            margin: 15px auto; 
-            border-radius:
+<script>
+    let onkoKaynnissa = false;
+
+    function nappiaPainettu() {
+        const nappi = document.getElementById('paa-nappi');
+        
+        if (!onkoKaynnissa) {
+            // Kysytään aikaa
+            let syote = prompt("Syötä aloitusaika (esim. 08:00) tai jätä tyhjäksi:", "");
+            if (syote === null) return; // Peruutettu
+
+            onkoKaynnissa = true;
+            nappi.innerText = "LOPETA VUORO 🏁";
+            nappi.className = "btn-lopeta";
+            alert("Vuoro aloitettu!");
+        } else {
+            if (confirm("Lopetetaanko vuoro?")) {
+                onkoKaynnissa = false;
+                nappi.innerText = "ALOITA TYÖVUORO 🚀";
+                nappi.className = "btn-aloita";
+            }
+        }
+    }
+</script>
+</body>
+</html>
