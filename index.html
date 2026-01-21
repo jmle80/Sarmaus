@@ -3,80 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Työaikakirjaus v2.2.6</title>
+    <title>Työaikakirjaus v2.2.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
         #app-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: 100%; max-width: 450px; }
         .version { color: #ff0000; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
-        .status-header { padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 1.2em; }
-        .off { background: #ffebee; color: #c62828; }
-        .on { background: #e8f5e9; color: #2e7d32; }
-        #main-ui { display: none; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #start-btn { background: #007bff; color: white; font-size: 1.2em; }
-        #scan-btn { background: #27ae60; color: white; }
+        
+        /* Tilapalkki */
+        #status-bar { padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; transition: 0.3s; }
+        .off { background: #eee; color: #666; }
+        .on { background: #e8f5e9; color: #2e7d32; border: 2px solid #2e7d32; }
+
+        /* Pääpainike */
+        #toggle-shift-btn { width: 100%; padding: 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.2em; transition: 0.3s; margin-bottom: 20px; }
+        .btn-start { background: #007bff; color: white; }
+        .btn-stop { background: #dc3545; color: white; }
+
+        /* Käyttöliittymän lukitus */
+        #main-ui { opacity: 0.3; pointer-events: none; transition: 0.5s; }
+        #main-ui.active { opacity: 1; pointer-events: auto; }
+
         input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; margin-top: 5px; }
-        #timer-display { font-size: 1.5em; margin: 10px 0; color: #333; }
+        #timer-display { font-size: 1.8em; margin: 10px 0; font-weight: bold; text-align: center; color: #333; }
         #interactive { width: 100%; height: 250px; background: #000; display: none; border-radius: 8px; margin-top: 10px; }
+        .control-group { margin: 20px 0; }
+        #scan-btn { background: #27ae60; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div class="version">v2.2.6 (Shift Management)</div>
+    <div class="version">v2.2.7 (Toggle Shift Mode)</div>
     
-    <div id="status-bar" class="status-header off">VUORO: SULJETTU</div>
+    <div id="status-bar" class="off">VUORO: EI ALOITETTU</div>
+    
+    <button id="toggle-shift-btn" class="btn-start" onclick="handleShiftToggle()">▶ ALOITA TYÖVUORO</button>
 
-    <button id="start-btn" onclick="activateShift()">▶ ALOITA TYÖVUORO</button>
+    <div id="timer-display">00:00:00</div>
 
     <div id="main-ui">
-        <div id="timer-display">Aika: 00:00:00</div>
-        
         <div id="interactive"></div>
 
-        <div style="margin: 15px 0;">
-            <label><b>Työkortin ID (Skannaa):</b></label>
-            <input type="text" id="work-id" oninput="saveAll()">
-            <button id="scan-btn" onclick="toggleCam()">📷 AVAA KAMERA</button>
+        <div class="control-group">
+            <label><b>Työkortin ID:</b></label>
+            <input type="text" id="work-id" oninput="saveData()" placeholder="Skannaa koodi...">
+            <button id="scan-btn" onclick="toggleCam()">📷 AVAA SKANNERI</button>
         </div>
 
-        <div style="margin: 15px 0;">
+        <div class="control-group">
             <label><b>Valmistetut yksiköt:</b></label>
-            <input type="number" id="units" oninput="saveAll()" placeholder="0">
+            <input type="number" id="units" oninput="saveData()" placeholder="0">
         </div>
 
-        <button onclick="endShift()" style="background:#666; color:white;">Lopeta vuoro</button>
-        <button onclick="askReset()" style="color:#dc3545; background:none; border:1px solid #dc3545; margin-top:20px;">Nollaa historia</button>
+        <button onclick="askReset()" style="color:#dc3545; background:none; border:none; width:100%; margin-top:20px; text-decoration:underline; cursor:pointer;">Tyhjennä jakson historia</button>
     </div>
 </div>
 
 <script>
+    let shiftActive = false;
     let startTime;
     let timerInterval;
     let camActive = false;
 
-    // 1. TYÖVUORON AKTIVOINTI
-    function activateShift() {
+    // 1. VUORON HALLINTA (Toggle)
+    function handleShiftToggle() {
+        if (!shiftActive) {
+            startShift();
+        } else {
+            if (confirm("Haluatko varmasti lopettaa työvuoron?")) {
+                stopShift();
+            }
+        }
+    }
+
+    function startShift() {
+        shiftActive = true;
         playBeep();
-        document.getElementById('start-btn').style.display = 'none';
-        document.getElementById('main-ui').style.display = 'block';
-        document.getElementById('status-bar').innerText = "VUORO: AKTIIVINEN";
-        document.getElementById('status-bar').className = "status-header on";
+        
+        // Päivitä UI
+        const btn = document.getElementById('toggle-shift-btn');
+        btn.innerText = "■ LOPETA VUORO";
+        btn.className = "btn-stop";
+        
+        document.getElementById('status-bar').innerText = "VUORO: KÄYNNISSÄ";
+        document.getElementById('status-bar').className = "on";
+        document.getElementById('main-ui').className = "active";
         
         startTime = Date.now();
         timerInterval = setInterval(updateTimer, 1000);
-        console.log("Vuoro käynnistetty.");
+        loadSaved();
+    }
+
+    function stopShift() {
+        shiftActive = false;
+        clearInterval(timerInterval);
+        
+        // Päivitä UI takaisin
+        const btn = document.getElementById('toggle-shift-btn');
+        btn.innerText = "▶ ALOITA TYÖVUORO";
+        btn.className = "btn-start";
+        
+        document.getElementById('status-bar').innerText = "VUORO: PÄÄTTYNYT";
+        document.getElementById('status-bar').className = "off";
+        document.getElementById('main-ui').className = "";
+        
+        if(camActive) toggleCam(); // Sulje kamera jos auki
+        alert("Työvuoro päätetty. Kokonaisaika: " + document.getElementById('timer-display').innerText);
     }
 
     function playBeep() {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
         osc.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.4);
+        osc.stop(audioCtx.currentTime + 0.5);
     }
 
     function updateTimer() {
@@ -85,10 +128,10 @@
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         document.getElementById('timer-display').innerText = 
-            `Aika: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
 
-    // 2. KAMERA & SKANNERI
+    // 2. KAMERA & TALLENNUS
     function toggleCam() {
         const div = document.getElementById('interactive');
         if (camActive) {
@@ -101,7 +144,7 @@
                 inputStream: { name: "Live", type: "LiveStream", target: div, constraints: { facingMode: "environment" } },
                 decoder: { readers: ["code_128_reader", "ean_reader"] }
             }, (err) => {
-                if(err) { alert("Kamera-error."); return; }
+                if(err) { alert("Kamera-virhe."); return; }
                 Quagga.start();
                 camActive = true;
             });
@@ -110,27 +153,31 @@
 
     Quagga.onDetected((data) => {
         document.getElementById('work-id').value = data.codeResult.code;
-        saveAll();
+        saveData();
         toggleCam();
+        alert("Koodi skannattu!");
     });
 
-    // 3. TALLENNUS JA NOLLAUS
-    function saveAll() {
+    function saveData() {
         const d = { id: document.getElementById('work-id').value, units: document.getElementById('units').value };
-        localStorage.setItem('shift_save', JSON.stringify(d));
+        localStorage.setItem('shift_backup_v227', JSON.stringify(d));
     }
 
-    function askReset() {
-        if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
-            localStorage.removeItem('shift_save');
-            location.reload();
+    function loadSaved() {
+        const saved = localStorage.getItem('shift_backup_v227');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('work-id').value = data.id || '';
+            document.getElementById('units').value = data.units || '';
         }
     }
 
-    function endShift() {
-        clearInterval(timerInterval);
-        alert("Työvuoro päätetty.");
-        location.reload();
+    function askReset() {
+        // Käyttäjän pyytämä vahvistus
+        if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
+            localStorage.removeItem('shift_backup_v227');
+            location.reload();
+        }
     }
 </script>
 
