@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Särmäys Pro v4.0.6</title>
+    <title>Särmäys Pro v4.0.7</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; text-align: center; }
@@ -11,15 +11,19 @@
         .mittari-alue { display: flex; justify-content: space-around; background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .mittari-arvo { font-family: monospace; font-size: 1.4rem; font-weight: bold; color: #007bff; }
         input, button { width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 12px; border: 2px solid #ddd; margin-bottom: 8px; box-sizing: border-box; }
-        .btn-aloita { background: #28a745; color: white; border: none; font-size: 1.4rem; }
+        .btn-aloita { background: #28a745; color: white; border: none; font-size: 1.4rem; font-weight: bold; }
         .btn-tallenna { background: #007bff; color: white; border: none; }
         .btn-lopeta { background: #dc3545; color: white; border: none; margin-top: 20px; }
         #reader { width: 100%; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 10px; display: none; }
         #raportti-alue { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; overflow-y: auto; padding: 20px; }
+        
+        /* Ajan syötön tyyli */
+        .aika-wrapper { display: flex; gap: 5px; margin-bottom: 10px; }
+        .aika-input { text-align: center; font-size: 1.3rem; }
     </style>
 </head>
 <body onload="tarkistaTila()">
-    <div class="version-tag">Versio 4.0.6 🟠</div>
+    <div class="version-tag">Versio 4.0.7 🟠</div>
 
     <div class="mittari-alue">
         <div><div>Vuoro</div><div id="v-jout" class="mittari-arvo">0.00</div></div>
@@ -29,8 +33,8 @@
     <div id="kello" style="font-size: 2.2rem; text-align: center; font-family: monospace; margin: 15px 0;">00:00:00</div>
 
     <div id="aloitus-paneeli">
-        <label>Aseta vuoron aloitusaika:</label>
-        <input type="time" id="aloitus-kello">
+        <label>Syötä vuoron aloitusaika (HH:MM):</label>
+        <input type="text" id="aloitus-kello" class="aika-input" placeholder="Esim. 06:00" inputmode="numeric" oninput="lisaaKaksoispiste(this)">
         <button class="btn-aloita" onclick="aloitaVuoro()">ALOITA TYÖVUORO 🚀</button>
     </div>
 
@@ -42,3 +46,186 @@
             
             <input type="text" id="id-input" placeholder="Syötä ID manuaalisesti" inputmode="numeric" 
                    oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length >= 6) tarkistaId(this.value)">
+            
+            <input type="text" id="laji-input" placeholder="LAJIMERKKI (ISOT)" style="display:none; text-transform: uppercase;" 
+                   oninput="this.value = this.value.toUpperCase(); tallennaLuonnos()" onkeypress="lajiEnter(event)">
+        </div>
+
+        <div id="vaiheet" style="display:none; background: white; padding: 15px; border-radius: 12px; margin-top:10px;">
+            <label>Työvaiheen tiedot:</label>
+            <input type="number" id="a-aika" placeholder="Asetusaika (min)" oninput="tallennaLuonnos()">
+            <input type="number" step="0.01" id="t-aika" placeholder="Taivutusaika (min.sek)" oninput="tallennaLuonnos()">
+            <hr>
+            <input type="text" id="m-nimi" placeholder="MUUN VAIHEEN NIMI" oninput="this.value = this.value.toUpperCase(); tallennaLuonnos()">
+            <input type="number" step="0.01" id="m-aika" placeholder="Muu aika (min.sek)" oninput="tallennaLuonnos()">
+            <button class="btn-tallenna" onclick="tallennaKortti()">TALLENNA KORTTI ✅</button>
+        </div>
+
+        <button class="btn-lopeta" onclick="lopetaVuoro()">LOPETA VUORO 🏁</button>
+    </div>
+
+    <div id="raportti-alue">
+        <h2>Päivän yhteenveto</h2>
+        <div id="raportti-sisalto"></div>
+        <button onclick="suljeRaportti()">SULJE</button>
+        <button style="background:#ffc107; margin-top:30px;" onclick="nollaaKaikki()">NOLLAA KOKO JAKSO ⚠️</button>
+    </div>
+
+<script>
+    let d = { aloitus: null, kortit: [], tavoite: 0 };
+    let jakso = JSON.parse(localStorage.getItem('sarmaysJakso')) || { min: 0, sek: 0 };
+    let html5QrCode = null;
+
+    function soita() { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{}); }
+
+    // Automaattinen kaksoispiste ajan syöttöön
+    function lisaaKaksoispiste(input) {
+        let v = input.value.replace(/[^0-9]/g, '');
+        if (v.length > 2) {
+            input.value = v.slice(0, 2) + ':' + v.slice(2, 4);
+        } else {
+            input.value = v;
+        }
+    }
+
+    function aloitaVuoro() {
+        let kelloVal = document.getElementById('aloitus-kello').value;
+        // Tarkistetaan onko aika muodossa 00:00
+        if(!kelloVal || kelloVal.length < 5) { 
+            alert("Syötä aika muodossa HH:MM (esim. 06:00)"); 
+            return; 
+        }
+        
+        soita();
+        d.aloitus = Date.now();
+        document.getElementById('aloitus-paneeli').style.display = "none";
+        document.getElementById('tyo-alue').style.display = "block";
+        
+        kaynnistaSkanneri();
+        setInterval(paivita, 1000);
+        tallennaLuonnos();
+    }
+
+    async function kaynnistaSkanneri() {
+        const readerElem = document.getElementById('reader');
+        readerElem.style.display = "block";
+        
+        if (html5QrCode) {
+            try { await html5QrCode.stop(); } catch(e) {}
+        }
+
+        html5QrCode = new Html5Qrcode("reader");
+        
+        const config = { 
+            fps: 15, 
+            qrbox: { width: 320, height: 80 }, 
+            aspectRatio: 1.777778
+        };
+
+        try {
+            await html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+                document.getElementById('id-input').value = text;
+                tarkistaId(text);
+                html5QrCode.stop();
+                readerElem.style.display = "none";
+            });
+        } catch (err) {
+            console.error("Skannerivirhe:", err);
+            // Jos kamera ei toimi, ei haittaa, manuaalisyöttö toimii yhä
+        }
+    }
+
+    function tarkistaId(v) {
+        if(v.length >= 6) {
+            soita();
+            document.getElementById('id-input').disabled = true;
+            document.getElementById('laji-input').style.display = "block";
+            document.getElementById('laji-input').focus();
+            tallennaLuonnos();
+        }
+    }
+
+    function lajiEnter(e) {
+        if(e.key === 'Enter') {
+            soita();
+            document.getElementById('skannaus-osio').style.display = "none";
+            document.getElementById('vaiheet').style.display = "block";
+            tallennaLuonnos();
+        }
+    }
+
+    function muunna(v) {
+        let s = v.toString().split('.');
+        return (parseInt(s[0])||0) + ((parseInt(s[1])||0)/60);
+    }
+
+    function tallennaKortti() {
+        let t = parseFloat(document.getElementById('a-aika').value||0) + muunna(document.getElementById('t-aika').value) + muunna(document.getElementById('m-aika').value);
+        d.kortit.push({id: document.getElementById('id-input').value, laji: document.getElementById('laji-input').value, t: t});
+        d.tavoite += t;
+        
+        document.getElementById('id-input').value = "";
+        document.getElementById('id-input').disabled = false;
+        document.getElementById('laji-input').value = "";
+        document.getElementById('laji-input').style.display = "none";
+        document.getElementById('vaiheet').style.display = "none";
+        document.getElementById('skannaus-osio').style.display = "block";
+        
+        ["a-aika", "t-aika", "m-nimi", "m-aika"].forEach(id => document.getElementById(id).value = "");
+        
+        kaynnistaSkanneri();
+        soita();
+        tallennaLuonnos();
+    }
+
+    function paivita() {
+        if(!d.aloitus) return;
+        let s = Math.floor((Date.now() - d.aloitus)/1000);
+        document.getElementById('kello').innerText = new Date(s*1000).toISOString().substr(11,8);
+        
+        let jMin = jakso.min + d.tavoite;
+        let jSek = jakso.sek + s;
+        
+        document.getElementById('v-jout').innerText = d.tavoite > 0 ? ((d.tavoite/60)/(s/3600)).toFixed(2) : "0.00";
+        document.getElementById('j-jout').innerText = jMin > 0 ? ((jMin/60)/(jSek/3600)).toFixed(2) : "0.00";
+    }
+
+    function tallennaLuonnos() { localStorage.setItem('sarmaysLuonnos', JSON.stringify(d)); }
+
+    function tarkistaTila() {
+        let l = JSON.parse(localStorage.getItem('sarmaysLuonnos'));
+        if(l && l.aloitus) {
+            d = l;
+            document.getElementById('aloitus-paneeli').style.display = "none";
+            document.getElementById('tyo-alue').style.display = "block";
+            setInterval(paivita, 1000);
+            if(!d.id) kaynnistaSkanneri();
+        }
+    }
+
+    function lopetaVuoro() {
+        if(confirm("Lopetetaanko vuoro? Jakson historia säilyy.")) {
+            jakso.min += d.tavoite;
+            jakso.sek += Math.floor((Date.now() - d.aloitus)/1000);
+            localStorage.setItem('sarmaysJakso', JSON.stringify(jakso));
+            localStorage.removeItem('sarmaysLuonnos');
+            location.reload();
+        }
+    }
+
+    function nollaaKaikki() {
+        if(confirm("Haluatko varmasti nollata koko jakson historian?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    function naytaRaportti() {
+        let html = d.kortit.map(k => `<p>${k.id} | ${k.laji} | ${k.t.toFixed(2)} min</p>`).join('');
+        document.getElementById('raportti-sisalto').innerHTML = html || "Ei kortteja.";
+        document.getElementById('raportti-alue').style.display = "block";
+    }
+    function suljeRaportti() { document.getElementById('raportti-alue').style.display = "none"; }
+</script>
+</body>
+</html>
