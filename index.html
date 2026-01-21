@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.8.1</title>
+    <title>Särmäys Pro v3.8.4</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; text-align: left; }
@@ -11,130 +11,15 @@
         #app-card { background: white; width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; box-sizing: border-box; text-align: center; position: relative; }
         #tyoaika-kello { position: absolute; top: 10px; right: 10px; background: #222; color: #0f0; padding: 8px 15px; border-radius: 6px; font-family: monospace; font-size: 1.2rem; display: none; }
         
-        button { width: 100%; padding: 18px; font-size: 1.2rem; border-radius: 12px; border: none; margin: 20px 0; font-weight: bold; cursor: pointer; }
+        button { width: 100%; padding: 18px; font-size: 1.2rem; border-radius: 12px; border: none; margin: 20px 0; font-weight: bold; cursor: pointer; transition: background 0.3s; }
         .btn-aloita { background: #28a745; color: white; }
         .btn-lopeta { background: #dc3545; color: white; }
         
         input { width: 100%; padding: 15px; font-size: 1.4rem; border-radius: 8px; border: 2px solid #007bff; box-sizing: border-box; margin: 10px 0; text-align: center; }
+        .virhe-teksti { color: #dc3545; font-weight: bold; margin-top: 5px; display: none; }
 
         #reader { 
             width: 300px !important; 
-            height: 150px !important; 
+            height: 200px !important; 
             margin: 15px auto; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            border: 2px solid #ddd; 
-            background: #000; 
-            display: none; 
-        }
-        #reader video { object-fit: cover !important; width: 300px !important; height: 150px !important; }
-    </style>
-</head>
-<body>
-
-<div id="app-card">
-    <div class="version-tag">Versio 3.8.1 🟠</div>
-    <div id="tyoaika-kello">00:00:00</div>
-    
-    <h1 id="otsikko">Särmäys Pro</h1>
-
-    <div id="tyo-alue" style="display:none;">
-        <h2 id="vaihe-otsikko">Syötä ID ⚡</h2>
-        <div id="reader"></div>
-        <input type="text" id="syotto" placeholder="Skannaa koodi" onfocus="varmistaKamera()">
-    </div>
-
-    <button id="paa-nappi" class="btn-aloita">ALOITA TYÖVUORO 🚀</button>
-</div>
-
-<script>
-let tyoaikaInterval, html5QrCode;
-let aloitusAikaleima = localStorage.getItem('aloitus_aikaleima');
-
-// Varmistetaan, että kaikki elementit ovat ladattu
-window.onload = function() {
-    const nappi = document.getElementById('paa-nappi');
-    nappi.onclick = hallitseVuoroa;
-
-    if (aloitusAikaleima) {
-        aloitusAikaleima = parseInt(aloitusAikaleima);
-        paivitaNakyma(true);
-        tyoaikaInterval = setInterval(paivitaKello, 1000);
-    } else {
-        paivitaNakyma(false);
-    }
-};
-
-function hallitseVuoroa() {
-    if (!aloitusAikaleima) {
-        if (confirm("Haluatko aloittaa työvuoron?")) {
-            aloitusAikaleima = new Date().getTime();
-            localStorage.setItem('aloitus_aikaleima', aloitusAikaleima);
-            
-            new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(() => {});
-            paivitaNakyma(true);
-            tyoaikaInterval = setInterval(paivitaKello, 1000);
-        }
-    } else {
-        if (confirm("Haluatko varmasti lopettaa työvuoron?")) {
-            lopetaKaikki();
-        }
-    }
-}
-
-function lopetaKaikki() {
-    clearInterval(tyoaikaInterval);
-    localStorage.removeItem('aloitus_aikaleima');
-    aloitusAikaleima = null;
-    
-    if (html5QrCode) {
-        html5QrCode.stop().finally(() => paivitaNakyma(false));
-    } else {
-        paivitaNakyma(false);
-    }
-}
-
-function paivitaNakyma(kaynnissa) {
-    const nappi = document.getElementById('paa-nappi');
-    const kello = document.getElementById('tyoaika-kello');
-    const alue = document.getElementById('tyo-alue');
-    const reader = document.getElementById('reader');
-
-    if (kaynnissa) {
-        nappi.innerText = "LOPETA VUORO 🏁";
-        nappi.className = "btn-lopeta";
-        kello.style.display = "block";
-        alue.style.display = "block";
-        reader.style.display = "block";
-    } else {
-        nappi.innerText = "ALOITA TYÖVUORO 🚀";
-        nappi.className = "btn-aloita";
-        kello.style.display = "none";
-        alue.style.display = "none";
-        reader.style.display = "none";
-        document.getElementById('tyoaika-kello').innerText = "00:00:00";
-    }
-}
-
-function varmistaKamera() {
-    if (html5QrCode && html5QrCode.getState() === 2) return;
-    
-    html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        { fps: 20, qrbox: { width: 250, height: 120 }, aspectRatio: 2.0 },
-        (txt) => { document.getElementById('syotto').value = txt; }
-    ).catch(err => console.error("Kameraongelma:", err));
-}
-
-function paivitaKello() {
-    if (!aloitusAikaleima) return;
-    const erotus = Math.floor((new Date().getTime() - aloitusAikaleima) / 1000);
-    const h = Math.floor(erotus / 3600).toString().padStart(2, '0');
-    const m = Math.floor((erotus % 3600) / 60).toString().padStart(2, '0');
-    const s = (erotus % 60).toString().padStart(2, '0');
-    document.getElementById('tyoaika-kello').innerText = `${h}:${m}:${s}`;
-}
-</script>
-</body>
-</html>
+            border-radius:
