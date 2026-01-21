@@ -3,44 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.3</title>
+    <title>Särmäys Pro v3.5</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; }
-        body { font-family: sans-serif; margin: 0; background: #f0f0f0; display: flex; justify-content: center; }
-        #app-card { background: white; width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; box-sizing: border-box; text-align: center; position: relative; }
-        #tyoaika-kello { position: absolute; top: 10px; right: 10px; background: #333; color: #0f0; padding: 5px 10px; border-radius: 5px; font-family: monospace; font-size: 1.1rem; }
-        button { width: 100%; padding: 18px; font-size: 1.1rem; border-radius: 12px; border: none; margin: 8px 0; font-weight: bold; cursor: pointer; }
-        .btn-start { background: #4CAF50; color: white; }
-        .btn-end { background: #f44336; color: white; }
-        .btn-action { background: #2196F3; color: white; }
-        .btn-cloud { background: #673AB7; color: white; margin-top: 20px; }
-        input { width: 100%; padding: 12px; font-size: 1.1rem; border-radius: 8px; border: 2px solid #ccc; box-sizing: border-box; margin: 8px 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.8rem; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.9rem; text-align: left; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f0f2f5; display: flex; justify-content: center; }
+        #app-card { background: white; width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; box-sizing: border-box; text-align: center; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        
+        #tyoaika-kello { 
+            position: absolute; top: 10px; right: 10px; 
+            background: #222; color: #00ff00; 
+            padding: 8px 15px; border-radius: 6px; 
+            font-family: "Courier New", monospace; font-size: 1.2rem; 
+            box-shadow: inset 0 0 5px #000;
+        }
+
+        button { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 10px; border: none; margin: 10px 0; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-start { background: #28a745; color: white; }
+        .btn-end { background: #dc3545; color: white; }
+        .btn-action { background: #007bff; color: white; }
+        
+        input { 
+            width: 100%; padding: 15px; font-size: 1.4rem; 
+            border-radius: 8px; border: 2px solid #007bff; 
+            box-sizing: border-box; margin: 10px 0; text-align: center;
+            background: #f8f9fa;
+        }
+
+        /* Skannerin säätö viivakoodille (5x1.5 suhde) */
+        #reader { 
+            width: 100%; 
+            margin: 15px auto; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            border: 2px solid #ddd;
+            background: #000;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: left; }
+        th { background: #e9ecef; }
+        tr:nth-child(even) { background: #f8f9fa; }
     </style>
 </head>
 <body>
 
 <div id="app-card">
-    <div class="version-tag">Versio 3.3 🟠</div>
+    <div class="version-tag">Versio 3.5 🟠</div>
     <div id="tyoaika-kello" style="display:none;">00:00:00</div>
     <div id="ui-content"></div>
 </div>
 
 <script>
 let tyoaikaInterval;
+let html5QrCode;
 let paivanKortit = JSON.parse(localStorage.getItem('sarmaus_historia')) || [];
 let aloitusAikaleima = localStorage.getItem('aloitus_aikaleima');
-
-function tallennaMuistiin() {
-    localStorage.setItem('sarmaus_historia', JSON.stringify(paivanKortit));
-}
 
 function paivitaKello() {
     if (!aloitusAikaleima) return;
     const nyt = new Date().getTime();
     const erotus = Math.floor((nyt - aloitusAikaleima) / 1000);
-    
     const h = Math.floor(erotus / 3600).toString().padStart(2, '0');
     const m = Math.floor((erotus % 3600) / 60).toString().padStart(2, '0');
     const s = (erotus % 60).toString().padStart(2, '0');
@@ -50,66 +75,130 @@ function paivitaKello() {
 function naytaAloitus() {
     document.getElementById('tyoaika-kello').style.display = "none";
     let historiaHtml = paivanKortit.length > 0 ? `
-        <h3>Päivän historia</h3>
-        <table><tr><th>ID</th><th>Kesto</th></tr>` + 
-        paivanKortit.map(k => `<tr><td>${k.id}</td><td>${k.kesto}</td></tr>`).join('') + 
-        `</table>
-        <button class="btn-cloud" onclick="lahetaPilveen()">LÄHETÄ PILVEEN ☁️</button>
-        <button style="background:#777; color:white;" onclick="nollaaHistoria()">TYHJENNÄ ⚠️</button>` : "";
+        <h3>Päivän suoritukset (${paivanKortit.length})</h3>
+        <table>
+            <thead><tr><th>ID</th><th>Aika</th></tr></thead>
+            <tbody>
+                ${paivanKortit.map(k => `<tr><td>${k.id}</td><td>${k.kesto}</td></tr>`).join('')}
+            </tbody>
+        </table>
+        <button style="background:#6c757d; color:white; margin-top:20px;" onclick="nollaaHistoria()">TYHJENNÄ HISTORIA ⚠️</button>
+    ` : "<p>Ei tallennettuja kortteja tältä jaksolta.</p>";
 
     document.getElementById('ui-content').innerHTML = `
-        <h1>Särmäys Pro</h1>
+        <h1 style="color:#333;">Särmäys Pro</h1>
+        <p>Tervetuloa! Aloita uusi vuoro alta.</p>
         <button class="btn-start" onclick="aloitaVuoro()">ALOITA TYÖVUORO 🚀</button>
-        ${historiaHtml}
+        <div style="margin-top:30px;">${historiaHtml}</div>
     `;
 }
 
 function aloitaVuoro() {
     aloitusAikaleima = new Date().getTime();
     localStorage.setItem('aloitus_aikaleima', aloitusAikaleima);
-    
     document.getElementById('tyoaika-kello').style.display = "block";
     tyoaikaInterval = setInterval(paivitaKello, 1000);
-    new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+    
+    // Äänimerkki vuoron alussa
+    const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    audio.play().catch(e => console.log("Audio vaatii käyttäjän klikkauksen"));
+    
     naytaSkannaus();
 }
 
 function naytaSkannaus() {
     document.getElementById('ui-content').innerHTML = `
-        <h2>Kortti käynnissä ⚡</h2>
-        <input type="number" id="id-input" placeholder="Syötä ID" autofocus>
-        <button class="btn-action" onclick="tallennaKortti()">TALLENNA KORTTI ✅</button>
+        <h2 style="margin-bottom:5px;">Skannaa tai syötä ID ⚡</h2>
+        <p style="font-size:0.8rem; color: #666;">Kello käy taustalla...</p>
+        <div id="reader"></div>
+        <input type="number" id="id-input" placeholder="Syötä 6 numeroa" 
+               oninput="tarkistaPituus(this)" autofocus inputmode="numeric">
+        <button class="btn-action" id="scan-btn" onclick="kaynnistaSkanneri()">AVAA KAMERA 📸</button>
         <button class="btn-end" onclick="lopetaVuoro()">LOPETA VUORO 🏁</button>
     `;
 }
 
-function tallennaKortti() {
-    const id = document.getElementById('id-input').value;
-    if(!id) return;
+function tarkistaPituus(el) {
+    if (el.value.length === 6) {
+        tallennaKortti(el.value);
+    }
+}
+
+function tallennaKortti(id) {
     const kesto = document.getElementById('tyoaika-kello').innerText;
-    paivanKortit.push({ id, kesto, pvm: new Date().toLocaleDateString() });
-    tallennaMuistiin();
-    alert(`Kortti ${id} tallennettu!`);
-    document.getElementById('id-input').value = "";
+    paivanKortit.push({ id, kesto });
+    localStorage.setItem('sarmaus_historia', JSON.stringify(paivanKortit));
+    
+    // Nollataan kello uutta korttia varten (aloitetaan uusi aikaleima tästä hetkestä)
+    aloitusAikaleima = new Date().getTime();
+    localStorage.setItem('aloitus_aikaleima', aloitusAikaleima);
+    
+    if(html5QrCode && html5QrCode.getState() === 2) {
+        html5QrCode.stop().then(() => {
+            alert(`Kortti ${id} tallennettu ja kello nollattu!`);
+            naytaSkannaus();
+        });
+    } else {
+        alert(`Kortti ${id} tallennettu ja kello nollattu!`);
+        naytaSkannaus();
+    }
+}
+
+function kaynnistaSkanneri() {
+    const scanBtn = document.getElementById('scan-btn');
+    scanBtn.disabled = true;
+    scanBtn.innerText = "Ladataan kameraa...";
+
+    html5QrCode = new Html5Qrcode("reader");
+    
+    // Säädetty viivakoodin muotoon: 300px leveä, 100px korkea
+    // Tämä auttaa 30cm etäisyydeltä lukemista.
+    const config = { 
+        fps: 15, 
+        qrbox: { width: 300, height: 100 },
+        aspectRatio: 1.0
+    };
+
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        config,
+        (decodedText) => {
+            // Hyväksytään koodi jos se on tasan 6 merkkiä
+            if(decodedText.trim().length === 6) {
+                tallennaKortti(decodedText.trim());
+            }
+        }
+    ).catch(err => {
+        alert("Virhe kamerassa: " + err);
+        scanBtn.disabled = false;
+        scanBtn.innerText = "AVAA KAMERA 📸";
+    });
 }
 
 function lopetaVuoro() {
-    if(confirm("Lopetetaanko vuoro?")) {
+    if(confirm("Haluatko varmasti lopettaa työvuoron?")) {
         clearInterval(tyoaikaInterval);
         localStorage.removeItem('aloitus_aikaleima');
         aloitusAikaleima = null;
+        if(html5QrCode && html5QrCode.getState() === 2) {
+            html5QrCode.stop().then(() => naytaAloitus());
+        } else {
+            naytaAloitus();
+        }
+    }
+}
+
+function nollaaHistoria() {
+    if(confirm("Haluatko varmasti nollata koko jakson historian?")) {
+        paivanKortit = [];
+        localStorage.removeItem('sarmaus_historia');
         naytaAloitus();
     }
 }
 
-// --- GOOGLE SHEETS LÄHETYS ---
-function lahetaPilveen() {
-    alert("Lähetetään " + paivanKortit.length + " korttia pilveen...");
-    // Tähän tulee myöhemmin fetch-kutsu Google Scriptiin
-}
-
-// Tarkistetaan onko vuoro jäänyt päälle
+// Automaattinen palautus jos sivu päivittyy
 if (aloitusAikaleima) {
+    aloitusAikaleima = parseInt(aloitusAikaleima);
     document.getElementById('tyoaika-kello').style.display = "block";
     tyoaikaInterval = setInterval(paivitaKello, 1000);
     naytaSkannaus();
