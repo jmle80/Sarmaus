@@ -6,37 +6,227 @@
     <title>Työaikakirjaus v2.3.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
-        #app-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        .version { color: #ff0000; font-weight: bold; font-size: 14px; margin-bottom: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 15px; margin: 0; display: flex; justify-content: center; }
+        #app-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        .version { color: #ff0000; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
         
-        #toggle-shift-btn { width: 100%; padding: 20px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.2em; transition: 0.3s; margin-bottom: 10px; }
+        #toggle-shift-btn { width: 100%; padding: 20px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.2em; margin-bottom: 15px; }
         .btn-start { background: #007bff; color: white; }
         .btn-stop { background: #dc3545; color: white; }
 
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; text-align: center; }
-        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #eee; }
-        .stat-label { font-size: 0.8em; color: #666; font-weight: bold; }
-        .stat-value { font-size: 1.5em; font-weight: bold; color: #333; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
+        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .stat-value { font-size: 20px; font-weight: bold; }
 
         #main-ui { opacity: 0.2; pointer-events: none; transition: 0.4s; }
         #main-ui.active { opacity: 1; pointer-events: auto; }
 
-        .control-group { margin: 15px 0; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 18px; margin-top: 5px; text-align: center; }
-        input.success { border-color: #27ae60; background-color: #f1f9f4; border-width: 2px; }
+        .input-box { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 18px; }
+        input.success { border: 2px solid #27ae60; background: #f1f9f4; }
         
-        #scan-btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        #interactive { width: 100%; height: 250px; background: #000; display: none; border-radius: 10px; margin-top: 10px; overflow: hidden; }
+        #scan-btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 10px 0; }
+        #interactive { width: 100%; height: 200px; background: #000; display: none; border-radius: 10px; margin-top: 10px; overflow: hidden; }
         
-        #reset-link { color: #888; background: none; border: none; width: 100%; margin-top: 30px; text-decoration: underline; cursor: pointer; font-size: 0.9em; }
+        /* Lokilista */
+        #history-list { margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px; max-height: 200px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+
+        #reset-link { color: #999; background: none; border: none; width: 100%; margin-top: 20px; text-decoration: underline; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div class="version">v2.3.2</div>
+    <div class="version">v2.3.2 (All-In-One)</div>
     
     <button id="toggle-shift-btn" class="btn-start" onclick="handleShiftToggle()">▶ ALOITA TYÖVUORO</button>
 
-    <div
+    <div class="dashboard">
+        <div class="stat-card">
+            <div class="stat-label">Työaika</div>
+            <div id="timer-display" class="stat-value">00:00</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Yhteensä</div>
+            <div id="total-units" class="stat-value">0</div>
+        </div>
+    </div>
+
+    <div id="main-ui">
+        <div id="interactive"></div>
+        <button id="scan-btn" onclick="toggleCam()">📷 SKANNAA TYÖKORTTI</button>
+
+        <div class="input-box">
+            <label>Työkortin ID (6 numeroa):</label>
+            <input type="text" id="work-id" oninput="validateID()" maxlength="6" inputmode="numeric" placeholder="------">
+        </div>
+
+        <div class="input-box">
+            <label>Valmistetut yksiköt:</label>
+            <input type="number" id="current-units" placeholder="Syötä määrä...">
+            <button onclick="submitEntry()" style="margin-top:10px; background:#007bff; color:white; border:none; padding:10px; width:100%; border-radius:8px; font-weight:bold;">TALLENNA ERÄ</button>
+        </div>
+
+        <div id="history-list">
+            <b>Viimeisimmät kirjaukset:</b>
+            <div id="history-items"></div>
+        </div>
+
+        <button id="reset-link" onclick="askReset()">Haluatko varmasti nollata koko jakson historian</button>
+    </div>
+</div>
+
+<script>
+    let shiftActive = false;
+    let startTime;
+    let timerInterval;
+    let camActive = false;
+    let totalUnits = 0;
+    let history = [];
+
+    // 1. KIRJAUSLOGIIKKA
+    function validateID() {
+        const idInput = document.getElementById('work-id');
+        idInput.value = idInput.value.replace(/\D/g, '');
+        if (idInput.value.length === 6) {
+            idInput.classList.add('success');
+            playBeep(1200, 0.1);
+            document.getElementById('current-units').focus();
+        } else {
+            idInput.classList.remove('success');
+        }
+    }
+
+    function submitEntry() {
+        const id = document.getElementById('work-id').value;
+        const units = parseInt(document.getElementById('current-units').value);
+
+        if (id.length === 6 && !isNaN(units) && units > 0) {
+            totalUnits += units;
+            history.unshift({id, units, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})});
+            
+            updateUI();
+            saveData();
+            
+            // Tyhjennys uutta varten
+            document.getElementById('work-id').value = '';
+            document.getElementById('current-units').value = '';
+            document.getElementById('work-id').classList.remove('success');
+            document.getElementById('work-id').focus();
+        } else {
+            alert("Tarkista ID (6 numeroa) ja määrä!");
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('total-units').innerText = totalUnits;
+        const list = document.getElementById('history-items');
+        list.innerHTML = history.slice(0, 5).map(item => `
+            <div class="history-item">
+                <span>ID: ${item.id}</span>
+                <span><b>${item.units} kpl</b></span>
+                <span style="color:#999">${item.time}</span>
+            </div>
+        `).join('');
+    }
+
+    // 2. TYÖVUORO
+    function handleShiftToggle() {
+        if (!shiftActive) {
+            startShift();
+        } else {
+            if (confirm("Lopetetaanko työvuoro?")) stopShift();
+        }
+    }
+
+    function startShift() {
+        shiftActive = true;
+        playBeep(880, 0.4);
+        const btn = document.getElementById('toggle-shift-btn');
+        btn.innerText = "■ LOPETA VUORO";
+        btn.className = "btn-stop";
+        document.getElementById('main-ui').classList.add('active');
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+        loadSaved();
+    }
+
+    function stopShift() {
+        shiftActive = false;
+        clearInterval(timerInterval);
+        const btn = document.getElementById('toggle-shift-btn');
+        btn.innerText = "▶ ALOITA TYÖVUORO";
+        btn.className = "btn-start";
+        document.getElementById('main-ui').classList.remove('active');
+        if(camActive) toggleCam();
+    }
+
+    function updateTimer() {
+        const diff = Date.now() - startTime;
+        const m = Math.floor(diff / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('timer-display').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function playBeep(freq, duration) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // 3. KAMERA JA MUISTI
+    function toggleCam() {
+        const div = document.getElementById('interactive');
+        if (camActive) {
+            Quagga.stop();
+            div.style.display = 'none';
+            camActive = false;
+        } else {
+            div.style.display = 'block';
+            Quagga.init({
+                inputStream: { name: "Live", type: "LiveStream", target: div, constraints: { facingMode: "environment" } },
+                decoder: { readers: ["code_128_reader", "ean_reader"] }
+            }, (err) => {
+                if(err) { alert("Kamera-virhe."); return; }
+                Quagga.start();
+                camActive = true;
+            });
+        }
+    }
+
+    Quagga.onDetected((data) => {
+        document.getElementById('work-id').value = data.codeResult.code.replace(/\D/g, '').substring(0,6);
+        validateID();
+        toggleCam();
+    });
+
+    function saveData() {
+        localStorage.setItem('work_data_v232', JSON.stringify({totalUnits, history}));
+    }
+
+    function loadSaved() {
+        const saved = localStorage.getItem('work_data_v232');
+        if (saved) {
+            const data = JSON.parse(saved);
+            totalUnits = data.totalUnits || 0;
+            history = data.history || [];
+            updateUI();
+        }
+    }
+
+    function askReset() {
+        if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
+            localStorage.removeItem('work_data_v232');
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
