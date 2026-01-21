@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.9.1</title>
+    <title>Särmäys Pro v3.9.2</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; }
@@ -11,33 +11,43 @@
         #tyoaika-display { font-family: monospace; font-size: 2rem; margin: 10px 0; }
         
         #reader { width: 300px !important; height: 180px !important; margin: 10px auto; border-radius: 12px; overflow: hidden; background: #000; border: 3px solid #ccc; }
-        /* Vaihtuva reunan väri kertoo vaiheen */
         .vaihe-id { border-color: #007bff !important; }
         .vaihe-laji { border-color: #ffc107 !important; }
 
         .ohje-teksti { font-weight: bold; font-size: 1.2rem; margin: 10px; color: #333; }
         .ilmoitus { padding: 10px; border-radius: 8px; margin: 10px; font-weight: bold; }
         .virhe { background: #dc3545; color: white; }
-        .onnistuminen { background: #28a745; color: white; }
+        
+        /* Kenttien tyylit */
+        .kentta-ryhma { margin: 10px 0; }
+        input { width: 85%; padding: 12px; margin: 5px; font-size: 1.2rem; text-align: center; border-radius: 8px; border: 2px solid #ddd; }
+        input:focus { border-color: #007bff; outline: none; }
+        
+        #laji-osio { display: none; } /* Piilossa aluksi */
 
-        input { width: 80%; padding: 10px; margin: 5px; font-size: 1.1rem; text-align: center; border-radius: 8px; border: 1px solid #ccc; background: #eee; }
         button { width: 100%; padding: 20px; font-size: 1.2rem; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-aloita { background: #28a745; color: white; }
         .btn-lopeta { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
-    <div class="version-tag">Versio 3.9.1 🟠</div>
+    <div class="version-tag">Versio 3.9.2 🟠</div>
     <div id="tyoaika-display">00:00:00</div>
 
     <div id="tyo-alue" style="display:none;">
-        <div id="ohje" class="ohje-teksti">Skannaa ID (6 numeroa) 🔢</div>
+        <div id="ohje" class="ohje-teksti">Syötä tai skannaa ID (6 numeroa) 🔢</div>
         <div id="reader" class="vaihe-id"></div>
         
-        <div id="info-ruutu"></div>
+        <div id="id-osio" class="kentta-ryhma">
+            <input type="tel" id="id-syotto" placeholder="Syötä 6 numeroa" maxlength="6" oninput="tarkistaId(this.value)">
+        </div>
+
+        <div id="laji-osio" class="kentta-ryhma">
+            <div class="ohje-teksti" style="color: #856404;">Skannaa nyt lajimerkki 🏷️</div>
+            <input type="text" id="laji-naytto" readonly placeholder="Odotetaan lajikoodia...">
+        </div>
         
-        <input type="text" id="id-kentta" readonly placeholder="ID">
-        <input type="text" id="laji-kentta" readonly placeholder="Lajimerkki">
+        <div id="info-ruutu"></div>
         
         <button class="btn-lopeta" onclick="lopetaVuoro()">LOPETA VUORO 🏁</button>
     </div>
@@ -49,9 +59,8 @@
     let kelloInterval = null;
     let html5QrCode = null;
     let tehdytKortit = [];
-    
-    let nykyinenVaihe = "ID"; // "ID" tai "LAJI"
-    let puskuriID = "";
+    let nykyinenVaihe = "ID";
+    let tallennettuID = "";
 
     function aloitaVuoro() {
         let syote = prompt("Aloitusaika (HH:MM) tai tyhjä:", "");
@@ -71,55 +80,53 @@
     function kaynnistaSkanneri() {
         html5QrCode = new Html5Qrcode("reader");
         html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 200 }, (txt) => {
-            kasitteleSkannaus(txt);
+            if (nykyinenVaihe === "ID") {
+                tarkistaId(txt);
+            } else {
+                tallennaLaji(txt);
+            }
         });
     }
 
-    function kasitteleSkannaus(txt) {
-        const ohje = document.getElementById('ohje');
-        const reader = document.getElementById('reader');
-        const info = document.getElementById('info-ruutu');
-
-        if (nykyinenVaihe === "ID") {
-            if (/^\d{6}$/.test(txt)) {
-                puskuriID = txt;
-                document.getElementById('id-kentta').value = "ID: " + txt;
-                
-                // Siirrytään lajivaiheeseen
-                nykyinenVaihe = "LAJI";
-                ohje.innerText = "Skannaa Lajimerkki 🏷️";
-                reader.className = "vaihe-laji";
-                info.innerHTML = `<div class="ilmoitus onnistuminen">ID Hyväksytty! Skannaa nyt laji.</div>`;
-                new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{});
-            } else {
-                info.innerHTML = `<div class="ilmoitus virhe">❌ Väärä ID (pitää olla 6 numeroa)</div>`;
-            }
-        } 
-        else if (nykyinenVaihe === "LAJI") {
-            // Hyväksytään mikä tahansa teksti
-            let laji = txt.trim();
-            document.getElementById('laji-kentta').value = "Laji: " + laji;
+    // Tarkistaa sekä käsin syötetyn että skannatun ID:n
+    function tarkistaId(arvo) {
+        const puhdas = arvo.trim();
+        if (/^\d{6}$/.test(puhdas)) {
+            tallennettuID = puhdas;
+            document.getElementById('id-syotto').value = puhdas;
+            document.getElementById('id-syotto').disabled = true; // Lukitaan ID
             
-            // Tallennetaan kortti
-            tehdytKortit.push({
-                id: puskuriID,
-                laji: laji,
-                aika: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-            });
-
-            // Palataan ID-vaiheeseen
-            nykyinenVaihe = "ID";
-            ohje.innerText = "Skannaa ID (6 numeroa) 🔢";
-            reader.className = "vaihe-id";
-            info.innerHTML = `<div class="ilmoitus onnistuminen">Kortti tallennettu! Seuraava ID...</div>`;
+            // Vaihdetaan tila
+            nykyinenVaihe = "LAJI";
+            document.getElementById('ohje').innerText = "ID Hyväksytty!";
+            document.getElementById('laji-osio').style.display = "block";
+            document.getElementById('reader').className = "vaihe-laji";
             
-            // Tyhjennetään kentät pienen viiveen jälkeen
-            setTimeout(() => {
-                document.getElementById('id-kentta').value = "";
-                document.getElementById('laji-kentta').value = "";
-                info.innerHTML = "";
-            }, 2000);
+            new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{});
         }
+    }
+
+    function tallennaLaji(txt) {
+        const laji = txt.trim();
+        document.getElementById('laji-naytto').value = laji;
+        
+        tehdytKortit.push({
+            id: tallennettuID,
+            laji: laji,
+            aika: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        });
+
+        // Palautus alkutilaan uutta korttia varten
+        setTimeout(() => {
+            nykyinenVaihe = "ID";
+            tallennettuID = "";
+            document.getElementById('id-syotto').value = "";
+            document.getElementById('id-syotto').disabled = false;
+            document.getElementById('laji-naytto').value = "";
+            document.getElementById('laji-osio').style.display = "none";
+            document.getElementById('ohje').innerText = "Syötä tai skannaa ID (6 numeroa) 🔢";
+            document.getElementById('reader').className = "vaihe-id";
+        }, 1500);
     }
 
     function paivitaKello() {
@@ -132,7 +139,7 @@
     }
 
     function lopetaVuoro() {
-        if (confirm("Lopetetaanko vuoro? Tehtyjä kortteja: " + tehdytKortit.length)) {
+        if (confirm("Lopetetaanko vuoro? Kortteja: " + tehdytKortit.length)) {
             location.reload();
         }
     }
