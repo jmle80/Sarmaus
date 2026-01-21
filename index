@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Työaikakirjaus v2.3.2</title>
+    <title>Työaikakirjaus v2.3.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 15px; margin: 0; display: flex; justify-content: center; }
@@ -24,23 +24,22 @@
 
         .input-box { margin-bottom: 15px; }
         label { font-weight: bold; display: block; margin-bottom: 5px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 18px; }
-        input.success { border: 2px solid #27ae60; background: #f1f9f4; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 18px; transition: 0.2s; }
+        input#work-id.success { border: 2px solid #27ae60; background: #f1f9f4; }
         
         #scan-btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 10px 0; }
         #interactive { width: 100%; height: 200px; background: #000; display: none; border-radius: 10px; margin-top: 10px; overflow: hidden; }
         
-        /* Lokilista */
         #history-list { margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px; max-height: 200px; overflow-y: auto; }
         .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
 
-        #reset-link { color: #999; background: none; border: none; width: 100%; margin-top: 20px; text-decoration: underline; cursor: pointer; }
+        #reset-link { color: #999; background: none; border: none; width: 100%; margin-top: 20px; text-decoration: underline; cursor: pointer; font-size: 13px; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div class="version">v2.3.2 (All-In-One)</div>
+    <div class="version">v2.3.3 (Verified Build)</div>
     
     <button id="toggle-shift-btn" class="btn-start" onclick="handleShiftToggle()">▶ ALOITA TYÖVUORO</button>
 
@@ -61,13 +60,13 @@
 
         <div class="input-box">
             <label>Työkortin ID (6 numeroa):</label>
-            <input type="text" id="work-id" oninput="validateID()" maxlength="6" inputmode="numeric" placeholder="------">
+            <input type="text" id="work-id" oninput="validateID()" maxlength="6" inputmode="numeric" placeholder="Syötä ID...">
         </div>
 
         <div class="input-box">
             <label>Valmistetut yksiköt:</label>
-            <input type="number" id="current-units" placeholder="Syötä määrä...">
-            <button onclick="submitEntry()" style="margin-top:10px; background:#007bff; color:white; border:none; padding:10px; width:100%; border-radius:8px; font-weight:bold;">TALLENNA ERÄ</button>
+            <input type="number" id="current-units" placeholder="Määrä...">
+            <button onclick="submitEntry()" style="margin-top:10px; background:#007bff; color:white; border:none; padding:12px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;">LISÄÄ LASKURIIN</button>
         </div>
 
         <div id="history-list">
@@ -85,12 +84,13 @@
     let timerInterval;
     let camActive = false;
     let totalUnits = 0;
-    let history = [];
+    let historyEntries = [];
 
-    // 1. KIRJAUSLOGIIKKA
+    // --- 1. ID VALIDATION & AUTOMATION ---
     function validateID() {
         const idInput = document.getElementById('work-id');
-        idInput.value = idInput.value.replace(/\D/g, '');
+        idInput.value = idInput.value.replace(/\D/g, ''); // Estä muut kuin numerot
+        
         if (idInput.value.length === 6) {
             idInput.classList.add('success');
             playBeep(1200, 0.1);
@@ -100,31 +100,32 @@
         }
     }
 
+    // --- 2. COUNTER LOGIC ---
     function submitEntry() {
         const id = document.getElementById('work-id').value;
         const units = parseInt(document.getElementById('current-units').value);
 
         if (id.length === 6 && !isNaN(units) && units > 0) {
             totalUnits += units;
-            history.unshift({id, units, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})});
+            historyEntries.unshift({id, units, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})});
             
             updateUI();
             saveData();
             
-            // Tyhjennys uutta varten
+            // Clear inputs for next entry
             document.getElementById('work-id').value = '';
             document.getElementById('current-units').value = '';
             document.getElementById('work-id').classList.remove('success');
             document.getElementById('work-id').focus();
         } else {
-            alert("Tarkista ID (6 numeroa) ja määrä!");
+            alert("Varmista, että ID on 6 numeroa ja määrä on vähintään 1.");
         }
     }
 
     function updateUI() {
         document.getElementById('total-units').innerText = totalUnits;
-        const list = document.getElementById('history-items');
-        list.innerHTML = history.slice(0, 5).map(item => `
+        const listDiv = document.getElementById('history-items');
+        listDiv.innerHTML = historyEntries.slice(0, 5).map(item => `
             <div class="history-item">
                 <span>ID: ${item.id}</span>
                 <span><b>${item.units} kpl</b></span>
@@ -133,7 +134,7 @@
         `).join('');
     }
 
-    // 2. TYÖVUORO
+    // --- 3. SHIFT MANAGEMENT ---
     function handleShiftToggle() {
         if (!shiftActive) {
             startShift();
@@ -144,10 +145,12 @@
 
     function startShift() {
         shiftActive = true;
-        playBeep(880, 0.4);
+        playBeep(880, 0.4); // Aloitusääni
+        
         const btn = document.getElementById('toggle-shift-btn');
         btn.innerText = "■ LOPETA VUORO";
         btn.className = "btn-stop";
+        
         document.getElementById('main-ui').classList.add('active');
         startTime = Date.now();
         timerInterval = setInterval(updateTimer, 1000);
@@ -157,9 +160,11 @@
     function stopShift() {
         shiftActive = false;
         clearInterval(timerInterval);
+        
         const btn = document.getElementById('toggle-shift-btn');
         btn.innerText = "▶ ALOITA TYÖVUORO";
         btn.className = "btn-start";
+        
         document.getElementById('main-ui').classList.remove('active');
         if(camActive) toggleCam();
     }
@@ -172,15 +177,17 @@
     }
 
     function playBeep(freq, duration) {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        osc.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e) { console.log("Audio not supported yet."); }
     }
 
-    // 3. KAMERA JA MUISTI
+    // --- 4. CAMERA & STORAGE ---
     function toggleCam() {
         const div = document.getElementById('interactive');
         if (camActive) {
@@ -193,7 +200,7 @@
                 inputStream: { name: "Live", type: "LiveStream", target: div, constraints: { facingMode: "environment" } },
                 decoder: { readers: ["code_128_reader", "ean_reader"] }
             }, (err) => {
-                if(err) { alert("Kamera-virhe."); return; }
+                if(err) { alert("Kamera-virhe: " + err); return; }
                 Quagga.start();
                 camActive = true;
             });
@@ -201,28 +208,29 @@
     }
 
     Quagga.onDetected((data) => {
-        document.getElementById('work-id').value = data.codeResult.code.replace(/\D/g, '').substring(0,6);
+        const code = data.codeResult.code.replace(/\D/g, '').substring(0,6);
+        document.getElementById('work-id').value = code;
         validateID();
         toggleCam();
     });
 
     function saveData() {
-        localStorage.setItem('work_data_v232', JSON.stringify({totalUnits, history}));
+        localStorage.setItem('v233_save', JSON.stringify({totalUnits, historyEntries}));
     }
 
     function loadSaved() {
-        const saved = localStorage.getItem('work_data_v232');
+        const saved = localStorage.getItem('v233_save');
         if (saved) {
             const data = JSON.parse(saved);
             totalUnits = data.totalUnits || 0;
-            history = data.history || [];
+            historyEntries = data.historyEntries || [];
             updateUI();
         }
     }
 
     function askReset() {
         if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
-            localStorage.removeItem('work_data_v232');
+            localStorage.removeItem('v233_save');
             location.reload();
         }
     }
