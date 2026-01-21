@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Särmäys Pro v4.0.3</title>
+    <title>Särmäys Pro v4.0.5</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; text-align: center; }
         body { font-family: sans-serif; padding: 10px; background: #f0f2f5; margin: 0; color: #333; }
@@ -13,11 +14,13 @@
         .btn-aloita { background: #28a745; color: white; border: none; font-size: 1.4rem; }
         .btn-tallenna { background: #007bff; color: white; border: none; }
         .btn-lopeta { background: #dc3545; color: white; border: none; margin-top: 20px; }
+        /* Skannerin tyylit */
+        #reader { width: 100%; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 10px; display: none; }
         #raportti-alue { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; overflow-y: auto; padding: 20px; }
     </style>
 </head>
 <body onload="tarkistaTila()">
-    <div class="version-tag">Versio 4.0.3 🟠</div>
+    <div class="version-tag">Versio 4.0.5 🟠</div>
 
     <div class="mittari-alue">
         <div><div>Vuoro</div><div id="v-jout" class="mittari-arvo">0.00</div></div>
@@ -36,7 +39,9 @@
         <button style="background:#6c757d; color:white; border:none;" onclick="naytaRaportti()">RAPORTTI 📊</button>
         
         <div id="skannaus-osio">
-            <input type="text" id="id-input" placeholder="Skannaa tai syötä ID" inputmode="numeric" 
+            <div id="reader"></div>
+            
+            <input type="text" id="id-input" placeholder="Syötä ID manuaalisesti" inputmode="numeric" 
                    oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length >= 6) tarkistaId(this.value)">
             
             <input type="text" id="laji-input" placeholder="LAJIMERKKI (ISOT)" style="display:none; text-transform: uppercase;" 
@@ -66,6 +71,7 @@
 <script>
     let d = { aloitus: null, kortit: [], tavoite: 0 };
     let jakso = JSON.parse(localStorage.getItem('sarmaysJakso')) || { min: 0, sek: 0 };
+    let html5QrCode = null;
 
     function soita() { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{}); }
 
@@ -74,17 +80,32 @@
         if(!kelloVal) { alert("Aseta aloitusaika!"); return; }
         soita();
         d.aloitus = Date.now();
-        
-        // Vaihdetaan näkymä
         document.getElementById('aloitus-paneeli').style.display = "none";
         document.getElementById('tyo-alue').style.display = "block";
         
-        // Aktivoidaan etsin heti
-        const idInput = document.getElementById('id-input');
-        idInput.focus();
-        
+        kaynnistaSkanneri();
         setInterval(paivita, 1000);
         tallennaLuonnos();
+    }
+
+    async function kaynnistaSkanneri() {
+        const readerElem = document.getElementById('reader');
+        readerElem.style.display = "block";
+        
+        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        try {
+            await html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+                document.getElementById('id-input').value = text;
+                tarkistaId(text);
+                html5QrCode.stop();
+                readerElem.style.display = "none";
+            });
+        } catch (err) {
+            console.error("Kamera ei auennut:", err);
+            alert("Kameraa ei voitu avata. Tarkista luvat!");
+        }
     }
 
     function tarkistaId(v) {
@@ -116,7 +137,6 @@
         d.kortit.push({id: document.getElementById('id-input').value, laji: document.getElementById('laji-input').value, t: t});
         d.tavoite += t;
         
-        // Palautetaan haku-tilaan
         document.getElementById('id-input').value = "";
         document.getElementById('id-input').disabled = false;
         document.getElementById('laji-input').value = "";
@@ -126,9 +146,7 @@
         
         ["a-aika", "t-aika", "m-nimi", "m-aika"].forEach(id => document.getElementById(id).value = "");
         
-        // Focus takaisin etsimeen automaattisesti
-        document.getElementById('id-input').focus();
-        
+        kaynnistaSkanneri();
         soita();
         tallennaLuonnos();
     }
@@ -154,11 +172,7 @@
             document.getElementById('aloitus-paneeli').style.display = "none";
             document.getElementById('tyo-alue').style.display = "block";
             setInterval(paivita, 1000);
-            
-            // Jos ollaan ID-vaiheessa, kohdistetaan etsimeen
-            if(!d.id || d.id === "") {
-                document.getElementById('id-input').focus();
-            }
+            if(!d.id) kaynnistaSkanneri();
         }
     }
 
