@@ -8,22 +8,15 @@
         .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; }
         body { font-family: sans-serif; text-align: center; padding: 10px; background: #f0f2f5; margin: 0; }
         
-        /* Mittarit */
         .mittari-alue { display: flex; justify-content: space-around; background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .mittari-arvo { font-family: monospace; font-size: 1.4rem; font-weight: bold; color: #007bff; }
         .mittari-otsikko { font-size: 0.8rem; color: #666; text-transform: uppercase; }
 
-        /* Raportti-ikkuna */
         #raportti-alue { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; overflow-y: auto; padding: 20px; box-sizing: border-box; text-align: left; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border-bottom: 1px solid #ddd; padding: 8px; font-size: 0.9rem; }
-        th { background: #f8f9fa; }
-
-        .btn-raportti { background: #6c757d; color: white; margin-bottom: 10px; }
-        .btn-sulje { background: #333; color: white; margin-top: 20px; }
         
-        /* Lomakkeet ja painikkeet */
-        input, select { width: 100%; padding: 12px; box-sizing: border-box; font-size: 1.1rem; border-radius: 8px; border: 2px solid #ddd; margin-bottom: 10px; }
+        input { width: 100%; padding: 12px; box-sizing: border-box; font-size: 1.1rem; border-radius: 8px; border: 2px solid #ddd; margin-bottom: 10px; }
         button { width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 5px; }
         .btn-aloita { background: #28a745; color: white; padding: 25px; }
         .btn-tallenna { background: #007bff; color: white; }
@@ -49,7 +42,7 @@
     <button id="aloita-nappi" class="btn-aloita" onclick="aloitaVuoro()">ALOITA TYÖVUORO 🚀</button>
 
     <div id="tyo-alue" style="display:none;">
-        <button class="btn-raportti" onclick="naytaRaportti()">AVAA RAPORTTI 📊</button>
+        <button style="background:#6c757d; color:white;" onclick="naytaRaportti()">AVAA RAPORTTI 📊</button>
         
         <div id="skannaus-alue">
             <input type="text" id="id-syotto" placeholder="Syötä ID (6 numeroa)" oninput="tarkistaId(this.value); tallennaLuonnos()">
@@ -58,11 +51,11 @@
             </div>
         </div>
 
-        <div id="vaihelomake" style="display:none; text-align: left; background: white; padding: 15px; border-radius: 10px;">
+        <div id="vaihelomake" style="display:none; text-align: left; background: white; padding: 15px; border-radius: 10px; margin-top:10px;">
             <label>Asetusaika (min):</label>
             <input type="number" id="asetusaika" oninput="tallennaLuonnos()">
             <label>Taivutusaika (min.sek):</label>
-            <input type="text" id="taivutusaika" oninput="tallennaLuonnos()">
+            <input type="text" id="taivutusaika" placeholder="esim. 2.30" oninput="tallennaLuonnos()">
             <label>Muu vaihe ja aika:</label>
             <input type="text" id="muu-vaihe-nimi" placeholder="Vaiheen nimi" oninput="tallennaLuonnos()">
             <input type="text" id="muu-vaihe-aika" placeholder="min.sek" oninput="tallennaLuonnos()">
@@ -75,38 +68,40 @@
     <div id="raportti-alue">
         <h2>Päivän kortit 📝</h2>
         <table id="vuoro-taulukko">
-            <thead><tr><th>ID</th><th>Laji</th><th>Jout.</th></tr></thead>
+            <thead><tr><th>ID</th><th>Laji</th><th>Min</th></tr></thead>
             <tbody></tbody>
         </table>
-
         <h2 style="margin-top:30px;">Palkkajakso 📅</h2>
         <div id="jakso-yhteenveto"></div>
-
-        <button class="btn-sulje" onclick="suljeRaportti()">SULJE RAPORTTI ✖️</button>
-        <button style="background:#ffc107; color:black; margin-top:10px;" onclick="nollaaKokoJakso()">NOLLAA JAKSON HISTORIA ⚠️</button>
+        <button style="background:#333; color:white;" onclick="suljeRaportti()">SULJE RAPORTTI ✖️</button>
+        <button style="background:#ffc107; color:black; margin-top:20px;" onclick="nollaaKokoJakso()">NOLLAA JAKSON HISTORIA ⚠️</button>
     </div>
 
 <script>
     let aloitusAikaleima = null;
+    let kelloInterval = null;
     let vuoroTavoiteMin = 0;
     let vuoroKortit = [];
     let jaksoData = JSON.parse(localStorage.getItem('sarmaysJakso')) || { tavoiteMin: 0, todellisetSek: 0 };
 
-    // Tuplakäytön esto
+    // Estetään tuplakäyttö
     localStorage.setItem('sarmays_aktiivinen', Date.now());
     window.addEventListener('storage', (e) => {
         if (e.key === 'sarmays_aktiivinen') {
             alert("Ohjelma on jo auki toisessa välilehdessä!");
-            document.body.innerHTML = "<h1>Käytä vain yhtä välilehteä kerrallaan.</h1>";
+            document.body.innerHTML = "<h1>Käytä vain yhtä välilehteä.</h1>";
         }
     });
 
     function aloitaVuoro() {
+        console.log("Vuoro aloitettu"); // Honorin debuggausta varten
         new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{});
+        
         aloitusAikaleima = Date.now();
         document.getElementById('aloita-nappi').style.display = "none";
         document.getElementById('tyo-alue').style.display = "block";
-        setInterval(paivitaNaytto, 60000); // Päivitys minuutin välein
+        
+        kelloInterval = setInterval(paivitaNaytto, 1000); // Kello sekunneittain, joutuisuus kerran minuutissa paivitaNaytto-sisällä
         paivitaNaytto();
         tallennaLuonnos();
     }
@@ -117,10 +112,11 @@
             document.getElementById('laji-lisa-alue').style.display = "block";
             document.getElementById('laji-syotto').focus();
             new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(()=>{});
+            tallennaLuonnos();
         }
     }
 
-    // Enter-tuki lajimerkille
+    // Enter-kuuntelija lajimerkille
     document.getElementById('laji-syotto').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             document.getElementById('skannaus-alue').style.display = "none";
@@ -130,8 +126,79 @@
         }
     });
 
+    function muunnaMin(val) {
+        if (!val) return 0;
+        let p = val.toString().replace(',', '.').split('.');
+        let m = parseInt(p[0]) || 0;
+        let s = parseInt(p[1]) || 0;
+        return m + (s / 60);
+    }
+
     function tallennaKortti() {
         const id = document.getElementById('id-syotto').value;
         const laji = document.getElementById('laji-syotto').value;
         const asetus = parseFloat(document.getElementById('asetusaika').value) || 0;
-        const tavoite = asetus + muunnaMin(document.getElementById('taivutusaika').value) + muunnaMin(document.getElementById
+        const tavoite = asetus + muunnaMin(document.getElementById('taivutusaika').value) + muunnaMin(document.getElementById('muu-vaihe-aika').value);
+        
+        vuoroTavoiteMin += tavoite;
+        vuoroKortit.push({ id, laji, tavoite });
+
+        // Palautus skannaukseen
+        document.getElementById('skannaus-alue').style.display = "block";
+        document.getElementById('vaihelomake').style.display = "none";
+        document.getElementById('id-syotto').disabled = false;
+        document.getElementById('id-syotto').value = "";
+        document.getElementById('laji-syotto').value = "";
+        document.getElementById('laji-lisa-alue').style.display = "none";
+        
+        paivitaNaytto();
+        tallennaLuonnos();
+    }
+
+    function paivitaNaytto() {
+        if (!aloitusAikaleima) return;
+        let kulunutSek = Math.floor((Date.now() - aloitusAikaleima) / 1000);
+        document.getElementById('tyoaika-display').innerText = new Date(kulunutSek * 1000).toISOString().substr(11, 8);
+        
+        // Joutuisuus lasketaan vain jos kortteja on valmiina
+        if (vuoroKortit.length > 0) {
+            let vJout = (vuoroTavoiteMin / 60) / (kulunutSek / 3600);
+            document.getElementById('vuoro-joutuisuus').innerText = vJout.toFixed(2);
+            
+            let jTunnitTotal = (jaksoData.todellisetSek + kulunutSek) / 3600;
+            let jJout = ((jaksoData.tavoiteMin + vuoroTavoiteMin) / 60) / jTunnitTotal;
+            document.getElementById('jakso-joutuisuus').innerText = jJout.toFixed(2);
+        }
+    }
+
+    function tallennaLuonnos() {
+        const tila = {
+            id: document.getElementById('id-syotto').value,
+            idLukittu: document.getElementById('id-syotto').disabled,
+            laji: document.getElementById('laji-syotto').value,
+            asetus: document.getElementById('asetusaika').value,
+            taivutus: document.getElementById('taivutusaika').value,
+            aloitus: aloitusAikaleima,
+            lomakeAuki: document.getElementById('vaihelomake').style.display === 'block',
+            kortit: vuoroKortit,
+            tavoiteMin: vuoroTavoiteMin
+        };
+        localStorage.setItem('sarmaysLuonnos', JSON.stringify(tila));
+    }
+
+    function tarkistaTila() {
+        const data = JSON.parse(localStorage.getItem('sarmaysLuonnos'));
+        if (!data || !data.aloitus) return;
+
+        aloitusAikaleima = data.aloitus;
+        vuoroKortit = data.kortit || [];
+        vuoroTavoiteMin = data.tavoiteMin || 0;
+        
+        document.getElementById('aloita-nappi').style.display = "none";
+        document.getElementById('tyo-alue').style.display = "block";
+        
+        document.getElementById('id-syotto').value = data.id || "";
+        if (data.idLukittu) {
+            document.getElementById('id-syotto').disabled = true;
+            document.getElementById('laji-lisa-alue').style.display = "block";
+            document
