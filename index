@@ -2,240 +2,149 @@
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Työaikakirjaus v2.3.3</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <title>Työajan seuranta v2.7</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 15px; margin: 0; display: flex; justify-content: center; }
-        #app-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        .version { color: #ff0000; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        /* Versio-nro ensimmäisellä rivillä eri värisenä */
+        .version-tag { color: #ff8c00; font-weight: bold; margin-bottom: 10px; }
         
-        #toggle-shift-btn { width: 100%; padding: 20px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.2em; margin-bottom: 15px; }
-        .btn-start { background: #007bff; color: white; }
-        .btn-stop { background: #dc3545; color: white; }
-
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
-        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
-        .stat-value { font-size: 20px; font-weight: bold; }
-
-        #main-ui { opacity: 0.2; pointer-events: none; transition: 0.4s; }
-        #main-ui.active { opacity: 1; pointer-events: auto; }
-
-        .input-box { margin-bottom: 15px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 18px; transition: 0.2s; }
-        input#work-id.success { border: 2px solid #27ae60; background: #f1f9f4; }
-        
-        #scan-btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 10px 0; }
-        #interactive { width: 100%; height: 200px; background: #000; display: none; border-radius: 10px; margin-top: 10px; overflow: hidden; }
-        
-        #history-list { margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px; max-height: 200px; overflow-y: auto; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
-
-        #reset-link { color: #999; background: none; border: none; width: 100%; margin-top: 20px; text-decoration: underline; cursor: pointer; font-size: 13px; }
+        body { font-family: sans-serif; display: flex; justify-content: center; padding: 20px; background: #f4f4f4; }
+        #app-card { 
+            background: white; padding: 30px; border-radius: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px;
+            border: 4px solid #ccc; transition: border-color 0.3s; text-align: center;
+        }
+        input { width: 80%; padding: 15px; font-size: 1.2rem; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; }
+        input:focus { outline: none; border-color: #ffd700; } /* Keltainen reuna syötettäessä */
+        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; margin: 5px; }
+        .btn-next { background: #4CAF50; color: white; width: 80%; }
+        .btn-skip { background: #ddd; color: #333; }
+        .btn-reset { background: #f44336; color: white; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     </style>
 </head>
 <body>
 
-<div id="app-container">
-    <div class="version">v2.3.3 (Verified Build)</div>
+<div id="app-card">
+    <div class="version-tag">Versio 2.7 🟠</div>
     
-    <button id="toggle-shift-btn" class="btn-start" onclick="handleShiftToggle()">▶ ALOITA TYÖVUORO</button>
-
-    <div class="dashboard">
-        <div class="stat-card">
-            <div class="stat-label">Työaika</div>
-            <div id="timer-display" class="stat-value">00:00</div>
+    <div id="ui-content">
         </div>
-        <div class="stat-card">
-            <div class="stat-label">Yhteensä</div>
-            <div id="total-units" class="stat-value">0</div>
-        </div>
-    </div>
-
-    <div id="main-ui">
-        <div id="interactive"></div>
-        <button id="scan-btn" onclick="toggleCam()">📷 SKANNAA TYÖKORTTI</button>
-
-        <div class="input-box">
-            <label>Työkortin ID (6 numeroa):</label>
-            <input type="text" id="work-id" oninput="validateID()" maxlength="6" inputmode="numeric" placeholder="Syötä ID...">
-        </div>
-
-        <div class="input-box">
-            <label>Valmistetut yksiköt:</label>
-            <input type="number" id="current-units" placeholder="Määrä...">
-            <button onclick="submitEntry()" style="margin-top:10px; background:#007bff; color:white; border:none; padding:12px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;">LISÄÄ LASKURIIN</button>
-        </div>
-
-        <div id="history-list">
-            <b>Viimeisimmät kirjaukset:</b>
-            <div id="history-items"></div>
-        </div>
-
-        <button id="reset-link" onclick="askReset()">Haluatko varmasti nollata koko jakson historian</button>
-    </div>
 </div>
 
 <script>
-    let shiftActive = false;
-    let startTime;
-    let timerInterval;
-    let camActive = false;
-    let totalUnits = 0;
-    let historyEntries = [];
-
-    // --- 1. ID VALIDATION & AUTOMATION ---
-    function validateID() {
-        const idInput = document.getElementById('work-id');
-        idInput.value = idInput.value.replace(/\D/g, ''); // Estä muut kuin numerot
-        
-        if (idInput.value.length === 6) {
-            idInput.classList.add('success');
-            playBeep(1200, 0.1);
-            document.getElementById('current-units').focus();
-        } else {
-            idInput.classList.remove('success');
-        }
+// --- 1. TUPLALATAUKSEN ESTO 🔒 ---
+const lockChannel = new BroadcastChannel('sovellus_lukitus');
+lockChannel.onmessage = (e) => {
+    if (e.data === 'ping') lockChannel.postMessage('pong');
+    if (e.data === 'pong') {
+        alert("Sovellus on jo auki toisessa välilehdessä!");
+        window.close();
+        document.body.innerHTML = "<h1>Pääsy estetty: Tuplalataus</h1>";
     }
+};
+lockChannel.postMessage('ping');
 
-    // --- 2. COUNTER LOGIC ---
-    function submitEntry() {
-        const id = document.getElementById('work-id').value;
-        const units = parseInt(document.getElementById('current-units').value);
+// --- 2. TIETORAKENNE 📦 ---
+let tyovaiheTiedot = {
+    id: "",
+    asetusaika: 0,
+    taivutusaika: 0,
+    muutVaiheet: []
+};
 
-        if (id.length === 6 && !isNaN(units) && units > 0) {
-            totalUnits += units;
-            historyEntries.unshift({id, units, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})});
-            
-            updateUI();
-            saveData();
-            
-            // Clear inputs for next entry
-            document.getElementById('work-id').value = '';
-            document.getElementById('current-units').value = '';
-            document.getElementById('work-id').classList.remove('success');
-            document.getElementById('work-id').focus();
-        } else {
-            alert("Varmista, että ID on 6 numeroa ja määrä on vähintään 1.");
-        }
+let vaihe = 1; // 1: ID, 2: Asetus, 3: Taivutus, 4: Yhteenveto
+
+// --- 3. TOIMINNALLISUUS ⚙️ ---
+function paivitaUI() {
+    const container = document.getElementById('ui-content');
+    const card = document.getElementById('app-card');
+    
+    if (vaihe === 1) {
+        card.style.borderColor = "#ccc";
+        container.innerHTML = `
+            <h2>Skannaa Lajimerkki 📸</h2>
+            <form onsubmit="tallennaVaihe(event, 'id')">
+                <input type="number" id="input-field" placeholder="6-numeroinen ID" required autofocus>
+                <button class="btn-next">VALMIS</button>
+            </form>`;
+    } 
+    else if (vaihe === 2) {
+        card.style.borderColor = "#ffd700"; // Keltainen reuna asetukselle
+        container.innerHTML = `
+            <h2>Asetusaika (min) ⏱️</h2>
+            <form onsubmit="tallennaVaihe(event, 'asetusaika')">
+                <input type="number" id="input-field" placeholder="0" autofocus>
+                <button class="btn-next">VALMIS</button>
+                <button type="button" class="btn-skip" onclick="seuraavaVaihe()">OHITA ⏭️</button>
+            </form>`;
     }
-
-    function updateUI() {
-        document.getElementById('total-units').innerText = totalUnits;
-        const listDiv = document.getElementById('history-items');
-        listDiv.innerHTML = historyEntries.slice(0, 5).map(item => `
-            <div class="history-item">
-                <span>ID: ${item.id}</span>
-                <span><b>${item.units} kpl</b></span>
-                <span style="color:#999">${item.time}</span>
-            </div>
-        `).join('');
+    else if (vaihe === 3) {
+        card.style.borderColor = "#2196F3"; // Sinertävä taivutukselce
+        container.innerHTML = `
+            <h2>Taivutusaika (min) 🔄</h2>
+            <form onsubmit="tallennaVaihe(event, 'taivutusaika')">
+                <input type="number" id="input-field" placeholder="0" autofocus>
+                <button class="btn-next">VALMIS</button>
+                <button type="button" class="btn-skip" onclick="seuraavaVaihe()">OHITA ⏭️</button>
+            </form>`;
     }
-
-    // --- 3. SHIFT MANAGEMENT ---
-    function handleShiftToggle() {
-        if (!shiftActive) {
-            startShift();
-        } else {
-            if (confirm("Lopetetaanko työvuoro?")) stopShift();
-        }
+    else if (vaihe === 4) {
+        card.style.borderColor = "#4CAF50";
+        naytaYhteenveto(container);
     }
+}
 
-    function startShift() {
-        shiftActive = true;
-        playBeep(880, 0.4); // Aloitusääni
-        
-        const btn = document.getElementById('toggle-shift-btn');
-        btn.innerText = "■ LOPETA VUORO";
-        btn.className = "btn-stop";
-        
-        document.getElementById('main-ui').classList.add('active');
-        startTime = Date.now();
-        timerInterval = setInterval(updateTimer, 1000);
-        loadSaved();
+function tallennaVaihe(event, avain) {
+    event.preventDefault();
+    const val = document.getElementById('input-field').value;
+    tyovaiheTiedot[avain] = val;
+    
+    // Äänimerkki alussa (toiveesi mukaisesti)
+    if (vaihe === 1) new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+    
+    seuraavaVaihe();
+}
+
+function seuraavaVaihe() {
+    vaihe++;
+    paivitaUI();
+}
+
+function naytaYhteenveto(container) {
+    let rows = `
+        <tr><td>ID</td><td>${tyovaiheTiedot.id}</td><td><button onclick="muokkaa(1)">✏️</button></td></tr>
+        <tr><td>Asetus</td><td>${tyovaiheTiedot.asetusaika} min</td><td><button onclick="muokkaa(2)">✏️</button></td></tr>
+        <tr><td>Taivutus</td><td>${tyovaiheTiedot.taivutusaika} min</td><td><button onclick="muokkaa(3)">✏️</button></td></tr>
+    `;
+    
+    container.innerHTML = `
+        <h2>Yhteenveto 📊</h2>
+        <table>${rows}</table>
+        <button class="btn-next" onclick="tallennaKaikki()">TALLENNA ✅</button>
+        <button class="btn-reset" onclick="nollaaKaikki()">NOLLAA JAKSO ⚠️</button>
+    `;
+}
+
+function muokkaa(v) {
+    vaihe = v;
+    paivitaUI();
+}
+
+function nollaaKaikki() {
+    if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
+        location.reload();
     }
+}
 
-    function stopShift() {
-        shiftActive = false;
-        clearInterval(timerInterval);
-        
-        const btn = document.getElementById('toggle-shift-btn');
-        btn.innerText = "▶ ALOITA TYÖVUORO";
-        btn.className = "btn-start";
-        
-        document.getElementById('main-ui').classList.remove('active');
-        if(camActive) toggleCam();
-    }
+function tallennaKaikki() {
+    alert("Tiedot tallennettu objektiin: " + JSON.stringify(tyovaiheTiedot));
+    // Tässä kohtaa tiedot lähetettäisiin eteenpäin
+}
 
-    function updateTimer() {
-        const diff = Date.now() - startTime;
-        const m = Math.floor(diff / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        document.getElementById('timer-display').innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-
-    function playBeep(freq, duration) {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            osc.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
-        } catch(e) { console.log("Audio not supported yet."); }
-    }
-
-    // --- 4. CAMERA & STORAGE ---
-    function toggleCam() {
-        const div = document.getElementById('interactive');
-        if (camActive) {
-            Quagga.stop();
-            div.style.display = 'none';
-            camActive = false;
-        } else {
-            div.style.display = 'block';
-            Quagga.init({
-                inputStream: { name: "Live", type: "LiveStream", target: div, constraints: { facingMode: "environment" } },
-                decoder: { readers: ["code_128_reader", "ean_reader"] }
-            }, (err) => {
-                if(err) { alert("Kamera-virhe: " + err); return; }
-                Quagga.start();
-                camActive = true;
-            });
-        }
-    }
-
-    Quagga.onDetected((data) => {
-        const code = data.codeResult.code.replace(/\D/g, '').substring(0,6);
-        document.getElementById('work-id').value = code;
-        validateID();
-        toggleCam();
-    });
-
-    function saveData() {
-        localStorage.setItem('v233_save', JSON.stringify({totalUnits, historyEntries}));
-    }
-
-    function loadSaved() {
-        const saved = localStorage.getItem('v233_save');
-        if (saved) {
-            const data = JSON.parse(saved);
-            totalUnits = data.totalUnits || 0;
-            historyEntries = data.historyEntries || [];
-            updateUI();
-        }
-    }
-
-    function askReset() {
-        if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
-            localStorage.removeItem('v233_save');
-            location.reload();
-        }
-    }
+// Käynnistys
+paivitaUI();
 </script>
 
 </body>
 </html>
-
