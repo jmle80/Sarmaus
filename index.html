@@ -3,28 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Särmäys Pro v3.7.4</title>
+    <title>Särmäys Pro v3.7.5</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Vakioidaan ulkoasu kaikille näkymille */
         .version-tag { color: #ff8c00; font-weight: bold; padding: 10px; font-size: 0.8rem; }
         body { font-family: sans-serif; margin: 0; background: #f0f2f5; display: flex; justify-content: center; }
         #app-card { background: white; width: 100%; max-width: 500px; min-height: 100vh; padding: 20px; box-sizing: border-box; text-align: center; position: relative; }
         #tyoaika-kello { position: absolute; top: 10px; right: 10px; background: #222; color: #0f0; padding: 8px 15px; border-radius: 6px; font-family: monospace; font-size: 1.2rem; }
         
-        h2 { margin-top: 40px; color: #333; }
         button { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 10px; border: none; margin: 10px 0; font-weight: bold; cursor: pointer; }
         .btn-action { background: #007bff; color: white; }
         .btn-end { background: #dc3545; color: white; }
         
-        /* Syöttökenttien yhtenäinen tyyli */
         input { width: 100%; padding: 15px; font-size: 1.4rem; border-radius: 8px; border: 2px solid #007bff; box-sizing: border-box; margin: 10px 0; text-align: center; }
 
-        /* Skannerin koon vakiointi molempiin ikkunoihin */
+        /* Tiukka kokorajoitus etsimelle */
         #reader { 
-            width: 250px; 
-            height: 100px; 
-            margin: 15px auto; 
+            width: 250px !important; 
+            height: 120px !important; 
+            margin: 10px auto; 
             border-radius: 12px; 
             overflow: hidden; 
             border: 2px solid #ddd; 
@@ -32,17 +29,15 @@
         }
         #reader video { 
             object-fit: cover !important; 
-            width: 100% !important; 
-            height: 100% !important; 
+            width: 250px !important; 
+            height: 120px !important; 
         }
-        /* Piilotetaan kirjaston omat elementit */
-        #reader__status_span, #reader__dashboard { display: none !important; }
     </style>
 </head>
 <body>
 
 <div id="app-card">
-    <div class="version-tag">Versio 3.7.4 🟠</div>
+    <div class="version-tag">Versio 3.7.5 🟠</div>
     <div id="tyoaika-kello" style="display:none;">00:00:00</div>
     <div id="ui-content">Ladataan...</div>
 </div>
@@ -79,7 +74,6 @@ function aloitaVuoro() {
     naytaSkannaus();
 }
 
-// Ensimmäinen ikkuna: ID-syöttö
 function naytaSkannaus() {
     document.getElementById('ui-content').innerHTML = `
         <h2>Syötä ID ⚡</h2>
@@ -90,9 +84,82 @@ function naytaSkannaus() {
     `;
 }
 
-// Toinen ikkuna: Lajimerkki-syöttö (samalla tyylillä)
+function tarkistaID(el) {
+    if (el.value.length === 6) {
+        nykyinenID = el.value;
+        pysaytaSkanneri(naytaLajimerkki);
+    }
+}
+
 function naytaLajimerkki() {
     document.getElementById('ui-content').innerHTML = `
         <h2>Syötä Lajimerkki 🏷️</h2>
+        <p>ID: ${nykyinenID}</p>
         <div id="reader"></div>
-        <input type="text" id="laji-input" placeholder="
+        <input type="text" id="laji-input" placeholder="Skannaa tai kirjoita" 
+               onfocus="kaynnistaSkanneri('LAJI')" autofocus>
+        <button class="btn-action" onclick="tallennaKaikki()">TALLENNA VAIHE ✅</button>
+    `;
+}
+
+function kaynnistaSkanneri(kohde) {
+    if (html5QrCode && html5QrCode.getState() === 2) return;
+    
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 20, qrbox: { width: 200, height: 80 }, aspectRatio: 2.1 },
+        (txt) => { 
+            if (kohde === 'ID') {
+                if(txt.length === 6) { 
+                    nykyinenID = txt; 
+                    pysaytaSkanneri(naytaLajimerkki); 
+                }
+            } else {
+                // Lajimerkin kohdalla hyväksytään kaikki koodit suoraan
+                document.getElementById('laji-input').value = txt;
+                pysaytaSkanneri(() => {});
+            }
+        }
+    ).catch(err => console.error(err));
+}
+
+function pysaytaSkanneri(callback) {
+    if (html5QrCode && html5QrCode.getState() === 2) {
+        html5QrCode.stop().then(callback).catch(() => callback());
+    } else {
+        callback();
+    }
+}
+
+function tallennaKaikki() {
+    const laji = document.getElementById('laji-input').value;
+    const kesto = document.getElementById('tyoaika-kello').innerText;
+    paivanKortit.push({ id: nykyinenID, laji: laji, kesto: kesto });
+    localStorage.setItem('sarmaus_historia', JSON.stringify(paivanKortit));
+    alert("Tallennettu!");
+    pysaytaSkanneri(naytaSkannaus);
+}
+
+function lopetaVuoro() {
+    if(confirm("Lopetetaanko vuoro?")) {
+        clearInterval(tyoaikaInterval);
+        localStorage.removeItem('aloitus_aikaleima');
+        aloitusAikaleima = null;
+        pysaytaSkanneri(naytaAloitus);
+    }
+}
+
+window.onload = function() {
+    if (aloitusAikaleima) {
+        aloitusAikaleima = parseInt(aloitusAikaleima);
+        document.getElementById('tyoaika-kello').style.display = "block";
+        tyoaikaInterval = setInterval(paivitaKello, 1000);
+        naytaSkannaus();
+    } else {
+        naytaAloitus();
+    }
+};
+</script>
+</body>
+</html>
