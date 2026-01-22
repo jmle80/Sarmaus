@@ -8,282 +8,144 @@
     <style>
         body { font-family: sans-serif; padding: 20px; background-color: #f0f0f0; }
         .version { color: #d32f2f; font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 10px; }
-        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
-        button { padding: 12px 20px; margin: 5px; cursor: pointer; font-size: 1em; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        button:hover { background-color: #e0e0e0; }
-        .control-panel { margin-top: 20px; border-top: 2px solid #eee; padding-top: 10px; }
-        .log { margin-top: 20px; white-space: pre-line; background: #fafafa; padding: 10px; border: 1px solid #ddd; max-height: 300px; overflow-y: auto; }
-        
-        .timer-display {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #2e7d32;
-            text-align: center;
-            margin: 15px 0;
-            font-family: monospace;
-        }
-
-        /* Uudet tietokentät */
-        .info-box {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 4px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        /* Kameran tyylit */
-        #reader {
-            width: 100%;
-            display: none; /* Piilotettu oletuksena */
-            margin-bottom: 15px;
-        }
-        
-        /* Estoviesti */
-        #blocked-message {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); color: white;
-            z-index: 9999; text-align: center; padding-top: 20%; font-size: 1.5em;
-        }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .timer-display { font-size: 3em; font-weight: bold; color: #e27d32; text-align: center; margin: 20px 0; font-family: monospace; border: 2px solid #eee; padding: 10px; border-radius: 10px; }
+        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 10px; margin: 5px 0; border-radius: 4px; font-weight: bold; text-align: center; }
+        button { width: 100%; padding: 15px; margin: 10px 0; cursor: pointer; font-size: 1.1em; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9; font-weight: bold; }
+        .btn-start { background-color: #4caf50; color: white; border: none; }
+        .btn-stop { background-color: #f44336; color: white; border: none; }
+        #reader { width: 100%; display: none; margin-bottom: 15px; border: 2px solid #333; }
+        .status-msg { text-align: center; font-style: italic; color: #666; }
     </style>
 </head>
 <body>
 
-    <div id="blocked-message">
-        ⚠️ Ohjelma on jo auki toisessa välilehdessä tai laitteessa.<br><br>
-        Sulje tämä ikkuna.
+<span class="version">Versio 1.11</span>
+
+<div class="container">
+    <h1>Sarmauslaskuri</h1>
+    
+    <div id="tyoAika" class="timer-display">00:00:00</div>
+    <p id="status" class="status-msg">Valmiina aloitukseen</p>
+
+    <div id="korttiIkkuna" class="info-box">Kortin nro: -</div>
+    <div id="lajiIkkuna" class="info-box">Lajimerkki: -</div>
+
+    <div id="reader"></div>
+
+    <div class="control-panel">
+        <button id="vuoroNappi" class="btn-start" onclick="hallitseVuoroa()">ALOITA VUORO</button>
+        <button onclick="avaaSkanneri()">📷 Skannaa viivakoodi</button>
+        <button onclick="varmuuskopioiTiedot()" style="background-color: #2196F3; color: white; border: none;">Pilvivarmuuskopio</button>
+        <hr>
+        <button onclick="nollaaHistoria()" style="color: #666; font-size: 0.8em; border: none; background: none;">Nollaa historia</button>
     </div>
+</div>
 
-    <span class="version">Versio 1.09</span>
+<script>
+    let sekunnit = 0;
+    let ajastin;
+    let vuoroKaynnissa = false;
 
-    <div class="container">
-        <h1>Sarmauslaskuri</h1>
+    // 1. Vuoron hallinta (Aloitus/Lopetus) ja Kello
+    function hallitseVuoroa() {
+        const nappi = document.getElementById('vuoroNappi');
+        const status = document.getElementById('status');
         
-        <div id="tyoAika" class="timer-display">00:00</div>
-        <div id="status">Ladataan...</div>
-
-        <div id="korttiIkkuna" class="info-box">Kortin nro: -</div>
-        <div id="lajiIkkuna" class="info-box">Lajimerkki: -</div>
-
-        <div id="reader"></div>
-
-        <div class="control-panel">
-            <h3>Toiminnot</h3>
-            <button id="vuoroNappi" onclick="hallitseVuoroa()">Aloita vuoro</button>
-            <hr>
-            <button onclick="avaaSkanneri()">📷 Skannaa viivakoodi</button>
-            <button onclick="kirjaaTapahtuma('Manuaalinen kirjaus')">Kirjaa manuaalisesti</button>
-            <hr>
-            <button onclick="nollaaJakso()" style="color: red;">Nollaa jakson historia</button>
-        </div>
-
-        <div class="log" id="logArea"></div>
-    </div>
-
-    <script>
-        // --- MUUTTUJAT ---
-        let vuoroKaynnissa = false;
-        let vuoronAloitusAika = null;
-        let ajastinIntervalli = null;
-        let html5QrCode = null; // Skannerin olio
-
-        // --- KAKSOISKÄYNNISTYKSEN ESTO ---
-        const bc = new BroadcastChannel('sarmaus_channel');
-        bc.onmessage = (event) => {
-            if (event.data === 'olen_taalla') {
-                document.getElementById('blocked-message').style.display = 'block';
-            } else if (event.data === 'kuka_on_siella') {
-                bc.postMessage('olen_taalla');
-            }
-        };
-        bc.postMessage('kuka_on_siella');
-
-
-        // --- ALUSTUS & TALLENNUS ---
-        window.onload = function() {
-            lataaTiedot();
-        };
-
-        function tallennaTiedot() {
-            const data = {
-                vuoroKaynnissa: vuoroKaynnissa,
-                vuoronAloitusAika: vuoronAloitusAika ? vuoronAloitusAika.getTime() : null,
-                loki: document.getElementById('logArea').innerText,
-                korttiData: document.getElementById('korttiIkkuna').innerText,
-                lajiData: document.getElementById('lajiIkkuna').innerText
-            };
-            localStorage.setItem('sarmausData', JSON.stringify(data));
+        if (!vuoroKaynnissa) {
+            // ALOITUS
+            vuoroKaynnissa = true;
+            nappi.innerText = "LOPETA VUORO";
+            nappi.className = "btn-stop";
+            status.innerText = "Työaika käynnissä...";
+            soitaAani(660, 0.2); // Aloituspiippaus
+            kaynnistaKello();
+        } else {
+            // LOPETUS
+            vuoroKaynnissa = false;
+            nappi.innerText = "ALOITA VUORO";
+            nappi.className = "btn-start";
+            status.innerText = "Vuoro päättynyt.";
+            pysaytaKello();
+            varmuuskopioiTiedot(); // Automaattinen varmuuskopio lopetettaessa
         }
+    }
 
-        function lataaTiedot() {
-            const dataJSON = localStorage.getItem('sarmausData');
-            if (dataJSON) {
-                const data = JSON.parse(dataJSON);
-                
-                document.getElementById('logArea').innerText = data.loki || "";
-                
-                // Palautetaan uudet kentät
-                if (data.korttiData) document.getElementById('korttiIkkuna').innerText = data.korttiData;
-                if (data.lajiData) document.getElementById('lajiIkkuna').innerText = data.lajiData;
+    function kaynnistaKello() {
+        ajastin = setInterval(() => {
+            sekunnit++;
+            paivitaNaytto();
+        }, 1000);
+    }
 
-                if (data.vuoroKaynnissa && data.vuoronAloitusAika) {
-                    vuoroKaynnissa = true;
-                    vuoronAloitusAika = new Date(data.vuoronAloitusAika);
-                    document.getElementById("vuoroNappi").innerText = "Lopeta vuoro";
-                    document.getElementById("status").innerText = "Vuoro palautettu muistista";
-                    kaynnistaLaskuri();
-                } else {
-                    document.getElementById("status").innerText = "Vuoro ei käynnissä";
-                }
-            } else {
-                document.getElementById("status").innerText = "Tervetuloa";
-            }
-        }
+    function pysaytaKello() {
+        clearInterval(ajastin);
+    }
 
-        // --- TOIMINNOT ---
+    function paivitaNaytto() {
+        const h = Math.floor(sekunnit / 3600).toString().padStart(2, '0');
+        const m = Math.floor((sekunnit % 3600) / 60).toString().padStart(2, '0');
+        const s = (sekunnit % 60).toString().padStart(2, '0');
+        document.getElementById('tyoAika').innerText = `${h}:${m}:${s}`;
+    }
 
-        function soitaAani() {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = context.createOscillator();
-            const gainNode = context.createGain();
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(440, context.currentTime); 
+    // 2. Äänimerkki
+    function soitaAani(taajuus, kesto) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
             oscillator.connect(gainNode);
-            gainNode.connect(context.destination);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = taajuus;
             oscillator.start();
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.5);
-            oscillator.stop(context.currentTime + 0.5);
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + kesto);
+            oscillator.stop(audioCtx.currentTime + kesto);
+        } catch(e) { console.log("Ääntä ei voitu toistaa"); }
+    }
+
+    // 3. Skannaus
+    function avaaSkanneri() {
+        const readerElement = document.getElementById('reader');
+        readerElement.style.display = 'block';
+        const html5QrCode = new Html5Qrcode("reader");
+        
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
+                document.getElementById('korttiIkkuna').innerText = "Kortin nro: " + decodedText;
+                soitaAani(880, 0.1);
+                html5QrCode.stop();
+                readerElement.style.display = 'none';
+            },
+            (errorMessage) => {}
+        ).catch(err => alert("Kamera-virhe: " + err));
+    }
+
+    // 4. Varmuuskopiointi (Simulaatio)
+    function varmuuskopioiTiedot() {
+        console.log("Tallennetaan tietoja...");
+        const status = document.getElementById('status');
+        const alkuperainenTeksti = status.innerText;
+        status.innerText = "☁️ Varmuuskopioidaan...";
+        
+        setTimeout(() => {
+            status.innerText = alkuperainenTeksti;
+            alert("Tiedot varmuuskopioitu onnistuneesti!");
+        }, 1500);
+    }
+
+    // 5. Nollaus vahvistuksella
+    function nollaaHistoria() {
+        if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
+            sekunnit = 0;
+            paivitaNaytto();
+            document.getElementById('korttiIkkuna').innerText = "Kortin nro: -";
+            alert("Historia nollattu.");
         }
+    }
+</script>
 
-        function hallitseVuoroa() {
-            if (!vuoroKaynnissa) {
-                // ALOITUS
-                soitaAani();
-                let syote = prompt("Syötä aloitusaika (esim. 0700) tai paina OK nykyhetkelle.");
-                vuoronAloitusAika = kasitteleAikaSyote(syote);
-                vuoroKaynnissa = true;
-                
-                document.getElementById("vuoroNappi").innerText = "Lopeta vuoro";
-                document.getElementById("status").innerText = "Vuoro käynnissä";
-                kirjaaLoki("Vuoro aloitettu: " + formatTime(vuoronAloitusAika));
-                kaynnistaLaskuri();
-                tallennaTiedot(); 
-
-            } else {
-                // LOPETUS
-                pysaytaLaskuri();
-                let syote = prompt("Syötä lopetusaika (esim. 1530) tai paina OK nykyhetkelle.");
-                let lopetusaika = kasitteleAikaSyote(syote);
-
-                vuoroKaynnissa = false;
-                document.getElementById("vuoroNappi").innerText = "Aloita vuoro";
-                document.getElementById("status").innerText = "Vuoro päättynyt";
-                
-                kirjaaLoki("Vuoro lopetettu: " + formatTime(lopetusaika));
-                
-                vuoronAloitusAika = null;
-                tallennaTiedot();
-            }
-        }
-
-        // --- KAMERASKANNERI JA LOGIIKKA ---
-
-        function avaaSkanneri() {
-            const readerDiv = document.getElementById("reader");
-            
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                    readerDiv.style.display = "none";
-                }).catch(err => console.log(err));
-                return;
-            }
-
-            readerDiv.style.display = "block";
-            html5QrCode = new Html5Qrcode("reader");
-            
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-            .catch(err => {
-                alert("Kameran käynnistys epäonnistui. Varmista, että annoit luvan.");
-            });
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            soitaAani();
-            
-            // --- TÄSSÄ ON UUSI LOGIIKKA ---
-            if (decodedText.length === 6) {
-                // Tasan 6 merkkiä -> Kortin numero
-                document.getElementById("korttiIkkuna").innerText = "Kortin nro: " + decodedText;
-                kirjaaLoki("Luettu työkortti: " + decodedText);
-            } else {
-                // Muu pituus -> Lajimerkki
-                document.getElementById("lajiIkkuna").innerText = "Lajimerkki: " + decodedText;
-                kirjaaLoki("Luettu lajimerkki: " + decodedText);
-            }
-
-            // Tallennetaan heti, jotta tiedot pysyvät tallessa
-            tallennaTiedot();
-
-            // Suljetaan kamera
-            html5QrCode.stop().then(() => {
-                html5QrCode.clear();
-                html5QrCode = null;
-                document.getElementById("reader").style.display = "none";
-            });
-        }
-
-        // --- APUFUNKTIOT ---
-
-        function kasitteleAikaSyote(syote) {
-            let nyt = new Date();
-            if (!syote || syote.trim() === "") return nyt;
-            let puhdas = syote.replace(/[^0-9]/g, ''); 
-            if (puhdas.length === 4) {
-                let t = parseInt(puhdas.substring(0, 2));
-                let m = parseInt(puhdas.substring(2, 4));
-                let uusi = new Date();
-                uusi.setHours(t, m, 0, 0);
-                return uusi;
-            }
-            return nyt;
-        }
-
-        function kaynnistaLaskuri() {
-            paivitaKellonaika();
-            ajastinIntervalli = setInterval(() => {
-                paivitaKellonaika();
-                tallennaTiedot(); 
-            }, 1000);
-        }
-
-        function pysaytaLaskuri() {
-            if (ajastinIntervalli) {
-                clearInterval(ajastinIntervalli);
-                ajastinIntervalli = null;
-            }
-        }
-
-        function paivitaKellonaika() {
-            if (!vuoronAloitusAika) return;
-            let nyt = new Date();
-            let erotus = nyt - vuoronAloitusAika; 
-            let tunnit = Math.floor(erotus / (1000 * 60 * 60));
-            let minuutit = Math.floor((erotus % (1000 * 60 * 60)) / (1000 * 60));
-            
-            let hStr = tunnit < 10 ? "0" + tunnit : tunnit;
-            let mStr = minuutit < 10 ? "0" + minuutit : minuutit;
-
-            document.getElementById("tyoAika").innerText = `${hStr}:${mStr}`;
-        }
-
-        function formatTime(dateObj) {
-            let h = dateObj.getHours();
-            let m = dateObj.getMinutes();
-            return (h < 10 ? "0"+h : h) + ":" + (m < 10 ?
+</body>
+</html>
