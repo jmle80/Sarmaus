@@ -42,11 +42,12 @@
         .history-container { margin-top: 20px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
         td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .timestamp-label { font-size: 0.85em; color: #666; font-weight: normal; }
     </style>
 </head>
 <body onload="tarkistaPalautus()">
 
-<span class="version">Versio 1.46</span>
+<span class="version">Versio 1.47</span>
 
 <div class="container">
     <h1>Press Brake Pro</h1>
@@ -128,6 +129,8 @@
     }
 
     function tallennaKorttiNyt() {
+        const nyt = new Date();
+        const kello = nyt.getHours().toString().padStart(2,'0') + ":" + nyt.getMinutes().toString().padStart(2,'0');
         const aVal = poimiNumero(document.getElementById('asetusBox').innerText);
         const tVal = poimiNumero(document.getElementById('taivutusBox').innerText);
         const mVal = poimiNumero(document.getElementById('muutBox').innerText);
@@ -136,7 +139,8 @@
         let h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
         h.unshift({
             id: Date.now(),
-            pvm: new Date().toLocaleDateString('fi-FI'),
+            pvm: nyt.toLocaleDateString('fi-FI'),
+            klo: kello,
             kortti: document.getElementById('korttiBox').innerText.replace('KORTIN NRO: ', ''),
             lajike: document.getElementById('lajiBox').innerText.replace('LAJIMERKKI: ', ''),
             asetus: document.getElementById('asetusBox').innerText,
@@ -148,36 +152,36 @@
         nollaaHistoria(false); paivitaHistoriaNakyma();
     }
 
-    function avaaVuoroKysely() {
-        const nyt = new Date();
-        const h = nyt.getHours().toString().padStart(2,'0'), m = nyt.getMinutes().toString().padStart(2,'0');
-        syote = h + m;
-        aktiivinenKentta = vuoroKaynnissa ? 'lopetus' : 'aloitus';
-        avaaKeypad(aktiivinenKentta);
-        document.getElementById('keypadInput').innerText = h + ":" + m;
+    function paivitaHistoriaNakyma() {
+        const h = JSON.parse(localStorage.getItem('pb_historia')||"[]");
+        const filter = document.getElementById('historiaHaku').value.toLowerCase();
+        let html = "";
+        h.filter(i => i.kortti.toLowerCase().includes(filter) || i.lajike.toLowerCase().includes(filter)).forEach((i, idx) => {
+            html += `<table style="width:100%; border-bottom:1px solid #ddd" onclick="naytaDetails(${idx})">
+                <tr>
+                    <td style="width:70%">
+                        <b>${i.kortti}</b> <span class="timestamp-label">(${i.klo})</span><br>
+                        <small>${i.lajike}</small>
+                    </td>
+                    <td style="text-align:right; font-weight:bold; color:#e27d32;">${i.yhteisaika}</td>
+                </tr>
+            </table>`;
+        });
+        document.getElementById('historyContent').innerHTML = html;
     }
 
-    function hallitseVuoroa(aikaSyote) {
-        let nyt = new Date(), h = parseInt(aikaSyote.substring(0, 2)), m = parseInt(aikaSyote.substring(2, 4));
-        if (!vuoroKaynnissa) {
-            new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{});
-            let aloitus = new Date(); aloitus.setHours(h, m, 0, 0);
-            aloitusLeimaUTC = aloitus.getTime();
-            sekunnit = Math.max(0, Math.floor((nyt - aloitus) / 1000));
-            vuoroKaynnissa = true;
-            localStorage.setItem('pb_tila', 'kaynnissa');
-            localStorage.setItem('pb_leima', Date.now());
-            localStorage.setItem('pb_sekunnit', sekunnit);
-            localStorage.setItem('pb_aloitusUTC', aloitusLeimaUTC);
-            kaynnistaKello();
-        } else {
-            if(confirm(`Vuoro päättyy klo ${h}:${m.toString().padStart(2,'0')}. Luodaanko raportti?`)) {
-                vuoroKaynnissa = false; clearInterval(ajastin);
-                localStorage.setItem('pb_tila', 'lopetettu');
-                luoLoppuRaportti(); nollaaHistoria(false);
-            }
-        }
-        paivitaVuoroNakyma(); paivitaJoutuisuus();
+    function naytaDetails(idx) {
+        const h = JSON.parse(localStorage.getItem('pb_historia'))[idx];
+        document.getElementById('detailContent').innerHTML = `
+            <b>TALLENNETTU:</b> ${h.pvm} klo ${h.klo}<br>
+            <b>LAJIMERKKI:</b> ${h.lajike}<br>
+            <b>ASETUS:</b> ${h.asetus}<br>
+            <b>TAIVUTUS:</b> ${h.taivutus}<br>
+            <b>MUUT:</b> ${h.muut}<br><hr>
+            <b>SUMMA:</b> ${h.yhteisaika}
+        `;
+        document.getElementById('poistoNappi').onclick = () => { if(confirm("Poistetaanko?")){ let hist = JSON.parse(localStorage.getItem('pb_historia')); hist.splice(idx,1); localStorage.setItem('pb_historia', JSON.stringify(hist)); document.getElementById('detailsOverlay').style.display='none'; paivitaHistoriaNakyma(); } };
+        document.getElementById('detailsOverlay').style.display = 'flex';
     }
 
     function kaynnistaKello() {
@@ -244,8 +248,40 @@
         document.getElementById('yleisInput').value = ""; setTimeout(() => document.getElementById('yleisInput').focus(), 100);
     }
 
+    function hallitseVuoroa(aikaSyote) {
+        let nyt = new Date(), h = parseInt(aikaSyote.substring(0, 2)), m = parseInt(aikaSyote.substring(2, 4));
+        if (!vuoroKaynnissa) {
+            new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{});
+            let aloitus = new Date(); aloitus.setHours(h, m, 0, 0);
+            aloitusLeimaUTC = aloitus.getTime();
+            sekunnit = Math.max(0, Math.floor((nyt - aloitus) / 1000));
+            vuoroKaynnissa = true;
+            localStorage.setItem('pb_tila', 'kaynnissa');
+            localStorage.setItem('pb_leima', Date.now());
+            localStorage.setItem('pb_sekunnit', sekunnit);
+            localStorage.setItem('pb_aloitusUTC', aloitusLeimaUTC);
+            kaynnistaKello();
+        } else {
+            if(confirm(`Vuoro päättyy klo ${h}:${m.toString().padStart(2,'0')}. Luodaanko raportti?`)) {
+                vuoroKaynnissa = false; clearInterval(ajastin);
+                localStorage.setItem('pb_tila', 'lopetettu');
+                luoLoppuRaportti(); nollaaHistoria(false);
+            }
+        }
+        paivitaVuoroNakyma(); paivitaJoutuisuus();
+    }
+
+    function avaaVuoroKysely() {
+        const nyt = new Date();
+        const h = nyt.getHours().toString().padStart(2,'0'), m = nyt.getMinutes().toString().padStart(2,'0');
+        syote = h + m;
+        aktiivinenKentta = vuoroKaynnissa ? 'lopetus' : 'aloitus';
+        avaaKeypad(aktiivinenKentta);
+        document.getElementById('keypadInput').innerText = h + ":" + m;
+    }
+
     function nollaaHistoria(kaikki) {
-        if (kaikki && !confirm("Nollataanko koko muisti ja historia?")) return;
+        if (kaikki && !confirm("Haluatko varmasti nollata koko jakson historian?")) return;
         ['pb_kortti', 'pb_lajike', 'pb_asetus', 'pb_taivutus', 'pb_muut', 'pb_sekunnit', 'pb_leima', 'pb_aloitusUTC'].forEach(k => localStorage.removeItem(k));
         if(kaikki) { localStorage.removeItem('pb_historia'); localStorage.removeItem('pb_tila'); location.reload(); }
         else { 
@@ -264,8 +300,6 @@
     function paivitaJoutuisuus() { if (!vuoroKaynnissa) { resetJoutuisuus(); return; } const t = tavoiteAsetus + tavoiteTaivutus; if (t <= 0) { resetJoutuisuus(); return; } const p = Math.round((sekunnit/60 / t) * 100); const ik = document.getElementById('joutuisuusIkkuna'); document.getElementById('jProsentti').innerText = p + "%"; if (p <= 80) { ik.className = "j-tehokas"; document.getElementById('jTila').innerText = "TEHOKAS"; } else if (p <= 100) { ik.className = "j-varoitus"; document.getElementById('jTila').innerText = "VAROITUS"; } else { ik.className = "j-hidas"; document.getElementById('jTila').innerText = "HIDAS"; } }
     function resetJoutuisuus() { document.getElementById('joutuisuusIkkuna').className = ""; document.getElementById('jTila').innerText = "ODOTTAA"; document.getElementById('jProsentti').innerText = "0%"; }
     function suljeKeypad() { document.getElementById('keypadOverlay').style.display = 'none'; }
-    function paivitaHistoriaNakyma() { const h = JSON.parse(localStorage.getItem('pb_historia')||"[]"); const filter = document.getElementById('historiaHaku').value.toLowerCase(); let html = ""; h.filter(i => i.kortti.toLowerCase().includes(filter) || i.lajike.toLowerCase().includes(filter)).forEach((i, idx) => { html += `<table style="width:100%; border-bottom:1px solid #ddd" onclick="naytaDetails(${idx})"><tr><td style="width:70%"><b>${i.kortti}</b><br><small>${i.lajike}</small></td><td style="text-align:right; font-weight:bold; color:#e27d32;">${i.yhteisaika}</td></tr></table>`; }); document.getElementById('historyContent').innerHTML = html; }
-    function naytaDetails(idx) { const h = JSON.parse(localStorage.getItem('pb_historia'))[idx]; document.getElementById('detailContent').innerHTML = `<b>LAJIMERKKI:</b> ${h.lajike}<br><b>ASETUS:</b> ${h.asetus}<br><b>TAIVUTUS:</b> ${h.taivutus}<br><b>MUUT:</b> ${h.muut}<br><hr><b>SUMMA:</b> ${h.yhteisaika}`; document.getElementById('poistoNappi').onclick = () => { if(confirm("Poistetaanko?")){ let hist = JSON.parse(localStorage.getItem('pb_historia')); hist.splice(idx,1); localStorage.setItem('pb_historia', JSON.stringify(hist)); document.getElementById('detailsOverlay').style.display='none'; paivitaHistoriaNakyma(); } }; document.getElementById('detailsOverlay').style.display = 'flex'; }
     function luoLoppuRaportti() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const h = JSON.parse(localStorage.getItem('pb_historia') || "[]").filter(x => x.pvm === new Date().toLocaleDateString('fi-FI')); doc.autoTable({ head: [['Kortti', 'Lajimerkki', 'Yhteensä']], body: h.map(x => [x.kortti, x.lajike, x.yhteisaika]) }); doc.save(`Raportti.pdf`); }
 </script>
 </body>
