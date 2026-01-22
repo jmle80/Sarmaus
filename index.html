@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v1.79</title>
+    <title>Press Brake Pro v1.80</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -12,10 +12,8 @@
         .version-tag { color: white; background: #d32f2f; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 0.8em; margin-bottom: 10px; display: inline-block; }
         .container { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
         
-        /* KELLO */
         .timer { font-size: 4em; font-weight: bold; text-align: center; margin: 10px 0; font-family: 'Courier New', monospace; background: #1e1e2f; color: #50fa7b; padding: 15px; border-radius: 15px; border: 2px solid #333; }
         
-        /* JOUTUISUUS */
         #j-box { background: #eee; border: 1px solid #ccc; padding: 12px; margin: 10px 0; border-radius: 12px; text-align: center; font-weight: bold; min-height: 110px; display: flex; flex-direction: column; justify-content: center; transition: all 0.3s; }
         .lukema-naytto { font-size: 2.8em; margin: 2px 0; }
         
@@ -48,7 +46,7 @@
 <body onload="alusta()">
 
 <div class="container">
-    <div class="version-tag">VERSIO 1.79 (FIX)</div>
+    <div class="version-tag">VERSIO 1.80</div>
     <div id="kello" class="timer">00:00</div>
     
     <div id="j-box">
@@ -93,9 +91,9 @@
 <script>
     let timer = null, kaynnissa = false, syote = "", kKunta = "";
     let tAsetus = 0, tTaivutus = 0, eTila = null, eTarkennus = "";
-    // Käytetään aikaleimoja (timestamp) tarkkaan laskentaan
-    let aloitusLeima = 0; 
-    let erikoisLeima = 0;
+    let aloitusLeima = 0, erikoisLeima = 0;
+    // Tämä muuttuja säilyttää KAIKKIEN tallennettujen korttien minuutit yhteensä
+    let kuitatutPankki = 0;
 
     function alusta() {
         // Palauta kentät
@@ -107,6 +105,10 @@
                 if(id === 'taivutus') tTaivutus = parseFloat(v) || 0;
             }
         });
+        
+        // Palauta pankki
+        kuitatutPankki = parseFloat(localStorage.getItem('pb_pankki')) || 0;
+        
         paivitaHist();
         
         // Palauta tila
@@ -124,14 +126,13 @@
             const nyt = Date.now();
             const kulunutSek = Math.floor((nyt - aloitusLeima) / 1000);
             
-            // Laske tunnit ja minuutit
             const h = Math.floor(kulunutSek / 3600).toString().padStart(2, '0');
             const m = Math.floor((kulunutSek % 3600) / 60).toString().padStart(2, '0');
             document.getElementById('kello').innerText = `${h}:${m}`;
             
             joutuisuus(kulunutSek);
         };
-        paivita(); // Heti
+        paivita();
         timer = setInterval(paivita, 1000);
     }
 
@@ -153,14 +154,11 @@
         const min = document.getElementById('t-minuutit');
         txt.value = ""; min.value = "";
         
-        // Määritä näkymä
         const onTeksti = (['lajike', 'PROTO', 'HÄIRIÖ', 'HUOLTO', 'muut'].includes(k));
         document.getElementById('t-alue').style.display = onTeksti ? 'block' : 'none';
         min.style.display = (k === 'muut') ? 'block' : 'none';
         
-        // Pakota isot kirjaimet vain jos ei erikoistila
         txt.style.textTransform = (['lajike', 'muut'].includes(k)) ? "uppercase" : "none";
-        
         document.getElementById('n-otsikko').innerText = k.toUpperCase();
         
         let g = document.getElementById('k-alue'); g.innerHTML = "";
@@ -182,29 +180,32 @@
         // --- VUORO ---
         if(kKunta === 'vuoro') {
             if(!kaynnissa) {
-                // Käynnistä
+                // PAKOTETTU ALOITUS
                 try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{}); } catch(e){}
                 
-                // Määritä aloitusaika syötteestä
+                let start = new Date();
                 if(v.length === 4) {
-                    const d = new Date();
-                    d.setHours(parseInt(v.substr(0,2)), parseInt(v.substr(2,2)), 0, 0);
-                    aloitusLeima = d.getTime();
-                } else {
-                    aloitusLeima = Date.now();
+                    start.setHours(parseInt(v.substr(0,2)), parseInt(v.substr(2,2)), 0, 0);
                 }
+                
+                // Jos aloitusaika on tulevaisuudessa (esim. eilinen jatkuu), korjataan
+                if(start > new Date()) start.setDate(start.getDate() - 1);
+
+                aloitusLeima = start.getTime();
                 
                 kaynnissa = true;
                 localStorage.setItem('pb_tila', 'kylla');
                 localStorage.setItem('pb_aloitusLeima', aloitusLeima);
+                // Nollataan pankki uuden vuoron alussa, jos halutaan
+                // kuitatutPankki = 0; localStorage.setItem('pb_pankki', 0); 
+                
                 kelloKayntiin();
             } else {
-                // Lopeta
                 if(confirm("Lopetetaanko vuoro?")) {
                     kaynnissa = false; 
                     clearInterval(timer); 
                     localStorage.setItem('pb_tila', 'ei'); 
-                    nollaa(false);
+                    nollaa(false); // Tyhjentää kentät
                 }
             }
         } 
@@ -234,13 +235,14 @@
         const b = document.getElementById('j-box');
         const lEl = document.getElementById('j-lukema');
         const tEl = document.getElementById('j-tila');
-        const kuitatutSumma = tAsetus + tTaivutus + poimiNum(document.getElementById('v-muut').innerText);
         
-        // Vähennä erikoistilojen aika (yksinkertaistettu: erikoistilassa aika ei ole tehokasta)
-        // Oletetaan tässä versiossa, että 'kulunutSek' on kokonaisaika. 
-        // Tarkempaan laskentaan tarvittaisiin monimutkaisempi logiikka, mutta tämä riittää peruskäyttöön.
+        // Laske nykyisen työn minuutit
+        const nykyinenTyöMin = tAsetus + tTaivutus + poimiNum(document.getElementById('v-muut').innerText);
         
-        document.getElementById('j-kuitatut').innerText = `KUITATUT: ${kuitatutSumma.toFixed(1)} MIN | TYÖAIKA: ${Math.floor(kulunutSek/60)} MIN`;
+        // Yhdistä pankkiin tallennetut ja nykyinen työ
+        const kokonaisKuitatut = kuitatutPankki + nykyinenTyöMin;
+        
+        document.getElementById('j-kuitatut').innerText = `KUITATUT: ${kokonaisKuitatut.toFixed(1)} MIN | TYÖAIKA: ${Math.floor(kulunutSek/60)} MIN`;
         
         b.classList.remove('blink');
         if(eTila) {
@@ -253,7 +255,7 @@
         }
         
         const tyotunnit = kulunutSek / 3600;
-        let lukema = (kuitatutSumma / 60) / tyotunnit;
+        let lukema = (kokonaisKuitatut / 60) / tyotunnit;
         if(!isFinite(lukema)) lukema = 0;
         
         lEl.innerText = lukema.toFixed(2);
@@ -261,6 +263,35 @@
         if(lukema < 1.0) { b.style.background = "#f44336"; b.style.color = "white"; tEl.innerText = "HIDAS"; }
         else if(lukema <= 1.5) { b.style.background = "#ff9800"; b.style.color = "white"; tEl.innerText = "VAROITUS"; }
         else { b.style.background = "#4caf50"; b.style.color = "white"; tEl.innerText = "TEHOKAS"; if(lukema >= 2.0) b.classList.add('blink'); }
+    }
+
+    function tallenna() {
+        const k = document.getElementById('v-kortti').innerText; if(k === "-") return;
+        
+        // 1. Lisää nykyisen työn minuutit pankkiin
+        const nykyiset = tAsetus + tTaivutus + poimiNum(document.getElementById('v-muut').innerText);
+        kuitatutPankki += nykyiset;
+        localStorage.setItem('pb_pankki', kuitatutPankki);
+
+        // 2. Tallenna historia
+        let h = JSON.parse(localStorage.getItem('pb_h') || "[]");
+        const klo = new Date().toLocaleTimeString().substr(0,5);
+        h.unshift({ id: Date.now(), k: k, l: document.getElementById('v-lajike').innerText, a: nykyiset + " MIN", klo: klo });
+        localStorage.setItem('pb_h', JSON.stringify(h)); 
+        
+        // 3. Nollaa vain kentät, EI kelloa eikä pankkia
+        nollaaKentat(); 
+        paivitaHist();
+    }
+
+    function nollaaKentat() {
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { 
+            let el = document.getElementById('v-'+id); if(el) el.innerText="-";
+            localStorage.removeItem('pb_'+id);
+        }); 
+        tAsetus=0; tTaivutus=0;
+        // Päivitä joutuisuus (nyt pankki on päivitetty, mutta nykyiset nollattu)
+        joutuisuus(Math.floor((Date.now() - aloitusLeima)/1000));
     }
 
     function tilaVaihda(t) {
@@ -277,21 +308,6 @@
             avaaRuutu(t);
         }
         näkymä();
-    }
-
-    function yritaAvaa(k) {
-        if(!kaynnissa) { alert("Aloita vuoro ensin!"); return; }
-        if(eTila) { alert("Lopeta " + eTila + " ensin!"); return; }
-        avaaRuutu(k);
-    }
-
-    function tallenna() {
-        const k = document.getElementById('v-kortti').innerText; if(k === "-") return;
-        let h = JSON.parse(localStorage.getItem('pb_h') || "[]");
-        const a = (tAsetus + tTaivutus + poimiNum(document.getElementById('v-muut').innerText)).toFixed(1);
-        const klo = new Date().toLocaleTimeString().substr(0,5);
-        h.unshift({ id: Date.now(), k: k, l: document.getElementById('v-lajike').innerText, a: a + " MIN", klo: klo });
-        localStorage.setItem('pb_h', JSON.stringify(h)); nollaa(false); paivitaHist();
     }
 
     function lisaaHistErikois(t, tark, min) {
@@ -324,14 +340,20 @@
         });
     }
 
+    function yritaAvaa(k) {
+        if(!kaynnissa) { alert("Aloita vuoro ensin!"); return; }
+        if(eTila) { alert("Lopeta " + eTila + " ensin!"); return; }
+        avaaRuutu(k);
+    }
+
     function naytaMenu() { let m = document.getElementById('menu-spec'); m.style.display = (m.style.display === 'grid' ? 'none' : 'grid'); }
     function poimiNum(t) { const n = t.match(/[\d.]+/); return n ? parseFloat(n[0]) : 0; }
     function sulje() { document.getElementById('n-ruutu').style.display = 'none'; }
     function paivitaLive(v) { document.getElementById('n-naytto').innerText = (['lajike', 'muut'].includes(kKunta)) ? v.toUpperCase() : v; }
     function nollaa(k) {
-        if(k && !confirm("Nollataanko historia?")) return;
+        if(k && !confirm("Nollataanko historia ja kaikki tiedot?")) return;
         if(k) { localStorage.clear(); location.reload(); }
-        else { ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { document.getElementById('v-'+id).innerText="-"; localStorage.removeItem('pb_'+id); }); tAsetus=0; tTaivutus=0; }
+        else { nollaaKentat(); }
     }
 </script>
 </body>
