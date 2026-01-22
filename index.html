@@ -5,163 +5,188 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Press Brake Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f0f2f5; margin: 0; }
-        .version { color: #d32f2f; font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 15px; background-color: #f0f2f5; margin: 0; }
+        .version { color: #d32f2f; font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 5px; }
         .container { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); max-width: 500px; margin: auto; }
-        h1 { color: #1a237e; text-align: center; text-transform: uppercase; margin: 0 0 15px 0; }
-        .timer-display { font-size: 3.5em; font-weight: bold; text-align: center; margin: 15px 0; font-family: monospace; background: #222; color: #00ff00; padding: 15px; border-radius: 8px; }
+        h1 { color: #1a237e; text-align: center; text-transform: uppercase; margin: 0 0 10px 0; font-size: 1.5em; }
+        .timer-display { font-size: 3em; font-weight: bold; text-align: center; margin: 10px 0; font-family: monospace; background: #222; color: #00ff00; padding: 10px; border-radius: 8px; }
         
-        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 12px; margin: 5px 0; border-radius: 6px; font-weight: bold; text-align: center; color: #0d47a1; min-height: 1.2em; cursor: pointer; }
-        .info-label { font-size: 0.8em; color: #555; margin-bottom: 2px; text-align: center; font-weight: bold; margin-top: 10px; }
+        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 12px; margin: 5px 0; border-radius: 6px; font-weight: bold; text-align: center; color: #0d47a1; cursor: pointer; }
+        .info-label { font-size: 0.8em; color: #555; margin-bottom: 2px; text-align: center; font-weight: bold; margin-top: 8px; }
         
-        button { width: 100%; padding: 18px; margin: 10px 0; cursor: pointer; font-size: 1.2em; border-radius: 10px; font-weight: bold; border: 1px solid #ccc; }
+        button { width: 100%; padding: 16px; margin: 8px 0; cursor: pointer; font-size: 1.1em; border-radius: 10px; font-weight: bold; border: 1px solid #ccc; }
         .btn-start { background-color: #2e7d32; color: white; border: none; }
         .btn-stop { background-color: #c62828; color: white; border: none; }
         
+        /* Keypad & Modals */
         #keypadOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
-        .keypad-container { background: white; padding: 20px; border-radius: 15px; width: 300px; text-align: center; }
-        .keypad-display { font-size: 2em; border: 2px solid #333; margin-bottom: 15px; padding: 10px; border-radius: 5px; height: 1.2em; font-family: monospace; background: #f9f9f9; overflow: hidden; }
-        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .keypad-btn { padding: 20px; font-size: 1.5em; background: #eee; border: 1px solid #bbb; border-radius: 8px; cursor: pointer; }
+        .keypad-container { background: white; padding: 15px; border-radius: 15px; width: 310px; text-align: center; }
+        .keypad-display { font-size: 1.8em; border: 2px solid #333; margin-bottom: 10px; padding: 8px; border-radius: 5px; min-height: 1.2em; font-family: monospace; background: #f9f9f9; }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .keypad-btn { padding: 15px; font-size: 1.3em; background: #eee; border: 1px solid #bbb; border-radius: 8px; cursor: pointer; }
         .keypad-ok { background-color: #2e7d32; color: white; border: none; }
-        .keypad-cancel { background-color: #c62828; color: white; border: none; }
         
-        .time-log { font-size: 0.9em; background: #fff9c4; padding: 8px; border-radius: 4px; display: none; text-align: center; margin-top: 10px; border: 1px solid #fbc02d; font-weight: bold; }
+        /* Oppiva input */
+        .name-input { width: 90%; padding: 10px; font-size: 1.1em; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        datalist { width: 100%; }
+
+        .time-log { font-size: 0.85em; background: #fff9c4; padding: 8px; border-radius: 4px; display: none; text-align: center; margin-top: 10px; border: 1px solid #fbc02d; font-weight: bold; }
     </style>
 </head>
 <body onload="tarkistaPalautus()">
 
-<span class="version">Versio 1.22</span>
+<span class="version">Versio 1.23</span>
 
 <div class="container">
     <h1>Press Brake Pro</h1>
     <div id="tyoAika" class="timer-display">00:00:00</div>
     <div id="aikatallenne" class="time-log"></div>
     
-    <div class="info-label">Kortti & Lajike</div>
     <div id="korttiBox" class="info-box" onclick="avaaKeypad('kortti')">Kortin nro: -</div>
     <div id="lajiBox" class="info-box" onclick="avaaKeypad('lajike')">Lajimerkki: -</div>
     
-    <div class="info-label">Asetus & Taivutus</div>
+    <div class="info-label">Työvaiheet</div>
     <div id="asetusBox" class="info-box" onclick="avaaKeypad('asetus')">Asetusaika: -</div>
     <div id="taivutusBox" class="info-box" onclick="avaaKeypad('taivutus')">Taivutusaika: -</div>
+    <div id="muutBox" class="info-box" style="background: #f3e5f5; border-color: #ce93d8;" onclick="avaaMuutVaiheet()">Muut työvaiheet: -</div>
     
-    <div class="control-panel">
-        <button id="vuoroNappi" class="btn-start" onclick="avaaAikaKysely()">ALOITA VUORO</button>
-        <button onclick="nollaaHistoria()" style="color: #999; font-size: 0.8em; border: none; background: none; text-decoration: underline; margin-top: 20px;">Nollaa historia</button>
-    </div>
+    <button id="vuoroNappi" class="btn-start" onclick="avaaAikaKysely()">ALOITA VUORO</button>
+    <button onclick="nollaaHistoria()" style="color: #999; font-size: 0.8em; border: none; background: none; text-decoration: underline;">Nollaa historia</button>
 </div>
 
 <div id="keypadOverlay">
     <div class="keypad-container">
-        <h3 id="keypadTitle">Syötä arvo</h3>
+        <h3 id="keypadTitle" style="margin-top: 0;">Syötä arvo</h3>
+        
+        <div id="nameInputSection" style="display:none;">
+            <input type="text" id="vaiheNimi" class="name-input" placeholder="Vaiheen nimi (esim. Pakkaus)" list="vaiheLista">
+            <datalist id="vaiheLista"></datalist>
+        </div>
+
         <div id="keypadInput" class="keypad-display"></div>
+        
         <div class="keypad-grid" id="keypadGrid"></div>
-        <button style="margin-top:15px; color: blue; border:none; background:none; font-weight: bold;" onclick="suljeKeypad()">PERUUTA</button>
+        <button style="margin-top:10px; color: blue; border:none; background:none; font-weight:bold;" onclick="suljeKeypad()">PERUUTA</button>
     </div>
 </div>
 
 <script>
     let sekunnit = 0, ajastin = null, vuoroKaynnissa = false, syote = "", aktiivinenKentta = "";
+    let opitutVaiheet = ["Pakkaus", "Kierteytys", "Irrotus", "Hionta"];
 
     function tarkistaPalautus() {
-        const fields = ['pb_kortti', 'pb_lajike', 'pb_asetus', 'pb_taivutus'];
+        const fields = ['pb_kortti', 'pb_lajike', 'pb_asetus', 'pb_taivutus', 'pb_muut'];
         fields.forEach(f => {
             const val = localStorage.getItem(f);
-            if(val) document.getElementById(f.replace('pb_','') + 'Box').innerText = val;
-        });
-        
-        const tallennettuTila = localStorage.getItem('pb_tila');
-        const tallennetutSekunnit = localStorage.getItem('pb_sekunnit');
-        
-        if (tallennetutSekunnit) {
-            sekunnit = parseInt(tallennetutSekunnit);
-            if (tallennettuTila === 'kaynnissa') {
-                sekunnit += Math.floor((Date.now() - parseInt(localStorage.getItem('pb_leima'))) / 1000);
-                vuoroKaynnissa = true;
-                paivitaVuoroNakyma();
-                kaynnistaKello();
-                const aloitusTxt = localStorage.getItem('pb_aloitus_txt');
-                if(aloitusTxt) {
-                    document.getElementById('aikatallenne').innerText = "Aloitettu: " + aloitusTxt;
-                    document.getElementById('aikatallenne').style.display = "block";
-                }
+            if(val) {
+                const id = f.replace('pb_','') + 'Box';
+                if(document.getElementById(id)) document.getElementById(id).innerText = val;
             }
+        });
+
+        const tallennetutVaiheet = localStorage.getItem('pb_opitut');
+        if(tallennetutVaiheet) opitutVaiheet = JSON.parse(tallennetutVaiheet);
+        paivitaDatalist();
+
+        if (localStorage.getItem('pb_tila') === 'kaynnissa') {
+            sekunnit = parseInt(localStorage.getItem('pb_sekunnit')) + Math.floor((Date.now() - parseInt(localStorage.getItem('pb_leima'))) / 1000);
+            vuoroKaynnissa = true;
+            paivitaVuoroNakyma();
+            kaynnistaKello();
+        } else if(localStorage.getItem('pb_sekunnit')) {
+            sekunnit = parseInt(localStorage.getItem('pb_sekunnit'));
             paivitaNaytto();
         }
     }
+
+    function paivitaDatalist() {
+        const dl = document.getElementById('vaiheLista');
+        dl.innerHTML = "";
+        opitutVaiheet.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            dl.appendChild(opt);
+        });
+    }
+
+    function avaaMuutVaiheet() { avaaKeypad('muut'); }
 
     function avaaKeypad(tyyppi) {
         aktiivinenKentta = tyyppi; syote = "";
         document.getElementById('keypadOverlay').style.display = 'flex';
         document.getElementById('keypadInput').innerText = "";
+        document.getElementById('nameInputSection').style.display = (tyyppi === 'muut') ? 'block' : 'none';
+        
         const grid = document.getElementById('keypadGrid');
         grid.innerHTML = "";
-        
-        const nappulat = ['1','2','3','4','5','6','7','8','9','C','0'];
-        if (tyyppi === 'taivutus') nappulat.push('.'); else nappulat.push(' ');
+        const nappulat = ['1','2','3','4','5','6','7','8','9','C','0','.', 'OK'];
         
         nappulat.forEach(n => {
             const btn = document.createElement('button');
-            btn.className = 'keypad-btn' + (n === 'C' ? ' keypad-cancel' : '');
+            btn.className = 'keypad-btn' + (n === 'C' ? ' keypad-cancel' : (n === 'OK' ? ' keypad-ok' : ''));
             btn.innerText = n;
-            btn.onclick = () => (n === 'C' ? (syote = "", document.getElementById('keypadInput').innerText = "") : (syote += n, document.getElementById('keypadInput').innerText = syote));
+            btn.onclick = () => {
+                if(n === 'C') { syote = ""; document.getElementById('keypadInput').innerText = ""; }
+                else if(n === 'OK') vahvistaSyote();
+                else { syote += n; document.getElementById('keypadInput').innerText = syote; }
+            };
             grid.appendChild(btn);
         });
-        
-        const okBtn = document.createElement('button');
-        okBtn.className = 'keypad-btn keypad-ok'; okBtn.innerText = 'OK';
-        okBtn.onclick = vahvistaSyote;
-        grid.appendChild(okBtn);
 
         const otsikot = {
-            kortti: 'Kortin numero', lajike: 'Lajimerkki', asetus: 'Asetusaika (min)',
-            taivutus: 'Taivutusaika (min.sek)', aloitus: 'Aloitusaika (HHMM)', lopetus: 'Lopetusaika (HHMM)'
+            kortti: 'Kortin nro', lajike: 'Lajimerkki', asetus: 'Asetusaika (min)',
+            taivutus: 'Taivutusaika (mm.ss)', muut: 'Muu työvaihe & aika', aloitus: 'Aloitusaika (HHMM)', lopetus: 'Lopetusaika (HHMM)'
         };
         document.getElementById('keypadTitle').innerText = otsikot[tyyppi];
     }
 
-    function avaaAikaKysely() { avaaKeypad(vuoroKaynnissa ? 'lopetus' : 'aloitus'); }
-    function suljeKeypad() { document.getElementById('keypadOverlay').style.display = 'none'; }
-
     function vahvistaSyote() {
         const v = syote || "0";
-        if (aktiivinenKentta === 'kortti') {
-            document.getElementById('korttiBox').innerText = "Kortin nro: " + v;
-            localStorage.setItem('pb_kortti', "Kortin nro: " + v);
+        if (aktiivinenKentta === 'muut') {
+            const nimi = document.getElementById('vaiheNimi').value || "Muu vaihe";
+            if(!opitutVaiheet.includes(nimi)) {
+                opitutVaiheet.push(nimi);
+                localStorage.setItem('pb_opitut', JSON.stringify(opitutVaiheet));
+                paivitaDatalist();
+            }
+            const txt = nimi + ": " + v + " min";
+            document.getElementById('muutBox').innerText = txt;
+            localStorage.setItem('pb_muut', txt);
+        } else if (aktiivinenKentta === 'kortti') {
+            const txt = "Kortin nro: " + v;
+            document.getElementById('korttiBox').innerText = txt;
+            localStorage.setItem('pb_kortti', txt);
         } else if (aktiivinenKentta === 'lajike') {
-            document.getElementById('lajiBox').innerText = "Lajimerkki: " + v;
-            localStorage.setItem('pb_lajike', "Lajimerkki: " + v);
+            const txt = "Lajimerkki: " + v;
+            document.getElementById('lajiBox').innerText = txt;
+            localStorage.setItem('pb_lajike', txt);
         } else if (aktiivinenKentta === 'asetus') {
-            document.getElementById('asetusBox').innerText = "Asetusaika: " + v + " min";
-            localStorage.setItem('pb_asetus', "Asetusaika: " + v + " min");
+            const txt = "Asetusaika: " + v + " min";
+            document.getElementById('asetusBox').innerText = txt;
+            localStorage.setItem('pb_asetus', txt);
         } else if (aktiivinenKentta === 'taivutus') {
-            document.getElementById('taivutusBox').innerText = "Taivutusaika: " + v + " min";
-            localStorage.setItem('pb_taivutus', "Taivutusaika: " + v + " min");
+            const txt = "Taivutusaika: " + v + " min";
+            document.getElementById('taivutusBox').innerText = txt;
+            localStorage.setItem('pb_taivutus', txt);
         } else {
             hallitseVuoroa(v);
         }
         suljeKeypad();
     }
 
+    function avaaAikaKysely() { avaaKeypad(vuoroKaynnissa ? 'lopetus' : 'aloitus'); }
+    function suljeKeypad() { document.getElementById('keypadOverlay').style.display = 'none'; }
+
     function hallitseVuoroa(aika) {
         let nyt = new Date(), h = nyt.getHours(), m = nyt.getMinutes();
         if(aika && aika.length >= 3) { h = parseInt(aika.substring(0,2)); m = parseInt(aika.substring(2,4)); }
-        const muotoiltu = h.toString().padStart(2,'0') + ":" + m.toString().padStart(2,'0');
-
         if (!vuoroKaynnissa) {
             let aloitus = new Date(); aloitus.setHours(h, m, 0);
             sekunnit = (aloitus < nyt) ? Math.floor((nyt - aloitus) / 1000) : 0;
-            vuoroKaynnissa = true;
-            document.getElementById('aikatallenne').innerText = "Aloitettu: " + muotoiltu;
-            document.getElementById('aikatallenne').style.display = "block";
-            localStorage.setItem('pb_aloitus_txt', muotoiltu);
-            localStorage.setItem('pb_tila', 'kaynnissa');
-            paivitaVuoroNakyma(); soitaAani(660, 0.2); kaynnistaKello();
+            vuoroKaynnissa = true; localStorage.setItem('pb_tila', 'kaynnissa');
+            paivitaVuoroNakyma(); kaynnistaKello();
         } else {
-            vuoroKaynnissa = false;
-            document.getElementById('aikatallenne').innerText += " | Lopetettu: " + muotoiltu;
-            localStorage.setItem('pb_tila', 'pysatty');
+            vuoroKaynnissa = false; localStorage.setItem('pb_tila', 'pysatty');
             paivitaVuoroNakyma(); pysaytaKello();
         }
     }
@@ -174,40 +199,23 @@
             localStorage.setItem('pb_leima', Date.now());
         }, 1000);
     }
-
-    function pysaytaKello() { if(ajastin) clearInterval(ajastin); }
+    function pysaytaKello() { clearInterval(ajastin); }
     function paivitaNaytto() {
-        const h = Math.floor(sekunnit / 3600).toString().padStart(2, '0');
-        const m = Math.floor((sekunnit % 3600) / 60).toString().padStart(2, '0');
-        const s = (sekunnit % 60).toString().padStart(2, '0');
+        const h = Math.floor(sekunnit/3600).toString().padStart(2,'0');
+        const m = Math.floor((sekunnit%3600)/60).toString().padStart(2,'0');
+        const s = (sekunnit%60).toString().padStart(2,'0');
         document.getElementById('tyoAika').innerText = `${h}:${m}:${s}`;
     }
-
     function paivitaVuoroNakyma() {
-        const n = document.getElementById('vuoroNappi');
-        n.innerText = vuoroKaynnissa ? "LOPETA VUORO" : "ALOITA VUORO";
-        n.className = vuoroKaynnissa ? "btn-stop" : "btn-start";
-    }
-
-    function soitaAani(f, k) {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator(); const g = ctx.createGain();
-            osc.connect(g); g.connect(ctx.destination);
-            osc.frequency.value = f; osc.start();
-            g.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + k);
-            osc.stop(ctx.currentTime + k);
-        } catch(e) {}
+        document.getElementById('vuoroNappi').innerText = vuoroKaynnissa ? "LOPETA VUORO" : "ALOITA VUORO";
+        document.getElementById('vuoroNappi').className = vuoroKaynnissa ? "btn-stop" : "btn-start";
     }
 
     function nollaaHistoria() {
         if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
             pysaytaKello(); sekunnit = 0; vuoroKaynnissa = false;
             localStorage.clear(); paivitaNaytto(); paivitaVuoroNakyma();
-            const ids = ['korttiBox','lajiBox','asetusBox','taivutusBox'];
-            const labels = ['Kortin nro: -','Lajimerkki: -','Asetusaika: -','Taivutusaika: -'];
-            ids.forEach((id, i) => document.getElementById(id).innerText = labels[i]);
-            document.getElementById('aikatallenne').style.display = "none";
+            location.reload();
         }
     }
 </script>
