@@ -10,7 +10,7 @@
         .version { color: #d32f2f; font-weight: bold; font-size: 1.2em; display: block; margin-bottom: 10px; }
         .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         .timer-display { font-size: 3em; font-weight: bold; color: #e27d32; text-align: center; margin: 20px 0; font-family: monospace; border: 2px solid #eee; padding: 10px; border-radius: 10px; }
-        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 10px; margin: 5px 0; border-radius: 4px; font-weight: bold; text-align: center; }
+        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 10px; margin: 5px 0; border-radius: 4px; font-weight: bold; text-align: center; min-height: 1.2em; }
         button { width: 100%; padding: 15px; margin: 10px 0; cursor: pointer; font-size: 1.1em; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9; font-weight: bold; }
         .btn-start { background-color: #4caf50; color: white; border: none; }
         .btn-stop { background-color: #f44336; color: white; border: none; }
@@ -18,9 +18,9 @@
         .status-msg { text-align: center; font-style: italic; color: #666; }
     </style>
 </head>
-<body>
+<body onload="tarkistaPalautus()">
 
-<span class="version">Versio 1.11</span>
+<span class="version">Versio 1.14</span>
 
 <div class="container">
     <h1>Sarmauslaskuri</h1>
@@ -36,7 +36,6 @@
     <div class="control-panel">
         <button id="vuoroNappi" class="btn-start" onclick="hallitseVuoroa()">ALOITA VUORO</button>
         <button onclick="avaaSkanneri()">📷 Skannaa viivakoodi</button>
-        <button onclick="varmuuskopioiTiedot()" style="background-color: #2196F3; color: white; border: none;">Pilvivarmuuskopio</button>
         <hr>
         <button onclick="nollaaHistoria()" style="color: #666; font-size: 0.8em; border: none; background: none;">Nollaa historia</button>
     </div>
@@ -47,34 +46,60 @@
     let ajastin;
     let vuoroKaynnissa = false;
 
-    // 1. Vuoron hallinta (Aloitus/Lopetus) ja Kello
+    // --- TIETOJEN PALAUTUS ---
+    function tarkistaPalautus() {
+        const tallennettuKortti = localStorage.getItem('sarmaus_kortti');
+        const tallennettuLaji = localStorage.getItem('sarmaus_laji');
+        if (tallennettuKortti) document.getElementById('korttiIkkuna').innerText = tallennettuKortti;
+        if (tallennettuLaji) document.getElementById('lajiIkkuna').innerText = tallennettuLaji;
+
+        const tallennettuTila = localStorage.getItem('sarmaus_tila');
+        const tallennetutSekunnit = localStorage.getItem('sarmaus_sekunnit');
+        
+        if (tallennetutSekunnit) {
+            sekunnit = parseInt(tallennetutSekunnit);
+            if (tallennettuTila === 'kaynnissa') {
+                const tallennusAika = localStorage.getItem('sarmaus_aika');
+                const erotusSekunteina = Math.floor((Date.now() - parseInt(tallennusAika)) / 1000);
+                sekunnit += erotusSekunteina;
+                paivitaNaytto();
+                hallitseVuoroa(); 
+            } else {
+                paivitaNaytto();
+            }
+        }
+    }
+
+    // --- VUORON HALLINTA ---
     function hallitseVuoroa() {
         const nappi = document.getElementById('vuoroNappi');
         const status = document.getElementById('status');
         
         if (!vuoroKaynnissa) {
-            // ALOITUS
             vuoroKaynnissa = true;
             nappi.innerText = "LOPETA VUORO";
             nappi.className = "btn-stop";
             status.innerText = "Työaika käynnissä...";
-            soitaAani(660, 0.2); // Aloituspiippaus
+            localStorage.setItem('sarmaus_tila', 'kaynnissa');
+            soitaAani(660, 0.2);
             kaynnistaKello();
         } else {
-            // LOPETUS
             vuoroKaynnissa = false;
             nappi.innerText = "ALOITA VUORO";
             nappi.className = "btn-start";
-            status.innerText = "Vuoro päättynyt.";
+            status.innerText = "Vuoro lopetettu.";
+            localStorage.setItem('sarmaus_tila', 'pysatty');
             pysaytaKello();
-            varmuuskopioiTiedot(); // Automaattinen varmuuskopio lopetettaessa
         }
     }
 
     function kaynnistaKello() {
+        if (ajastin) clearInterval(ajastin);
         ajastin = setInterval(() => {
             sekunnit++;
             paivitaNaytto();
+            localStorage.setItem('sarmaus_sekunnit', sekunnit);
+            localStorage.setItem('sarmaus_aika', Date.now());
         }, 1000);
     }
 
@@ -89,7 +114,35 @@
         document.getElementById('tyoAika').innerText = `${h}:${m}:${s}`;
     }
 
-    // 2. Äänimerkki
+    // --- SKANNAUS EHTO-TOIMINNALLA ---
+    function avaaSkanneri() {
+        const readerElement = document.getElementById('reader');
+        readerElement.style.display = 'block';
+        const html5QrCode = new Html5Qrcode("reader");
+        
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
+                // Ehto: Jos koodi alkaa "L-", se on lajimerkki, muuten kortin numero
+                if (decodedText.startsWith("L-")) {
+                    const lajiTeksti = "Lajimerkki: " + decodedText.substring(2);
+                    document.getElementById('lajiIkkuna').innerText = lajiTeksti;
+                    localStorage.setItem('sarmaus_laji', lajiTeksti);
+                } else {
+                    const korttiTeksti = "Kortin nro: " + decodedText;
+                    document.getElementById('korttiIkkuna').innerText = korttiTeksti;
+                    localStorage.setItem('sarmaus_kortti', korttiTeksti);
+                }
+                
+                soitaAani(880, 0.1);
+                html5QrCode.stop();
+                readerElement.style.display = 'none';
+            },
+            (errorMessage) => {}
+        ).catch(err => alert("Kamera-virhe: " + err));
+    }
+
     function soitaAani(taajuus, kesto) {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -101,48 +154,17 @@
             oscillator.start();
             gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + kesto);
             oscillator.stop(audioCtx.currentTime + kesto);
-        } catch(e) { console.log("Ääntä ei voitu toistaa"); }
+        } catch(e) {}
     }
 
-    // 3. Skannaus
-    function avaaSkanneri() {
-        const readerElement = document.getElementById('reader');
-        readerElement.style.display = 'block';
-        const html5QrCode = new Html5Qrcode("reader");
-        
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            { fps: 10, qrbox: 250 },
-            (decodedText) => {
-                document.getElementById('korttiIkkuna').innerText = "Kortin nro: " + decodedText;
-                soitaAani(880, 0.1);
-                html5QrCode.stop();
-                readerElement.style.display = 'none';
-            },
-            (errorMessage) => {}
-        ).catch(err => alert("Kamera-virhe: " + err));
-    }
-
-    // 4. Varmuuskopiointi (Simulaatio)
-    function varmuuskopioiTiedot() {
-        console.log("Tallennetaan tietoja...");
-        const status = document.getElementById('status');
-        const alkuperainenTeksti = status.innerText;
-        status.innerText = "☁️ Varmuuskopioidaan...";
-        
-        setTimeout(() => {
-            status.innerText = alkuperainenTeksti;
-            alert("Tiedot varmuuskopioitu onnistuneesti!");
-        }, 1500);
-    }
-
-    // 5. Nollaus vahvistuksella
     function nollaaHistoria() {
         if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
             sekunnit = 0;
+            localStorage.clear();
             paivitaNaytto();
             document.getElementById('korttiIkkuna').innerText = "Kortin nro: -";
-            alert("Historia nollattu.");
+            document.getElementById('lajiIkkuna').innerText = "Lajimerkki: -";
+            alert("Historia tyhjennetty.");
         }
     }
 </script>
