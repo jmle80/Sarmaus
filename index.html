@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v1.71</title>
+    <title>Press Brake Pro v1.73</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -41,7 +41,7 @@
         .key-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .key { padding: 18px; background: #f8f9fa; border-radius: 10px; font-weight: bold; cursor: pointer; border: 1px solid #ddd; font-size: 1.2em; }
         .key-ok { background: var(--success); color: white; grid-column: 2; }
-        .input-f { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid var(--accent); border-radius: 8px; text-transform: uppercase; text-align: center; font-size: 1.2em; box-sizing: border-box; }
+        .input-f { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid var(--accent); border-radius: 8px; text-align: center; font-size: 1.2em; box-sizing: border-box; }
         .hist-cont { margin-top: 20px; background: #fff; border: 1px solid #eee; border-radius: 15px; max-height: 180px; overflow-y: auto; }
         .hist-item { padding: 12px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; font-size: 0.9em; cursor: pointer; }
     </style>
@@ -49,7 +49,7 @@
 <body onload="alusta()">
 
 <div class="container">
-    <div class="version-tag">VERSIO 1.71</div>
+    <div class="version-tag">VERSIO 1.73</div>
     <div id="kello" class="timer">00:00</div>
     
     <div id="j-box">
@@ -110,7 +110,8 @@
             let ero = Math.floor((Date.now() - l) / 1000);
             kokonaisSek = (parseInt(localStorage.getItem('pb_sek_tot')) || 0) + ero;
             tyoSek = (parseInt(localStorage.getItem('pb_sek_tyo')) || 0) + ero;
-            kaynnissa = true; kelloKayntiin();
+            kaynnissa = true; 
+            kelloKayntiin();
         }
         näkymä();
     }
@@ -120,11 +121,9 @@
         timer = setInterval(() => {
             kokonaisSek++;
             if(!eTila) tyoSek++;
-            
             const h = Math.floor(kokonaisSek / 3600).toString().padStart(2, '0');
             const m = Math.floor((kokonaisSek % 3600) / 60).toString().padStart(2, '0');
             document.getElementById('kello').innerText = `${h}:${m}`;
-            
             joutuisuus();
             localStorage.setItem('pb_sek_tot', kokonaisSek);
             localStorage.setItem('pb_sek_tyo', tyoSek);
@@ -137,25 +136,18 @@
         const lEl = document.getElementById('j-lukema');
         const tEl = document.getElementById('j-tila');
         const kuitatutSumma = tAsetus + tTaivutus + poimiNum(document.getElementById('v-muut').innerText);
-        
         document.getElementById('j-kuitatut').innerText = `KUITATUT: ${kuitatutSumma.toFixed(1)} MIN | TYÖAIKA: ${Math.floor(tyoSek/60)} MIN`;
-
         b.classList.remove('blink');
-
         if(eTila) {
             b.style.background = "#607d8b"; b.style.color = "white";
             tEl.innerText = eTila; lEl.innerText = "TAUKO"; return;
         }
-
         if(!kaynnissa || tyoSek < 5) { 
             b.style.background = "#eee"; b.style.color = "black";
             tEl.innerText = "ODOTTAA"; lEl.innerText = "0.00"; return; 
         }
-
-        const tyotunnit = tyoSek / 3600;
-        const lukema = (kuitatutSumma / 60) / tyotunnit;
+        const lukema = (kuitatutSumma / 60) / (tyoSek / 3600);
         lEl.innerText = lukema.toFixed(2);
-
         if(lukema < 1.0) {
             b.style.background = "#f44336"; b.style.color = "white"; tEl.innerText = "HIDAS";
         } else if(lukema <= 1.5) {
@@ -166,18 +158,45 @@
         }
     }
 
+    function valmis() {
+        let v = (document.getElementById('t-alue').style.display === 'block') ? document.getElementById('t-syotto').value : syote;
+        // Pakota isot kirjaimet VAIN työtietoihin, EI erikoistiloihin
+        if(['kortti', 'lajike', 'muut', 'asetus', 'taivutus'].includes(kKunta)) v = v.toUpperCase();
+        if(kKunta === 'kortti' && v.length !== 6) { alert("6 NUMEROA!"); return; }
+        
+        if(['PROTO', 'HÄIRIÖ', 'HUOLTO'].includes(kKunta)) {
+            eTarkennus = v;
+        } else if(kKunta === 'vuoro') {
+            const h = parseInt(v.substr(0,2)), m = parseInt(v.substr(2,2));
+            const start = new Date(); start.setHours(h, m, 0, 0);
+            if(!kaynnissa) {
+                new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{});
+                kokonaisSek = Math.max(0, Math.floor((Date.now() - start) / 1000));
+                tyoSek = kokonaisSek;
+                kaynnissa = true; localStorage.setItem('pb_tila', 'kylla'); kelloKayntiin();
+            } else {
+                if(confirm("Lopetetaanko vuoro?")) { kaynnissa = false; clearInterval(timer); localStorage.setItem('pb_tila', 'ei'); nollaa(false); }
+            }
+        } else {
+            let d = v + (kKunta === 'muut' ? " " + (document.getElementById('t-minuutit').value || 0) + " MIN" : (['asetus','taivutus'].includes(kKunta) ? " MIN" : ""));
+            document.getElementById('v-' + kKunta).innerText = d;
+            localStorage.setItem('pb_' + kKunta, d);
+            if(kKunta==='asetus') tAsetus = parseFloat(v) || 0; if(kKunta==='taivutus') tTaivutus = parseFloat(v) || 0;
+        }
+        sulje(); näkymä(); joutuisuus();
+    }
+
     function tilaVaihda(t) {
         if(!kaynnissa) return;
-        const btnId = 's-' + t;
         if(eTila === t) {
             const min = Math.round((kokonaisSek - eAloitusSek) / 60);
             lisaaHistErikois(eTila, eTarkennus, min);
-            document.getElementById(btnId).classList.remove('active');
+            document.getElementById('s-' + t).classList.remove('active');
             eTila = null;
         } else {
             if(eTila) document.getElementById('s-' + eTila).classList.remove('active');
             eTila = t; eAloitusSek = kokonaisSek;
-            document.getElementById(btnId).classList.add('active');
+            document.getElementById('s-' + t).classList.add('active');
             avaaRuutu(t);
         }
         joutuisuus(); näkymä();
@@ -190,12 +209,11 @@
         const txt = document.getElementById('t-syotto');
         const min = document.getElementById('t-minuutit');
         txt.value = ""; min.value = "";
-        
+        txt.style.textTransform = (['lajike', 'muut'].includes(k)) ? "uppercase" : "none";
         const onTeksti = (['lajike', 'PROTO', 'HÄIRIÖ', 'HUOLTO', 'muut'].includes(k));
         document.getElementById('t-alue').style.display = onTeksti ? 'block' : 'none';
         min.style.display = (k === 'muut') ? 'block' : 'none';
         document.getElementById('n-otsikko').innerText = k.toUpperCase();
-        
         let g = document.getElementById('k-alue'); g.innerHTML = "";
         if(onTeksti) {
             g.innerHTML = '<button class="key key-ok" style="grid-column: span 3" onclick="valmis()">OK</button>';
@@ -208,27 +226,6 @@
                 g.appendChild(b);
             });
         }
-    }
-
-    function valmis() {
-        let v = (document.getElementById('t-alue').style.display === 'block') ? document.getElementById('t-syotto').value.toUpperCase() : syote;
-        if(kKunta === 'kortti' && v.length !== 6) { alert("6 NUMEROA!"); return; }
-        
-        if(['PROTO', 'HÄIRIÖ', 'HUOLTO'].includes(kKunta)) { eTarkennus = v; }
-        else if(kKunta === 'vuoro') {
-            if(!kaynnissa) {
-                new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{});
-                kaynnissa = true; localStorage.setItem('pb_tila', 'kylla'); kelloKayntiin();
-            } else {
-                if(confirm("Lopetetaanko vuoro?")) { kaynnissa = false; clearInterval(timer); localStorage.setItem('pb_tila', 'ei'); nollaa(false); }
-            }
-        } else {
-            let d = v + (kKunta === 'muut' ? " " + (document.getElementById('t-minuutit').value || 0) + " MIN" : (['asetus','taivutus'].includes(kKunta) ? " MIN" : ""));
-            document.getElementById('v-' + kKunta).innerText = d;
-            localStorage.setItem('pb_' + kKunta, d);
-            if(kKunta==='asetus') tAsetus = parseFloat(v) || 0; if(kKunta==='taivutus') tTaivutus = parseFloat(v) || 0;
-        }
-        sulje(); näkymä(); joutuisuus();
     }
 
     function tallenna() {
@@ -261,9 +258,8 @@
     }
 
     function näkymä() {
-        const b = document.getElementById('v-nappi');
-        b.innerText = kaynnissa ? "LOPETA VUORO" : "ALOITA VUORO";
-        b.className = kaynnissa ? "btn-stop" : "btn-start";
+        document.getElementById('v-nappi').innerText = kaynnissa ? "LOPETA VUORO" : "ALOITA VUORO";
+        document.getElementById('v-nappi').className = kaynnissa ? "btn-stop" : "btn-start";
         ['kortti', 'lajike', 'asetus', 'taivutus', 'muut'].forEach(id => {
             const box = document.getElementById('box-' + id);
             if(kaynnissa && !eTila) box.classList.add('box-active'); else box.classList.remove('box-active');
@@ -279,14 +275,12 @@
     function naytaMenu() { let m = document.getElementById('menu-spec'); m.style.display = (m.style.display === 'grid' ? 'none' : 'grid'); }
     function poimiNum(t) { const n = t.match(/[\d.]+/); return n ? parseFloat(n[0]) : 0; }
     function sulje() { document.getElementById('n-ruutu').style.display = 'none'; }
-    function vuoroKysely() { avaaRuutu('vuoro'); }
-    function paivitaLive(v) { document.getElementById('n-naytto').innerText = v.toUpperCase(); }
+    function paivitaLive(v) { document.getElementById('n-naytto').innerText = (['lajike', 'muut'].includes(kKunta)) ? v.toUpperCase() : v; }
     function nollaa(k) {
         if(k && !confirm("Nollataanko historia?")) return;
         if(k) { localStorage.clear(); location.reload(); }
-        else { ['val-kortti','val-lajike','val-asetus','val-taivutus','val-muut'].forEach(id => { 
-            let el = document.getElementById(id); if(el) el.innerText="-";
-            let el2 = document.getElementById('v-'+id.replace('val-','')); if(el2) el2.innerText="-";
+        else { ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { 
+            let el = document.getElementById('v-'+id); if(el) el.innerText="-";
         }); 
         tAsetus=0; tTaivutus=0; tyoSek=0; kokonaisSek=0; joutuisuus(); }
     }
