@@ -3,44 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SärmäTeho Pro</title>
+    <title>Press Brake Pro</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f0f2f5; margin: 0; }
         .version { color: #d32f2f; font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 10px; }
-        .container { background-color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); max-width: 500px; margin: auto; }
-        h1 { color: #1a237e; text-align: center; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; }
-        .timer-display { font-size: 3.5em; font-weight: bold; text-align: center; margin: 20px 0; font-family: 'Courier New', monospace; background: #222; color: #00ff00; padding: 15px; border-radius: 8px; }
-        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 12px; margin: 8px 0; border-radius: 6px; font-weight: bold; text-align: center; min-height: 1.2em; color: #0d47a1; }
-        button { width: 100%; padding: 18px; margin: 10px 0; cursor: pointer; font-size: 1.1em; border-radius: 10px; font-weight: bold; transition: 0.2s; border: 1px solid #ccc; }
+        .container { background-color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); max-width: 500px; margin: auto; }
+        h1 { color: #1a237e; text-align: center; text-transform: uppercase; margin: 0 0 15px 0; }
+        .timer-display { font-size: 3.5em; font-weight: bold; text-align: center; margin: 15px 0; font-family: monospace; background: #222; color: #00ff00; padding: 15px; border-radius: 8px; }
+        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 10px; margin: 5px 0; border-radius: 6px; font-weight: bold; text-align: center; color: #0d47a1; }
+        button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; font-size: 1.1em; border-radius: 10px; font-weight: bold; border: 1px solid #ccc; }
         .btn-start { background-color: #2e7d32; color: white; border: none; }
         .btn-stop { background-color: #c62828; color: white; border: none; }
-        #reader { width: 100%; display: none; margin-bottom: 15px; border: 3px solid #1a237e; border-radius: 8px; overflow: hidden; }
-        .status-msg { text-align: center; font-style: italic; color: #555; font-weight: 500; }
-        .time-log { font-size: 0.9em; color: #333; margin-top: 10px; text-align: center; background: #fff9c4; padding: 5px; border-radius: 4px; display: none; }
+        
+        /* Numeronäppäimistö Overlay */
+        #keypadOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .keypad-container { background: white; padding: 20px; border-radius: 15px; width: 280px; text-align: center; }
+        .keypad-display { font-size: 2em; border: 2px solid #333; margin-bottom: 15px; padding: 10px; border-radius: 5px; height: 1.2em; font-family: monospace; }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .keypad-btn { padding: 20px; font-size: 1.5em; background: #eee; border: 1px solid #bbb; border-radius: 8px; cursor: pointer; }
+        .keypad-btn:active { background: #ccc; }
+        .keypad-ok { background: #2e7d32; color: white; }
+        .keypad-cancel { background: #c62828; color: white; }
+        
+        #reader { width: 100%; display: none; margin-bottom: 15px; border: 3px solid #1a237e; border-radius: 8px; }
+        .status-msg { text-align: center; font-style: italic; color: #555; }
+        .time-log { font-size: 0.9em; background: #fff9c4; padding: 8px; border-radius: 4px; display: none; text-align: center; margin-top: 10px; border: 1px solid #fbc02d; }
     </style>
 </head>
 <body onload="tarkistaPalautus()">
 
-<span class="version">Versio 1.16</span>
+<span class="version">Versio 1.19</span>
 
 <div class="container">
-    <h1>SärmäTeho Pro</h1>
-    
+    <h1>Press Brake Pro</h1>
     <div id="tyoAika" class="timer-display">00:00:00</div>
     <p id="status" class="status-msg">Järjestelmä valmiina</p>
+    
     <div id="aikatallenne" class="time-log"></div>
-
+    
     <div id="korttiIkkuna" class="info-box">Kortin nro: -</div>
     <div id="lajiIkkuna" class="info-box">Lajimerkki: -</div>
-
+    
     <div id="reader"></div>
-
+    
     <div class="control-panel">
-        <button id="vuoroNappi" class="btn-start" onclick="hallitseVuoroa()">ALOITA VUORO</button>
+        <button id="vuoroNappi" class="btn-start" onclick="avaaAikaKysely()">ALOITA VUORO</button>
         <button onclick="avaaSkanneri()">📷 SKANNAA VIIVAKOODI</button>
         <hr>
-        <button onclick="nollaaHistoria()" style="color: #999; font-size: 0.85em; border: none; background: none; text-decoration: underline;">Nollaa historia</button>
+        <button onclick="nollaaHistoria()" style="color: #999; font-size: 0.8em; border: none; background: none; text-decoration: underline;">Nollaa historia</button>
+    </div>
+</div>
+
+<div id="keypadOverlay">
+    <div class="keypad-container">
+        <h3 id="keypadTitle">Aloitusaika (HHMM)</h3>
+        <p style="font-size: 0.8em; color: #666; margin-top: -10px;">Jätä tyhjäksi käyttääksesi nykyhetkeä</p>
+        <div id="keypadInput" class="keypad-display"></div>
+        <div class="keypad-grid">
+            <button class="keypad-btn" onclick="lisaaNumero('1')">1</button>
+            <button class="keypad-btn" onclick="lisaaNumero('2')">2</button>
+            <button class="keypad-btn" onclick="lisaaNumero('3')">3</button>
+            <button class="keypad-btn" onclick="lisaaNumero('4')">4</button>
+            <button class="keypad-btn" onclick="lisaaNumero('5')">5</button>
+            <button class="keypad-btn" onclick="lisaaNumero('6')">6</button>
+            <button class="keypad-btn" onclick="lisaaNumero('7')">7</button>
+            <button class="keypad-btn" onclick="lisaaNumero('8')">8</button>
+            <button class="keypad-btn" onclick="lisaaNumero('9')">9</button>
+            <button class="keypad-btn keypad-cancel" onclick="tyhjennaNaytto()">C</button>
+            <button class="keypad-btn" onclick="lisaaNumero('0')">0</button>
+            <button class="keypad-btn keypad-ok" onclick="vahvistaAika()">OK</button>
+        </div>
+        <button style="margin-top:15px; font-size:0.9em; background: none; border: none; color: blue; cursor: pointer;" onclick="suljeKeypad()">Peruuta</button>
     </div>
 </div>
 
@@ -48,152 +82,18 @@
     let sekunnit = 0;
     let ajastin;
     let vuoroKaynnissa = false;
+    let syoteAika = "";
+    let aloitusLeima = null;
 
     function tarkistaPalautus() {
-        const tallennettuKortti = localStorage.getItem('sarma_kortti');
-        const tallennettuLaji = localStorage.getItem('sarma_laji');
-        if (tallennettuKortti) document.getElementById('korttiIkkuna').innerText = tallennettuKortti;
-        if (tallennettuLaji) document.getElementById('lajiIkkuna').innerText = tallennettuLaji;
-
         const tallennettuTila = localStorage.getItem('sarma_tila');
         const tallennetutSekunnit = localStorage.getItem('sarma_sekunnit');
+        const tallennettuAloitus = localStorage.getItem('sarma_aloitus_teksti');
+        
+        if (localStorage.getItem('sarma_kortti')) document.getElementById('korttiIkkuna').innerText = localStorage.getItem('sarma_kortti');
+        if (localStorage.getItem('sarma_laji')) document.getElementById('lajiIkkuna').innerText = localStorage.getItem('sarma_laji');
         
         if (tallennetutSekunnit) {
             sekunnit = parseInt(tallennetutSekunnit);
             if (tallennettuTila === 'kaynnissa') {
-                const tallennusAika = localStorage.getItem('sarma_aika');
-                const erotusSekunteina = Math.floor((Date.now() - parseInt(tallennusAika)) / 1000);
-                sekunnit += erotusSekunteina;
-                paivitaNaytto();
-                hallitseVuoroa(true); // Ohitetaan kysely palautuksessa
-            } else {
-                paivitaNaytto();
-            }
-        }
-    }
-
-    function haeNykyinenAika() {
-        const nyt = new Date();
-        return nyt.getHours().toString().padStart(2, '0') + ":" + nyt.getMinutes().toString().padStart(2, '0');
-    }
-
-    function hallitseVuoroa(onPalautus = false) {
-        const nappi = document.getElementById('vuoroNappi');
-        const status = document.getElementById('status');
-        const loki = document.getElementById('aikatallenne');
-        
-        if (!vuoroKaynnissa) {
-            let aloitusAika = haeNykyinenAika();
-            
-            if (!onPalautus) {
-                aloitusAika = prompt("Vahvista vuoron aloitusaika (HH:MM):", aloitusAika);
-                if (aloitusAika === null) return;
-                soitaAani(660, 0.2); // Hälytysääni alussa
-            }
-
-            vuoroKaynnissa = true;
-            nappi.innerText = "LOPETA VUORO";
-            nappi.className = "btn-stop";
-            status.innerText = "VUORO KÄYNNISSÄ";
-            loki.innerText = "Aloitettu: " + aloitusAika;
-            loki.style.display = "block";
-            
-            localStorage.setItem('sarma_tila', 'kaynnissa');
-            localStorage.setItem('sarma_aloitus', aloitusAika);
-            kaynnistaKello();
-        } else {
-            let lopetusAika = haeNykyinenAika();
-            lopetusAika = prompt("Vahvista vuoron lopetusaika (HH:MM):", lopetusAika);
-            
-            if (lopetusAika !== null) {
-                vuoroKaynnissa = false;
-                nappi.innerText = "ALOITA VUORO";
-                nappi.className = "btn-start";
-                status.innerText = "VUORO PÄÄTTYNYT";
-                loki.innerText += " | Lopetettu: " + lopetusAika;
-                
-                localStorage.setItem('sarma_tila', 'pysatty');
-                localStorage.setItem('sarma_lopetus', lopetusAika);
-                pysaytaKello();
-            }
-        }
-    }
-
-    function kaynnistaKello() {
-        if (ajastin) clearInterval(ajastin);
-        ajastin = setInterval(() => {
-            sekunnit++;
-            paivitaNaytto();
-            localStorage.setItem('sarma_sekunnit', sekunnit);
-            localStorage.setItem('sarma_aika', Date.now());
-        }, 1000);
-    }
-
-    function pysaytaKello() {
-        clearInterval(ajastin);
-    }
-
-    function paivitaNaytto() {
-        const h = Math.floor(sekunnit / 3600).toString().padStart(2, '0');
-        const m = Math.floor((sekunnit % 3600) / 60).toString().padStart(2, '0');
-        const s = (sekunnit % 60).toString().padStart(2, '0');
-        document.getElementById('tyoAika').innerText = `${h}:${m}:${s}`;
-    }
-
-    function avaaSkanneri() {
-        const readerElement = document.getElementById('reader');
-        readerElement.style.display = 'block';
-        const html5QrCode = new Html5Qrcode("reader");
-        
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            { fps: 15, qrbox: 280 },
-            (decodedText) => {
-                if (decodedText.startsWith("L-") || decodedText.startsWith("l-")) {
-                    const lajiTeksti = "Lajimerkki: " + decodedText.substring(2);
-                    document.getElementById('lajiIkkuna').innerText = lajiTeksti;
-                    localStorage.setItem('sarma_laji', lajiTeksti);
-                } else {
-                    const korttiTeksti = "Kortin nro: " + decodedText;
-                    document.getElementById('korttiIkkuna').innerText = korttiTeksti;
-                    localStorage.setItem('sarma_kortti', korttiTeksti);
-                }
-                
-                soitaAani(880, 0.15);
-                html5QrCode.stop();
-                readerElement.style.display = 'none';
-            },
-            (errorMessage) => {}
-        ).catch(err => alert("Kamera-virhe: " + err));
-    }
-
-    function soitaAani(taajuus, kesto) {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.frequency.value = taajuus;
-            oscillator.start();
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + kesto);
-            oscillator.stop(audioCtx.currentTime + kesto);
-        } catch(e) {}
-    }
-
-    function nollaaHistoria() {
-        if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
-            sekunnit = 0;
-            localStorage.clear();
-            paivitaNaytto();
-            document.getElementById('korttiIkkuna').innerText = "Kortin nro: -";
-            document.getElementById('lajiIkkuna').innerText = "Lajimerkki: -";
-            document.getElementById('aikatallenne').innerText = "";
-            document.getElementById('aikatallenne').style.display = "none";
-            alert("Kaikki tiedot on tyhjennetty.");
-        }
-    }
-</script>
-
-</body>
-</html>
+                const erotus = Math.floor((Date.now() - parseInt(localStorage.getItem('sarma_
