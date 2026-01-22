@@ -18,24 +18,19 @@
         .btn-start { background-color: #2e7d32; color: white; border: none; }
         .btn-stop { background-color: #c62828; color: white; border: none; }
         
-        /* Keypad & Modals */
         #keypadOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
-        .keypad-container { background: white; padding: 15px; border-radius: 15px; width: 310px; text-align: center; }
+        .keypad-container { background: white; padding: 20px; border-radius: 15px; width: 310px; text-align: center; }
         .keypad-display { font-size: 1.8em; border: 2px solid #333; margin-bottom: 10px; padding: 8px; border-radius: 5px; min-height: 1.2em; font-family: monospace; background: #f9f9f9; }
         .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .keypad-btn { padding: 15px; font-size: 1.3em; background: #eee; border: 1px solid #bbb; border-radius: 8px; cursor: pointer; }
         .keypad-ok { background-color: #2e7d32; color: white; border: none; }
-        
-        /* Oppiva input */
-        .name-input { width: 90%; padding: 10px; font-size: 1.1em; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        datalist { width: 100%; }
-
+        .name-input { width: 100%; padding: 12px; font-size: 1.1em; margin-bottom: 10px; border-radius: 5px; border: 1px solid #333; box-sizing: border-box; }
         .time-log { font-size: 0.85em; background: #fff9c4; padding: 8px; border-radius: 4px; display: none; text-align: center; margin-top: 10px; border: 1px solid #fbc02d; font-weight: bold; }
     </style>
 </head>
 <body onload="tarkistaPalautus()">
 
-<span class="version">Versio 1.23</span>
+<span class="version">Versio 1.25</span>
 
 <div class="container">
     <h1>Press Brake Pro</h1>
@@ -51,22 +46,19 @@
     <div id="muutBox" class="info-box" style="background: #f3e5f5; border-color: #ce93d8;" onclick="avaaMuutVaiheet()">Muut työvaiheet: -</div>
     
     <button id="vuoroNappi" class="btn-start" onclick="avaaAikaKysely()">ALOITA VUORO</button>
-    <button onclick="nollaaHistoria()" style="color: #999; font-size: 0.8em; border: none; background: none; text-decoration: underline;">Nollaa historia</button>
+    <button onclick="nollaaHistoria(true)" style="color: #999; font-size: 0.8em; border: none; background: none; text-decoration: underline;">Nollaa kaikki muisti</button>
 </div>
 
 <div id="keypadOverlay">
     <div class="keypad-container">
         <h3 id="keypadTitle" style="margin-top: 0;">Syötä arvo</h3>
-        
         <div id="nameInputSection" style="display:none;">
-            <input type="text" id="vaiheNimi" class="name-input" placeholder="Vaiheen nimi (esim. Pakkaus)" list="vaiheLista">
+            <input type="text" id="vaiheNimi" class="name-input" placeholder="Kirjoita tai valitse alta" list="vaiheLista" autocomplete="off">
             <datalist id="vaiheLista"></datalist>
         </div>
-
         <div id="keypadInput" class="keypad-display"></div>
-        
         <div class="keypad-grid" id="keypadGrid"></div>
-        <button style="margin-top:10px; color: blue; border:none; background:none; font-weight:bold;" onclick="suljeKeypad()">PERUUTA</button>
+        <button style="margin-top:15px; color: blue; border:none; background:none; font-weight:bold;" onclick="suljeKeypad()">PERUUTA</button>
     </div>
 </div>
 
@@ -135,7 +127,7 @@
 
         const otsikot = {
             kortti: 'Kortin nro', lajike: 'Lajimerkki', asetus: 'Asetusaika (min)',
-            taivutus: 'Taivutusaika (mm.ss)', muut: 'Muu työvaihe & aika', aloitus: 'Aloitusaika (HHMM)', lopetus: 'Lopetusaika (HHMM)'
+            taivutus: 'Taivutusaika (mm.ss)', muut: 'Työvaiheen nimi ja aika', aloitus: 'Aloitusaika (HHMM)', lopetus: 'Lopetusaika (HHMM)'
         };
         document.getElementById('keypadTitle').innerText = otsikot[tyyppi];
     }
@@ -144,7 +136,7 @@
         const v = syote || "0";
         if (aktiivinenKentta === 'muut') {
             const nimi = document.getElementById('vaiheNimi').value || "Muu vaihe";
-            if(!opitutVaiheet.includes(nimi)) {
+            if(nimi !== "Muu vaihe" && !opitutVaiheet.includes(nimi)) {
                 opitutVaiheet.push(nimi);
                 localStorage.setItem('pb_opitut', JSON.stringify(opitutVaiheet));
                 paivitaDatalist();
@@ -180,14 +172,19 @@
     function hallitseVuoroa(aika) {
         let nyt = new Date(), h = nyt.getHours(), m = nyt.getMinutes();
         if(aika && aika.length >= 3) { h = parseInt(aika.substring(0,2)); m = parseInt(aika.substring(2,4)); }
+        
         if (!vuoroKaynnissa) {
             let aloitus = new Date(); aloitus.setHours(h, m, 0);
             sekunnit = (aloitus < nyt) ? Math.floor((nyt - aloitus) / 1000) : 0;
-            vuoroKaynnissa = true; localStorage.setItem('pb_tila', 'kaynnissa');
+            vuoroKaynnissa = true; 
+            localStorage.setItem('pb_tila', 'kaynnissa');
             paivitaVuoroNakyma(); kaynnistaKello();
         } else {
-            vuoroKaynnissa = false; localStorage.setItem('pb_tila', 'pysatty');
-            paivitaVuoroNakyma(); pysaytaKello();
+            // LOPETUS: Tyhjennetään kaikki
+            vuoroKaynnissa = false; 
+            pysaytaKello();
+            nollaaHistoria(false); // Nollataan ilman confirm-ikkunaa lopetuksen yhteydessä
+            paivitaVuoroNakyma();
         }
     }
 
@@ -211,12 +208,27 @@
         document.getElementById('vuoroNappi').className = vuoroKaynnissa ? "btn-stop" : "btn-start";
     }
 
-    function nollaaHistoria() {
-        if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
-            pysaytaKello(); sekunnit = 0; vuoroKaynnissa = false;
-            localStorage.clear(); paivitaNaytto(); paivitaVuoroNakyma();
-            location.reload();
-        }
+    function nollaaHistoria(kysy) {
+        if (kysy && !confirm("Haluatko varmasti nollata koko jakson historian?")) return;
+        
+        pysaytaKello();
+        sekunnit = 0;
+        vuoroKaynnissa = false;
+        
+        // Tyhjennetään tallennetut arvot, paitsi opitut vaiheet
+        const keys = ['pb_kortti', 'pb_lajike', 'pb_asetus', 'pb_taivutus', 'pb_muut', 'pb_tila', 'pb_sekunnit', 'pb_leima', 'pb_aloitus_txt'];
+        keys.forEach(k => localStorage.removeItem(k));
+        
+        paivitaNaytto();
+        paivitaVuoroNakyma();
+        
+        // Nollataan laatikoiden tekstit
+        document.getElementById('korttiBox').innerText = "Kortin nro: -";
+        document.getElementById('lajiBox').innerText = "Lajimerkki: -";
+        document.getElementById('asetusBox').innerText = "Asetusaika: -";
+        document.getElementById('taivutusBox').innerText = "Taivutusaika: -";
+        document.getElementById('muutBox').innerText = "Muut työvaiheet: -";
+        document.getElementById('aikatallenne').style.display = "none";
     }
 </script>
 </body>
