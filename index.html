@@ -15,7 +15,10 @@
         h1 { color: #1a237e; text-align: center; text-transform: uppercase; margin: 0 0 10px 0; font-size: 1.5em; }
         .timer-display { font-size: 3em; font-weight: bold; text-align: center; margin: 10px 0; font-family: monospace; background: #222; color: #00ff00; padding: 10px; border-radius: 8px; }
         
-        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 12px; margin: 5px 0; border-radius: 6px; font-weight: bold; text-align: center; color: #0d47a1; cursor: pointer; word-wrap: break-word; }
+        /* Indikaattori-laatikot */
+        .info-box { background: #e3f2fd; border: 1px solid #90caf9; padding: 12px; margin: 5px 0; border-radius: 6px; font-weight: bold; text-align: center; color: #0d47a1; cursor: pointer; word-wrap: break-word; transition: all 0.3s; position: relative; overflow: hidden; }
+        .indicator-bar { position: absolute; bottom: 0; left: 0; height: 5px; background: #4caf50; transition: width 0.5s; width: 0%; }
+        
         .info-label { font-size: 0.8em; color: #555; margin-bottom: 2px; text-align: center; font-weight: bold; margin-top: 5px; }
         
         button { width: 100%; padding: 16px; margin: 5px 0; cursor: pointer; font-size: 1.1em; border-radius: 10px; font-weight: bold; border: 1px solid #ccc; }
@@ -23,10 +26,13 @@
         .btn-stop { background-color: #c62828; color: white; border: none; }
         .btn-save { background-color: #1976d2; color: white; border: none; margin-top: 10px; }
         
+        /* Tilavärit */
+        .box-warning { background-color: #fff9c4 !important; border-color: #fbc02d !important; }
+        .box-danger { background-color: #ffcdd2 !important; border-color: #f44336 !important; }
+
         .history-container { margin-top: 20px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
         td { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .col-aika { text-align: right; font-weight: bold; color: #e27d32; font-family: monospace; }
 
         #keypadOverlay, #detailsOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
         .modal-container { background: white; padding: 20px; border-radius: 15px; width: 310px; text-align: center; max-height: 90vh; overflow-y: auto; }
@@ -35,13 +41,11 @@
         .keypad-btn { padding: 15px; font-size: 1.3em; background: #eee; border: 1px solid #bbb; border-radius: 8px; cursor: pointer; }
         .keypad-ok { background-color: #2e7d32; color: white; border: none; }
         .text-input { width: 100%; padding: 12px; font-size: 1.1em; margin-bottom: 10px; border-radius: 5px; border: 1px solid #333; box-sizing: border-box; }
-        
-        #chartCanvas { display: none; }
     </style>
 </head>
 <body onload="tarkistaPalautus()">
 
-<span class="version">Versio 1.34</span>
+<span class="version">Versio 1.37</span>
 
 <div class="container">
     <h1>Press Brake Pro</h1>
@@ -50,10 +54,18 @@
     <div id="korttiBox" class="info-box" onclick="avaaKeypad('kortti')">Kortin nro: -</div>
     <div id="lajiBox" class="info-box" onclick="avaaTekstiSyotto('lajike')">Lajimerkki: -</div>
     
-    <div class="info-label">Työvaiheet</div>
-    <div id="asetusBox" class="info-box" onclick="avaaKeypad('asetus')">Asetusaika: -</div>
-    <div id="taivutusBox" class="info-box" onclick="avaaKeypad('taivutus')">Taivutusaika: -</div>
-    <div id="muutBox" class="info-box" style="background: #f3e5f5; border-color: #ce93d8;" onclick="avaaMuutVaiheet()">Muut työvaiheet: -</div>
+    <div class="info-label">Joutuisuusindikaattorit</div>
+    <div id="asetusBox" class="info-box" onclick="avaaKeypad('asetus')">
+        <span>Asetusaika: -</span>
+        <div id="asetusBar" class="indicator-bar"></div>
+    </div>
+    <div id="taivutusBox" class="info-box" onclick="avaaKeypad('taivutus')">
+        <span>Taivutusaika: -</span>
+        <div id="taivutusBar" class="indicator-bar"></div>
+    </div>
+    <div id="muutBox" class="info-box" style="background: #f3e5f5; border-color: #ce93d8;" onclick="avaaMuutVaiheet()">
+        Muut työvaiheet: -
+    </div>
     
     <button class="btn-save" onclick="tallennaKorttiNyt()">💾 TALLENNA KORTTI</button>
     <button id="vuoroNappi" class="btn-start" onclick="avaaAikaKysely()">ALOITA VUORO</button>
@@ -63,15 +75,15 @@
         <div id="historyContent"></div>
     </div>
 
-    <button onclick="nollaaHistoria(true)" style="color: #999; font-size: 0.8em; border: none; background: none; text-decoration: underline; margin-top: 10px;">Tyhjennä muisti</button>
+    <button onclick="nollaaHistoria(true)" style="color: #999; font-size: 0.8em; border: none; background: none; text-decoration: underline;">Tyhjennä muisti</button>
 </div>
 
-<canvas id="chartCanvas" width="400" height="400"></canvas>
+<canvas id="chartCanvas" style="display:none;" width="400" height="400"></canvas>
 
 <div id="keypadOverlay">
     <div class="modal-container">
         <h3 id="keypadTitle">SYÖTÄ</h3>
-        <div id="textInputSection" style="display:none;"><input type="text" id="yleisInput" class="text-input"></div>
+        <div id="textInputSection" style="display:none;"><input type="text" id="yleisInput" class="text-input" style="text-transform: uppercase;"></div>
         <div id="nameInputSection" style="display:none;"><input type="text" id="vaiheNimi" class="text-input" list="vaiheLista"><datalist id="vaiheLista"></datalist></div>
         <div id="keypadInput" class="keypad-display"></div>
         <div class="keypad-grid" id="keypadGrid"></div>
@@ -83,192 +95,147 @@
     <div class="modal-container">
         <h3 id="detailTitle">Kortin tiedot</h3>
         <div id="detailContent"></div>
-        <button style="margin-top:20px;" onclick="document.getElementById('detailsOverlay').style.display='none'">SULJE</button>
+        <button class="btn-stop" style="background:#f44336; font-size:0.8em; padding:10px;" id="poistoNappi">POISTA RIVI</button>
+        <button style="margin-top:10px; border:none; background:none;" onclick="document.getElementById('detailsOverlay').style.display='none'">SULJE</button>
     </div>
 </div>
 
 <script>
     let sekunnit = 0, ajastin = null, vuoroKaynnissa = false, syote = "", aktiivinenKentta = "";
-    let opitutVaiheet = ["Pakkaus", "Kierteytys", "Irrotus"];
+    let tavoiteAsetusMin = 0, tavoiteTaivutusMin = 0;
 
     function tarkistaPalautus() {
         ['pb_kortti', 'pb_lajike', 'pb_asetus', 'pb_taivutus', 'pb_muut'].forEach(f => {
             const val = localStorage.getItem(f);
-            if(val) document.getElementById(f.replace('pb_','') + 'Box').innerText = val;
+            if(val) {
+                document.getElementById(f.replace('pb_','') + 'Box').querySelector('span')?.innerText ? 
+                (document.getElementById(f.replace('pb_','') + 'Box').querySelector('span').innerText = val) : 
+                (document.getElementById(f.replace('pb_','') + 'Box').innerText = val);
+                
+                if (f === 'pb_asetus') tavoiteAsetusMin = parseFloat(val.match(/\d+(\.\d+)?/)) || 0;
+                if (f === 'pb_taivutus') tavoiteTaivutusMin = parseFloat(val.match(/\d+(\.\d+)?/)) || 0;
+            }
         });
-        const opitut = localStorage.getItem('pb_opitut');
-        if(opitut) opitutVaiheet = JSON.parse(opitut);
-        paivitaDatalist();
         paivitaHistoriaNakyma();
-
         if (localStorage.getItem('pb_tila') === 'kaynnissa') {
             sekunnit = parseInt(localStorage.getItem('pb_sekunnit')) + Math.floor((Date.now() - parseInt(localStorage.getItem('pb_leima'))) / 1000);
             vuoroKaynnissa = true;
             paivitaVuoroNakyma();
             kaynnistaKello();
-        } else if(localStorage.getItem('pb_sekunnit')) {
-            sekunnit = parseInt(localStorage.getItem('pb_sekunnit'));
-            paivitaNaytto();
         }
     }
 
-    function muotoileAika(s) {
-        const h = Math.floor(s/3600).toString().padStart(2,'0'), m = Math.floor((s%3600)/60).toString().padStart(2,'0'), sek = (s%60).toString().padStart(2,'0');
-        return `${h}:${m}:${sek}`;
+    function kaynnistaKello() {
+        if (ajastin) clearInterval(ajastin);
+        ajastin = setInterval(() => { 
+            sekunnit++; 
+            paivitaNaytto(); 
+            paivitaIndikaattorit();
+            localStorage.setItem('pb_sekunnit', sekunnit); 
+            localStorage.setItem('pb_leima', Date.now()); 
+        }, 1000);
     }
 
-    function tallennaKorttiNyt() {
-        let historia = JSON.parse(localStorage.getItem('pb_historia') || "[]");
-        const uusi = {
-            id: Date.now(),
-            pvm: new Date().toLocaleDateString('fi-FI'),
-            klo: new Date().toLocaleTimeString('fi-FI', {hour: '2-digit', minute:'2-digit'}),
-            kortti: document.getElementById('korttiBox').innerText.replace('Kortin nro: ', ''),
-            lajike: document.getElementById('lajiBox').innerText.replace('Lajimerkki: ', ''),
-            asetus: document.getElementById('asetusBox').innerText,
-            taivutus: document.getElementById('taivutusBox').innerText,
-            muut: document.getElementById('muutBox').innerText,
-            kestoSek: sekunnit,
-            kesto: muotoileAika(sekunnit)
-        };
-        historia.unshift(uusi);
-        localStorage.setItem('pb_historia', JSON.stringify(historia));
-        nollaaHistoria(false);
-        paivitaHistoriaNakyma();
-    }
-
-    async function luoLoppuRaportti() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const historia = JSON.parse(localStorage.getItem('pb_historia') || "[]").filter(h => h.pvm === new Date().toLocaleDateString('fi-FI'));
-
-        if(historia.length === 0) { alert("Ei tallennettuja kortteja tältä päivältä."); return; }
-
-        doc.setFontSize(20); doc.setTextColor(26, 35, 126);
-        doc.text("PRESS BRAKE PRO - RAPORTTI", 105, 20, { align: "center" });
-        doc.setFontSize(10); doc.text(`Luotu: ${new Date().toLocaleString('fi-FI')}`, 105, 28, { align: "center" });
-
-        let kasetus = 0, ktaivutus = 0, kmuut = 0, ktot = 0;
-        const tableBody = historia.map(h => {
-            const as = parseFloat(h.asetus.match(/\d+(\.\d+)?/)) || 0;
-            const ta = parseFloat(h.taivutus.match(/\d+(\.\d+)?/)) || 0;
-            const mu = parseFloat(h.muut.match(/\d+(\.\d+)?/)) || 0;
-            kasetus += as; ktaivutus += ta; kmuut += mu; ktot += h.kestoSek;
-            return [h.kortti, h.lajike, as, ta, mu, h.kesto];
-        });
-
-        doc.autoTable({
-            startY: 35,
-            head: [['Kortti', 'Lajimerkki', 'Asetus', 'Taivutus', 'Muut', 'Yhteensä']],
-            body: tableBody,
-            headStyles: { fillColor: [26, 35, 126] }
-        });
-
-        const ctx = document.getElementById('chartCanvas').getContext('2d');
-        const myChart = new Chart(ctx, {
-            type: 'pie',
-            data: { labels: ['Asetus', 'Taivutus', 'Muut'], datasets: [{ data: [kasetus, ktaivutus, kmuut], backgroundColor: ['#1976d2', '#2e7d32', '#9c27b0'] }] },
-            options: { animation: false }
-        });
-
-        await new Promise(r => setTimeout(r, 600));
-        const chartImg = document.getElementById('chartCanvas').toDataURL('image/png');
-        doc.addPage();
-        doc.text("VUORON AJANKÄYTTÖ (MIN)", 105, 20, { align: "center" });
-        doc.addImage(chartImg, 'PNG', 50, 30, 110, 110);
+    function paivitaIndikaattorit() {
+        const nykyMin = sekunnit / 60;
         
-        doc.text("YHTEENVETO", 20, 150);
-        doc.setFontSize(11);
-        doc.text(`Kortteja yhteensä: ${historia.length} kpl`, 25, 160);
-        doc.text(`Kokonaisaika: ${muotoileAika(ktot)}`, 25, 170);
-
-        doc.save(`PressBrake_Pro_Raportti.pdf`);
-        myChart.destroy();
-    }
-
-    function hallitseVuoroa(aika) {
-        if (!vuoroKaynnissa) {
-            sekunnit = 0; vuoroKaynnissa = true; localStorage.setItem('pb_tila', 'kaynnissa'); paivitaVuoroNakyma(); kaynnistaKello();
-        } else {
-            if(confirm("Lopetetaanko vuoro ja luodaanko raportti?")) {
-                vuoroKaynnissa = false; pysaytaKello(); luoLoppuRaportti(); paivitaVuoroNakyma();
-            }
+        // Asetusindikaattori
+        if (tavoiteAsetusMin > 0) {
+            const prosentti = (nykyMin / tavoiteAsetusMin) * 100;
+            const bar = document.getElementById('asetusBar');
+            const box = document.getElementById('asetusBox');
+            bar.style.width = Math.min(prosentti, 100) + "%";
+            
+            if (prosentti > 100) { box.className = "info-box box-danger"; bar.style.background = "#f44336"; }
+            else if (prosentti > 80) { box.className = "info-box box-warning"; bar.style.background = "#fbc02d"; }
+            else { box.className = "info-box"; bar.style.background = "#4caf50"; }
         }
-    }
 
-    function avaaKeypad(tyyppi) {
-        aktiivinenKentta = tyyppi; syote = "";
-        document.getElementById('keypadOverlay').style.display = 'flex';
-        document.getElementById('textInputSection').style.display = 'none';
-        document.getElementById('keypadInput').style.display = 'block';
-        document.getElementById('keypadInput').innerText = "";
-        document.getElementById('nameInputSection').style.display = (tyyppi === 'muut') ? 'block' : 'none';
-        const grid = document.getElementById('keypadGrid'); grid.innerHTML = "";
-        ['1','2','3','4','5','6','7','8','9','C','0','.', 'OK'].forEach(n => {
-            const btn = document.createElement('button'); btn.className = 'keypad-btn' + (n === 'C' ? ' keypad-cancel' : (n === 'OK' ? ' keypad-ok' : ''));
-            btn.innerText = n; btn.onclick = () => { if(n === 'C') { syote = ""; document.getElementById('keypadInput').innerText = ""; } else if(n === 'OK') vahvistaSyote(); else { syote += n; document.getElementById('keypadInput').innerText = syote; } };
-            grid.appendChild(btn);
-        });
-    }
-
-    function avaaTekstiSyotto(tyyppi) {
-        aktiivinenKentta = tyyppi;
-        document.getElementById('keypadOverlay').style.display = 'flex';
-        document.getElementById('textInputSection').style.display = 'block';
-        document.getElementById('keypadGrid').innerHTML = '<button class="keypad-btn keypad-ok" style="grid-column: span 3" onclick="vahvistaSyote()">OK</button>';
-        document.getElementById('keypadInput').style.display = 'none';
-        document.getElementById('yleisInput').value = "";
+        // Taivutusindikaattori (Lasketaan yleensä asetusajan jälkeen, mutta tässä reaaliaikainen kokonaisaikaan nähden)
+        if (tavoiteTaivutusMin > 0) {
+            const prosentti = (nykyMin / tavoiteTaivutusMin) * 100;
+            const bar = document.getElementById('taivutusBar');
+            const box = document.getElementById('taivutusBox');
+            bar.style.width = Math.min(prosentti, 100) + "%";
+            
+            if (prosentti > 100) { box.className = "info-box box-danger"; bar.style.background = "#f44336"; }
+            else if (prosentti > 80) { box.className = "info-box box-warning"; bar.style.background = "#fbc02d"; }
+            else { box.className = "info-box"; bar.style.background = "#4caf50"; }
+        }
     }
 
     function vahvistaSyote() {
         let v = (aktiivinenKentta === 'lajike') ? document.getElementById('yleisInput').value : syote;
+        
+        if (aktiivinenKentta === 'kortti' && (v.length !== 6 || isNaN(v))) {
+            alert("Kortin on oltava 6 numeroa."); return;
+        }
+
+        if (aktiivinenKentta === 'lajike') v = v.toUpperCase();
+
+        const box = document.getElementById(aktiivinenKentta + 'Box');
+        const txt = v + (['asetus','taivutus'].includes(aktiivinenKentta) ? ' min' : '');
+        
         if (aktiivinenKentta === 'muut') {
             const nimi = document.getElementById('vaiheNimi').value || "Muu";
-            document.getElementById('muutBox').innerText = nimi + ": " + v + " min";
-            localStorage.setItem('pb_muut', nimi + ": " + v + " min");
-        } else if (aktiivinenKentta === 'lajike') {
-            document.getElementById('lajiBox').innerText = "Lajimerkki: " + v;
-            localStorage.setItem('pb_lajike', "Lajimerkki: " + v);
-        } else if (['kortti','asetus','taivutus'].includes(aktiivinenKentta)) {
-            const labelit = { kortti: 'Kortin nro: ', asetus: 'Asetusaika: ', taivutus: 'Taivutusaika: ' };
-            const txt = labelit[aktiivinenKentta] + v + (aktiivinenKentta==='kortti'?'':' min');
-            document.getElementById(aktiivinenKentta + 'Box').innerText = txt;
-            localStorage.setItem('pb_' + aktiivinenKentta, txt);
-        } else { hallitseVuoroa(v); }
+            box.innerText = nimi + ": " + v + " min";
+            localStorage.setItem('pb_muut', box.innerText);
+        } else {
+            const label = {kortti:'Kortin nro: ', lajike:'Lajimerkki: ', asetus:'Asetusaika: ', taivutus:'Taivutusaika: '}[aktiivinenKentta];
+            if (box.querySelector('span')) box.querySelector('span').innerText = label + txt;
+            else box.innerText = label + txt;
+            localStorage.setItem('pb_' + aktiivinenKentta, label + txt);
+            
+            if (aktiivinenKentta === 'asetus') tavoiteAsetusMin = parseFloat(v);
+            if (aktiivinenKentta === 'taivutus') tavoiteTaivutusMin = parseFloat(v);
+        }
         suljeKeypad();
+        paivitaIndikaattorit();
     }
 
-    function paivitaHistoriaNakyma() {
-        const lista = JSON.parse(localStorage.getItem('pb_historia') || "[]");
-        const haku = document.getElementById('historiaHaku').value.toLowerCase();
-        let html = "";
-        lista.filter(i => i.kortti.toLowerCase().includes(haku) || i.lajike.toLowerCase().includes(haku)).forEach((h, index) => {
-            html += `<table style="margin-top:5px; width:100%; border-bottom:1px solid #ddd" onclick="naytaDetails(${index})"><tr><td style="width:70%"><b>${h.kortti}</b><br><small>${h.lajike}</small></td><td style="text-align:right; font-weight:bold; color:#e27d32;">${h.kesto}</td></tr></table>`;
+    function tallennaKorttiNyt() {
+        let historia = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        historia.unshift({ 
+            id: Date.now(),
+            pvm: new Date().toLocaleDateString('fi-FI'), 
+            kortti: document.getElementById('korttiBox').innerText.replace('Kortin nro: ', ''), 
+            lajike: document.getElementById('lajiBox').innerText.replace('Lajimerkki: ', ''), 
+            asetus: document.getElementById('asetusBox').querySelector('span').innerText, 
+            taivutus: document.getElementById('taivutusBox').querySelector('span').innerText, 
+            muut: document.getElementById('muutBox').innerText, 
+            kestoSek: sekunnit, 
+            kesto: muotoileAika(sekunnit) 
         });
-        document.getElementById('historyContent').innerHTML = html;
+        localStorage.setItem('pb_historia', JSON.stringify(historia));
+        nollaaHistoria(false); 
+        paivitaHistoriaNakyma();
     }
 
-    function naytaDetails(index) {
-        const h = JSON.parse(localStorage.getItem('pb_historia'))[index];
-        document.getElementById('detailContent').innerHTML = `<p><b>${h.asetus}</b></p><p><b>${h.taivutus}</b></p><p><b>${h.muut}</b></p><hr><p><b>Yhteisaika: ${h.kesto}</b></p>`;
-        document.getElementById('detailsOverlay').style.display = 'flex';
-    }
-
-    function nollaaHistoria(kaikki) {
-        if (kaikki && !confirm("Nollataanko kaikki?")) return;
-        ['pb_kortti', 'pb_lajike', 'pb_asetus', 'pb_taivutus', 'pb_muut', 'pb_sekunnit'].forEach(k => localStorage.removeItem(k));
-        if(kaikki) localStorage.removeItem('pb_historia');
-        sekunnit = 0; location.reload();
-    }
-
-    function kaynnistaKello() { if (ajastin) clearInterval(ajastin); ajastin = setInterval(() => { sekunnit++; paivitaNaytto(); localStorage.setItem('pb_sekunnit', sekunnit); localStorage.setItem('pb_leima', Date.now()); }, 1000); }
-    function pysaytaKello() { clearInterval(ajastin); }
+    // --- Muut standardifunktiot säilytetty ---
+    function muotoileAika(s) { const h = Math.floor(s/3600).toString().padStart(2,'0'), m = Math.floor((s%3600)/60).toString().padStart(2,'0'), sek = (s%60).toString().padStart(2,'0'); return `${h}:${m}:${sek}`; }
     function paivitaNaytto() { document.getElementById('tyoAika').innerText = muotoileAika(sekunnit); }
+    function avaaKeypad(tyyppi) { 
+        aktiivinenKentta = tyyppi; syote = ""; 
+        document.getElementById('keypadOverlay').style.display = 'flex'; 
+        document.getElementById('textInputSection').style.display = 'none';
+        document.getElementById('nameInputSection').style.display = (tyyppi === 'muut' ? 'block' : 'none');
+        const grid = document.getElementById('keypadGrid'); grid.innerHTML = "";
+        ['1','2','3','4','5','6','7','8','9','C','0','.', 'OK'].forEach(n => {
+            const btn = document.createElement('button'); btn.className = 'keypad-btn' + (n==='C'?' keypad-cancel':(n==='OK'?' keypad-ok':''));
+            btn.innerText = n; btn.onclick = () => n==='C'?(syote="",document.getElementById('keypadInput').innerText=""):n==='OK'?vahvistaSyote():(syote+=n,document.getElementById('keypadInput').innerText=syote);
+            grid.appendChild(btn);
+        });
+    }
+    function avaaTekstiSyotto(tyyppi) { aktiivinenKentta = tyyppi; document.getElementById('keypadOverlay').style.display = 'flex'; document.getElementById('textInputSection').style.display = 'block'; document.getElementById('keypadGrid').innerHTML = '<button class="keypad-btn keypad-ok" style="grid-column:span 3" onclick="vahvistaSyote()">OK</button>'; document.getElementById('keypadInput').innerText = ""; document.getElementById('yleisInput').value = ""; }
+    function suljeKeypad() { document.getElementById('keypadOverlay').style.display = 'none'; }
     function paivitaVuoroNakyma() { const n = document.getElementById('vuoroNappi'); n.innerText = vuoroKaynnissa ? "LOPETA VUORO" : "ALOITA VUORO"; n.className = vuoroKaynnissa ? "btn-stop" : "btn-start"; }
     function avaaAikaKysely() { avaaKeypad(vuoroKaynnissa ? 'lopetus' : 'aloitus'); }
     function avaaMuutVaiheet() { avaaKeypad('muut'); }
-    function suljeKeypad() { document.getElementById('keypadOverlay').style.display = 'none'; }
-    function paivitaDatalist() { document.getElementById('vaiheLista').innerHTML = opitutVaiheet.map(v => `<option value="${v}">`).join(''); }
+    function paivitaHistoriaNakyma() { const h = JSON.parse(localStorage.getItem('pb_historia')||"[]"); const filter = document.getElementById('historiaHaku').value.toLowerCase(); let html = ""; h.filter(i => i.kortti.toLowerCase().includes(filter) || i.lajike.toLowerCase().includes(filter)).forEach((i, idx) => { html += `<table style="width:100%; border-bottom:1px solid #ddd;" onclick="naytaDetails(${idx})"><tr><td style="width:70%"><b>${i.kortti}</b><br><small>${i.lajike}</small></td><td style="text-align:right; font-weight:bold; color:#e27d32;">${i.kesto}</td></tr></table>`; }); document.getElementById('historyContent').innerHTML = html; }
+    function naytaDetails(idx) { const h = JSON.parse(localStorage.getItem('pb_historia'))[idx]; document.getElementById('detailContent').innerHTML = `<p>${h.asetus}</p><p>${h.taivutus}</p><p>${h.muut}</p><b>Kesto: ${h.kesto}</b>`; document.getElementById('poistoNappi').onclick = () => { if(confirm("Poistetaanko?")){ let hist = JSON.parse(localStorage.getItem('pb_historia')); hist.splice(idx,1); localStorage.setItem('pb_historia', JSON.stringify(hist)); document.getElementById('detailsOverlay').style.display='none'; paivitaHistoriaNakyma(); } }; document.getElementById('detailsOverlay').style.display = 'flex'; }
+    function nollaaHistoria(kaikki) { if(kaikki && !confirm("Nollataanko kaikki?")) return; ['pb_kortti','pb_lajike','pb_asetus','pb_taivutus','pb_muut','pb_sekunnit','pb_tila'].forEach(k => localStorage.removeItem(k)); if(kaikki) localStorage.removeItem('pb_historia'); location.reload(); }
+    function hallitseVuoroa(v) { if(!vuoroKaynnissa){ sekunnit=0; vuoroKaynnissa=true; localStorage.setItem('pb_tila','kaynnissa'); paivitaVuoroNakyma(); kaynnistaKello(); } else { if(confirm("Lopetetaanko ja luodaanko raportti?")){ vuoroKaynnissa=false; clearInterval(ajastin); location.reload(); } } }
+    function paivitaDatalist() { const opitut = ["Pakkaus", "Kierteytys", "Irrotus"]; document.getElementById('vaiheLista').innerHTML = opitut.map(v => `<option value="${v}">`).join(''); }
 </script>
 </body>
 </html>
