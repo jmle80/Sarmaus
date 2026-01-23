@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v1.89</title>
+    <title>Press Brake Pro v1.90</title>
     <style>
         :root { --bg: #f4f7f9; --card: #ffffff; --primary: #1a237e; --accent: #2196f3; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --special: #607d8b; }
         body { font-family: sans-serif; padding: 10px; background: var(--bg); margin: 0; }
@@ -16,7 +16,6 @@
         #j-box { background: #eee; border: 1px solid #ccc; padding: 12px; margin: 10px 0; border-radius: 12px; text-align: center; font-weight: bold; min-height: 110px; display: flex; flex-direction: column; justify-content: center; transition: all 0.3s; }
         .lukema-naytto { font-size: 2.8em; margin: 2px 0; }
         
-        /* TIMELINE STYLES */
         .timeline-wrapper { margin: 15px 0; background: #eceff1; padding: 10px; border-radius: 12px; border: 1px solid #ddd; }
         .timeline-bar { display: flex; height: 25px; background: #ddd; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
         .seg { height: 100%; transition: width 0.5s ease; }
@@ -55,7 +54,7 @@
 <body onload="alustaOhjelma()">
 
 <div class="container">
-    <div class="version-tag">VERSIO 1.89</div>
+    <div class="version-tag">VERSIO 1.90 (VAKAA)</div>
     
     <div class="timer-box">
         <div id="kelloDisplay" class="timer">00:00</div>
@@ -94,7 +93,8 @@
     <div id="box-muut" class="info-box" onclick="yritaAvaa('muut')"><span>MUUT</span> <b id="v-muut">-</b></div>
     
     <button class="btn-save" onclick="tallennaKortti()">💾 Tallenna Kortti</button>
-    <button id="v-nappi" class="btn-start" onclick="vuoroAvaa()">Aloita Vuoro</button>
+    
+    <button id="v-nappi" class="btn-start" onclick="hallitseVuoroaSuoraan()">Aloita Vuoro</button>
     
     <div class="hist-cont" id="h-lista"></div>
     
@@ -113,3 +113,129 @@
         <div id="k-alue" class="key-grid"></div>
         <button onclick="suljeIkkuna()" style="background:none; color:#999; margin-top:15px;">PERUUTA</button>
     </div>
+</div>
+
+<script>
+    let appState = {
+        kaynnissa: false,
+        aloitusAika: 0,
+        kuitatutPankki: 0,
+        nykyinenTila: null,
+        erikoistilaAloitus: 0,
+        tarkennus: ""
+    };
+    
+    let kKunta = "";
+    let syoteBuffer = "";
+
+    function alustaOhjelma() {
+        // Lataa Tila ja korjaa jos rikki
+        try {
+            const saved = localStorage.getItem('pb_state_v1');
+            if (saved) {
+                appState = JSON.parse(saved);
+                // Varmistus: jos aika on null/NaN, nollataan
+                if (!appState.aloitusAika) appState.kaynnissa = false;
+            }
+        } catch(e) { 
+            console.log("State error, resetting");
+            localStorage.removeItem('pb_state_v1');
+        }
+
+        // Lataa Kentät
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
+            const val = localStorage.getItem('pb_field_' + id);
+            if(val) document.getElementById('v-' + id).innerText = val;
+        });
+
+        // Varmista historia-array
+        let hist = localStorage.getItem('pb_historia');
+        if (!hist || !hist.startsWith('[')) localStorage.setItem('pb_historia', '[]');
+
+        paivitaHistoriaLista();
+        paivitaUI();
+        paivitaAikajana();
+        
+        // Käynnistä kellosykli
+        setInterval(sykli, 1000);
+    }
+
+    function tallennaTila() { localStorage.setItem('pb_state_v1', JSON.stringify(appState)); }
+
+    function sykli() {
+        if (!appState.kaynnissa) { 
+            document.getElementById('kelloDisplay').innerText = "00:00"; 
+            return; 
+        }
+        
+        const nyt = Date.now();
+        const sek = Math.floor((nyt - appState.aloitusAika) / 1000);
+        
+        // Estä negatiiviset luvut
+        const safeSek = Math.max(0, sek);
+        
+        const h = Math.floor(safeSek / 3600).toString().padStart(2, '0');
+        const m = Math.floor((safeSek % 3600) / 60).toString().padStart(2, '0');
+        document.getElementById('kelloDisplay').innerText = `${h}:${m}`;
+
+        const b = document.getElementById('j-box');
+        const yhtMin = appState.kuitatutPankki;
+        const tyotunnit = Math.max(safeSek, 1) / 3600;
+        document.getElementById('j-kuitatut').innerText = `KUITATUT: ${yhtMin.toFixed(1)} MIN | AIKA: ${Math.floor(safeSek/60)} MIN`;
+        b.classList.remove('blink');
+
+        if (appState.nykyinenTila) {
+            b.style.background = "#607d8b"; b.style.color = "white";
+            document.getElementById('j-tila').innerText = appState.nykyinenTila;
+            document.getElementById('j-lukema').innerText = "TAUKO";
+            return;
+        }
+        if (safeSek < 10) { b.style.background = "#eee"; b.style.color = "black"; document.getElementById('j-lukema').innerText = "0.00"; document.getElementById('j-tila').innerText = "ODOTTAA"; return; }
+
+        let lukema = (yhtMin / 60) / tyotunnit;
+        document.getElementById('j-lukema').innerText = lukema.toFixed(2);
+        if (lukema < 1.0) { b.style.background = "#f44336"; b.style.color = "white"; document.getElementById('j-tila').innerText = "HIDAS"; }
+        else if (lukema <= 1.5) { b.style.background = "#ff9800"; b.style.color = "white"; document.getElementById('j-tila').innerText = "VAROITUS"; }
+        else { b.style.background = "#4caf50"; b.style.color = "white"; document.getElementById('j-tila').innerText = "TEHOKAS"; if (lukema >= 2.0) b.classList.add('blink'); }
+    }
+
+    // --- UUSI YKSINKERTAISTETTU VUORON HALLINTA ---
+    function hallitseVuoroaSuoraan() {
+        if (!appState.kaynnissa) {
+            // ALOITUS
+            if (confirm("Aloitetaanko uusi vuoro nyt?")) {
+                try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{}); } catch(e){}
+                
+                // Nollataan kaikki ja aloitetaan nykyhetkestä
+                appState.aloitusAika = Date.now();
+                appState.kaynnissa = true;
+                appState.kuitatutPankki = 0;
+                appState.nykyinenTila = null;
+                
+                // Tyhjennä kentät
+                ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
+                    asetaArvo(id, "-");
+                });
+                
+                tallennaTila();
+                paivitaUI();
+                paivitaAikajana();
+            }
+        } else {
+            // LOPETUS
+            if (confirm("Haluatko varmasti lopettaa vuoron?")) {
+                appState.kaynnissa = false;
+                tallennaTila();
+                paivitaUI();
+                location.reload(); // Varmistetaan puhdas pöytä lopetuksessa
+            }
+        }
+    }
+
+    function taytaTestitiedot() {
+        if(!appState.kaynnissa) { alert("Aloita ensin vuoro!"); return; }
+        const randKortti = Math.floor(100000 + Math.random() * 900000);
+        const randLaji = "TESTI-" + Math.floor(Math.random() * 100);
+        asetaArvo('kortti', randKortti.toString());
+        asetaArvo('lajike', randLaji);
+        asetaArvo('asetus', "15 MIN");
