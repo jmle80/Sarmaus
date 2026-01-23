@@ -3,63 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.25 - SCANNER FIX</title>
+    <title>Press Brake Pro v2.26 - RENDER FIRST</title>
     
-    <script>
-        // Määritellään tila globaalisti heti, jotta mikään ei voi estää tätä
-        var appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, erikoistilaAloitus: 0, tarkennus: "" };
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <style>
+        :root { --bg: #222831; --card: #393e46; --dark-panel: #30475e; --primary: #FF6700; --accent: #FF8C33; --success: #00e676; --warning: #ffea00; --danger: #ff1744; --special: #78909c; --blue: #29b6f6; --text-light: #eeeeee; --text-muted: #adb5bd; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 10px; background: var(--bg); margin: 0; color: var(--text-light); -webkit-user-select: none; user-select: none; }
+        .container { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-width: 450px; margin: auto; padding-bottom: 60px; }
+
+        .vamm-header { text-align: center; margin-bottom: 20px; }
+        .vamm-logo { font-size: 2em; font-weight: bold; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
+        .vamm-sub { font-size: 1em; color: var(--text-muted); }
+
+        .dashboard { background: var(--dark-panel); color: var(--text-light); border-radius: 20px; padding: 20px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 6px solid #555; transition: border-color 0.5s ease; margin-bottom: 15px; }
+        .dash-clock { font-size: 4em; font-weight: 700; font-family: 'Courier New', monospace; line-height: 1; margin: 5px 0; text-shadow: 0 0 10px rgba(0,0,0,0.3); }
+        .dash-efficiency { font-size: 2.5em; font-weight: 800; margin-right: 10px; }
+        .dash-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.2); }
+        .stat-val { font-size: 1.2em; font-weight: bold; display: block; color: var(--text-light); }
         
-        // Yritetään ladata tallennettu tila heti
-        try {
-            var saved = localStorage.getItem('pb_state_final');
-            if (saved) appState = JSON.parse(saved);
-        } catch(e) { console.log("Ei tallennettua tilaa"); }
+        .status-idle { border-left-color: #555; } .status-bad { border-left-color: var(--danger); } .status-ok { border-left-color: var(--warning); } .status-good { border-left-color: var(--success); }
 
-        // TÄMÄ FUNKTIO ON NYT TÄYSIN ERISTETTY JA TURVASSA
-        function VAIHDA_VUORO() {
-            try {
-                // Varmistus
-                if (!appState) {
-                     appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, erikoistilaAloitus: 0, tarkennus: "" };
-                }
+        .timeline-wrapper { margin-bottom: 15px; background: var(--dark-panel); padding: 8px; border-radius: 12px; border: 1px solid #495057; }
+        .timeline-bar { display: flex; height: 30px; background: #2c3036; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
+        .seg { height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.8); font-weight: bold; font-size: 0.8em; white-space: nowrap; overflow: hidden; transition: width 0.5s ease; }
+        .seg-asetus { background-color: var(--accent); } .seg-taivutus { background-color: var(--success); } .seg-muut { background-color: var(--warning); }
+        .timeline-legend { display: flex; justify-content: center; gap: 15px; font-size: 0.7em; color: var(--text-muted); font-weight: bold; margin-top: 4px; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
 
-                if (!appState.kaynnissa) {
-                    if (confirm("Aloitetaanko uusi vuoro nyt?")) {
-                        // Soita ääni jos onnistuu
-                        try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(function(e){}); } catch(e){}
-                        
-                        appState.aloitusAika = Date.now();
-                        appState.kaynnissa = true;
-                        appState.kuitatutPankki = 0;
-                        appState.nykyinenTila = null;
-                        
-                        // Nollataan kentät, jos elementit on ladattu
-                        if(document.getElementById('v-kortti')) {
-                            ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id){ 
-                                document.getElementById('v-'+id).innerText = "-"; 
-                                localStorage.setItem('pb_field_' + id, "-");
-                            });
-                        }
-                        
-                        tallennaTilaCore();
-                        if(typeof paivitaUI === 'function') paivitaUI();
-                        if(typeof paivitaAikajana === 'function') paivitaAikajana();
-                    }
-                } else {
-                    if (confirm("Haluatko varmasti lopettaa vuoron?")) {
-                        appState.kaynnissa = false;
-                        tallennaTilaCore();
-                        location.reload();
-                    }
-                }
-            } catch (e) {
-                alert("Virhe vuoron vaihdossa: " + e.message);
-            }
-        }
+        .info-row { display: flex; gap: 10px; align-items: stretch; margin: 5px 0; }
+        .info-box { background: var(--dark-panel); border: 1px solid #495057; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; border-left: 4px solid #ccc; font-weight: 600; transition: transform 0.1s; color: var(--text-light); flex-grow: 1; margin: 0; }
+        .box-active { border-left-color: var(--primary); background: #393e46; }
+        .box-disabled { opacity: 0.5; pointer-events: none; background: #343a40; }
 
-        function tallennaTilaCore() {
-            localStorage.setItem('pb_state_final', JSON.stringify(appState));
-        }
+        .btn-scan { background: #393e46; border: 1px solid #495057; color: var(--primary); border-radius: 10px; width: 55px; font-size: 1.5em; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .special-menu { display: none; background: var(--dark-panel); padding: 10px; border-radius: 10px; margin: 10px 0; grid-template-columns: repeat(3, 1fr); gap: 8px; border: 1px solid #495057; }
+        .btn-spec { padding: 10px; font-size: 0.8em; border: none; border-radius: 8px; cursor: pointer; background: var(--special); color: white; font-weight: bold; }
+        .btn-spec.active { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+        .btn-spec.disabled { opacity: 0.3; pointer-events: none; }
 
-        function hataNollaus() {
-            if(confirm("Tämä poistaa kaiken tiedon ja korjaa jumiutuneen
+        button.main-action { width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-size: 1em; }
+        .btn-start { background: var(--success); color: #003300; } .btn-stop { background: var(--danger); color: white; } .btn-save { background: var(--primary); color: white; }
+        
+        .btn-test { background: #393e46; color: var(--text-muted); font-size: 0.8em; padding: 12px; margin-top: 15px; border: 1px dashed #495057; width: 100%; cursor: pointer; border-radius: 12px; font-weight: bold; }
+        .btn-save-file { background: var(--dark-panel); color: var(--primary); font-size: 0.9em; padding: 12px; margin-top: 10px; border: 2px solid var(--primary); width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; border-radius: 12px; letter-spacing: 1px; }
+        .btn-hard-reset { background: #b71c1c; color: white; font-size: 0.8em; padding: 15px; margin-top: 30px; border: 2px solid #ff5252; width: 100%; cursor: pointer; text-transform: uppercase; border-radius: 12px; font-weight: bold; }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .modal { background: var(--card); padding: 25px; border-radius: 20px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        
+        .display { display: none; font-size: 2em; background: var(--dark-panel); padding: 15px; margin-bottom: 15px; border-radius: 12px; min-height: 1.2em; font-family: monospace; font-weight: bold; color: var(--primary); }
+        
+        /* 2-MAN BUTTON */
+        .btn-2man { width: 100%; background: var(--blue); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; margin-bottom: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 0.9em; }
+        .btn-2man:active { transform: scale(0.98); opacity: 0.9; }
+
+        .key-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .key { padding: 15px; background: var(--dark-panel); border-radius: 10px; font-weight: bold; cursor: pointer; border: 1px solid #495057; font-size: 1.2em; box-shadow: 0 2px 5px rgba(0,0,0,0.2); color: var(--text-light); }
+        .key-ok { background: var(--success); color: #003300; grid-column: 2; border: none; }
+        .input-f { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 12px; text-align: center; font-size: 1.4em; font-weight: bold; box-sizing: border-box; background: var(--dark-panel); color: var(--text-light); }
+        .input-f:focus { outline: none; box-shadow: 0 0 15px rgba(255, 103, 0, 0.3); }
+        
+        /* SCANNER MODAL - CLEAN & WIDE */
+        #scan-modal-content { width: 98%; max-width: 500px; height: 85vh; display: flex; flex-direction: column; padding: 10px; background: #111; }
+        #reader { width: 100%; flex-grow: 1; background: #000; margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); position: relative; }
+        #reader div[style*="position: absolute"] { border: none !important; box-shadow: none !important; }
+        #reader::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 2px; background: red; box-shadow: 0 0 10px red; z-index: 999; pointer-events: none; }
+        
+        /* HISTORIA HEADER & LIST */
+        .hist-header { display: grid; grid-template-columns: 75px 1fr auto; gap: 15px; padding: 10px 12px; background: #2c3e50; border-bottom: 2px solid #495057; font-size: 0.75em; font-weight: 900; color: var(--text-muted); text-transform: uppercase; border-radius: 15px 15px 0 0; margin-top: 20px; letter-spacing: 1px; }
+        .hist-cont { margin-top: 0; background: var(--dark-panel); border: 1px solid #495057; border-top: none; border-radius: 0 0 15px 15px; max-height: 300px; overflow-y: auto; padding: 0; }
+        .date-divider { background: #222831; color: var(--primary); padding: 5px 12px; font-size: 0.8em; font-weight: bold; border-bottom: 1px solid #495057; border-top: 1px solid #495057; text-align: center; letter-spacing: 1px; }
+        .hist-item { display: grid; grid-template-columns: 75px 1fr auto; gap: 15px; padding: 12px; border-bottom: 1px solid #495057; font-size: 0.9em; cursor: pointer; color
