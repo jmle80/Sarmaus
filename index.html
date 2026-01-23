@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.09 - RESCUE</title>
+    <title>Press Brake Pro v2.10 - CLEAN SCANNER</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript" defer></script>
 
@@ -60,13 +60,26 @@
         .key-ok { background: var(--success); color: #003300; grid-column: 2; border: none; }
         .input-f { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid var(--primary); border-radius: 8px; text-align: center; font-size: 1.2em; box-sizing: border-box; background: var(--dark-panel); color: var(--text-light); }
         
-        #scan-modal-content { width: 95%; max-width: 500px; height: 85vh; display: flex; flex-direction: column; padding: 10px; background: #000; }
-        #reader { width: 100%; flex-grow: 1; background: #000; margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary); }
+        /* --- SCANNER STYLES V2.10 --- */
+        #scan-modal-content { 
+            width: 98%; max-width: 500px; height: 85vh; display: flex; flex-direction: column; padding: 10px; 
+            background: #111; /* Tummempi tausta */
+        }
+        #reader { 
+            width: 100%; flex-grow: 1; background: #000; margin-bottom: 10px; border-radius: 10px; overflow: hidden; 
+            border: 2px solid rgba(255, 255, 255, 0.3); /* Hillitty valkoinen reunus oranssin sijaan */
+            position: relative;
+        }
+        
+        /* TÄMÄ CSS PIILOTTAA KIRJASTON PIIRTÄMÄN VIHREÄN LAATIKON */
+        #reader > div:nth-of-type(2) {
+             box-shadow: none !important;
+             border: none !important;
+        }
         
         .hist-cont { margin-top: 20px; background: var(--dark-panel); border: 1px solid #495057; border-radius: 15px; max-height: 250px; overflow-y: auto; padding: 5px; }
         .hist-item { display: grid; grid-template-columns: 75px 1fr auto; gap: 15px; padding: 12px; border-bottom: 1px solid #495057; font-size: 0.9em; cursor: pointer; color: var(--text-light); align-items: center; }
         
-        /* Error Box */
         #error-display { display:none; background: #b71c1c; color: white; padding: 20px; margin: 20px; border-radius: 10px; border: 2px solid red; font-family: monospace; }
         .nollaa-btn { color: var(--text-muted); font-size: 0.75em; background: none; text-decoration: underline; margin-top: 10px; width: 100%; border:none; cursor: pointer; }
     </style>
@@ -78,7 +91,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.09</div>
+        <div class="vamm-sub">Press Brake Pro v2.10</div>
     </div>
     
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -148,15 +161,14 @@
 
 <div id="s-ruutu" class="overlay">
     <div class="modal" id="scan-modal-content">
-        <h3 style="margin-top:0; color:var(--primary); margin-bottom:5px;">SKANNAA</h3>
-        <div id="scan-info" style="color:#aaa; font-size:0.8em; margin-bottom:10px;">Kohdista koodi kameraan</div>
+        <h3 style="margin-top:0; color:var(--text-light); margin-bottom:5px;">SKANNAA</h3>
+        <div id="scan-info" style="color:#aaa; font-size:0.8em; margin-bottom:10px;">Kohdista koodi keskelle</div>
         <div id="reader"></div>
         <button onclick="suljeSkanneri()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none; font-weight:bold; margin-top:10px; width:100%;">SULJE KAMERA</button>
     </div>
 </div>
 
 <script>
-    // --- GLOBAL ERROR HANDLER ---
     window.onerror = function(message, source, lineno, colno, error) {
         const d = document.getElementById('error-display');
         d.style.display = 'block';
@@ -170,12 +182,12 @@
     let html5QrcodeScanner = null;
     let skannausKohde = "";
 
-    // Käynnistetään heti
     bootloader();
 
     function bootloader() {
         try {
-            if (!localStorage.getItem('v209_clean')) { localStorage.clear(); localStorage.setItem('v209_clean', 'true'); }
+            if (typeof Html5Qrcode === 'undefined') { console.warn("Skannerikirjastoa ei voitu ladata."); }
+            if (!localStorage.getItem('v210_clean')) { localStorage.clear(); localStorage.setItem('v210_clean', 'true'); }
             const saved = localStorage.getItem('pb_state_final');
             if (saved) { try { appState = JSON.parse(saved); } catch(e) { console.error("State reset"); } }
             ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
@@ -190,14 +202,10 @@
         }
     }
 
-    // --- SKANNERI (Safe) ---
+    // --- SKANNERI V2.10 (Clean & Small box) ---
     function avaaSkanneri(kohde) {
         if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
-        
-        if (typeof Html5Qrcode === 'undefined') {
-            alert("Virhe: Skannerikirjasto ei latautunut. Tarkista internetyhteys tai käytä manuaalista syöttöä.");
-            return;
-        }
+        if (typeof Html5Qrcode === 'undefined') { alert("Virhe: Skannerikirjasto ei latautunut. Käytä manuaalista syöttöä."); return; }
 
         skannausKohde = kohde;
         document.getElementById('s-ruutu').style.display = 'flex';
@@ -205,17 +213,17 @@
         
         try {
             if (!html5QrcodeScanner) { html5QrcodeScanner = new Html5Qrcode("reader"); }
-            const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+            
+            // V2.10 MUUTOS: Pienempi ja suorakaiteen muotoinen skannausalue (tulitikkuaski)
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 180, height: 100 }, // Pienempi alue
+                aspectRatio: 1.0 
+            };
             
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-            .catch(err => {
-                alert("Kameran käynnistys epäonnistui. Syy: " + err);
-                suljeSkanneri();
-            });
-        } catch (e) {
-            alert("Skanneri kaatui: " + e);
-            suljeSkanneri();
-        }
+            .catch(err => { alert("Kameran käynnistys epäonnistui: " + err); suljeSkanneri(); });
+        } catch (e) { alert("Skannerivirhe: " + e); suljeSkanneri(); }
     }
 
     function onScanSuccess(decodedText) {
@@ -396,7 +404,14 @@
             const el = document.getElementById('s-'+t); if(el) { if (appState.nykyinenTila === t) el.className = 'btn-spec active'; else if (appState.nykyinenTila) el.className = 'btn-spec disabled'; else el.className = 'btn-spec'; }
         });
         const lukittu = !!appState.nykyinenTila; const aktiivinen = appState.kaynnissa && !lukittu;
-        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { const el = document.getElementById('box-'+id); if(el) { if (lukittu) el.className = 'info-box box-disabled'; else el.className = 'info-box' + (aktiivinen ? ' box-active' : ''); } });
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { 
+            const el = document.getElementById('box-'+id); 
+            if(el) { 
+                if (lukittu) el.className = 'info-box box-disabled'; else el.className = 'info-box' + (aktiivinen ? ' box-active' : ''); 
+                const btn = el.nextElementSibling;
+                if(btn && btn.classList.contains('btn-scan')) { btn.style.pointerEvents = lukittu ? 'none' : 'auto'; btn.style.opacity = lukittu ? '0.5' : '1'; }
+            } 
+        });
     }
 
     function nollaaKaikki() { if(confirm("Haluatko varmasti nollata koko jakson historian?")) { localStorage.clear(); location.reload(); } }
@@ -421,7 +436,7 @@
     function paivitaLive(v) { document.getElementById('n-naytto').innerText = (['PROTO','HÄIRIÖ','HUOLTO'].includes(kKunta)) ? v : v.toUpperCase(); }
 
     function tallennaTiedostoon() {
-        const exportData = { version: "2.09", timestamp: new Date().toISOString(), appState: appState, history: JSON.parse(localStorage.getItem('pb_historia') || "[]") };
+        const exportData = { version: "2.10", timestamp: new Date().toISOString(), appState: appState, history: JSON.parse(localStorage.getItem('pb_historia') || "[]") };
         const dataStr = JSON.stringify(exportData, null, 2); const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         const exportFileDefaultName = `press_brake_data_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`;
         let linkElement = document.createElement('a'); linkElement.setAttribute('href', dataUri); linkElement.setAttribute('download', exportFileDefaultName);
