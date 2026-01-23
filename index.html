@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.19 - HARD MASK</title>
+    <title>Press Brake Pro v2.20 - HISTORY HEADER</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript" defer></script>
 
@@ -61,59 +61,40 @@
         .input-f { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 12px; text-align: center; font-size: 1.4em; font-weight: bold; box-sizing: border-box; background: var(--dark-panel); color: var(--text-light); }
         .input-f:focus { outline: none; box-shadow: 0 0 15px rgba(255, 103, 0, 0.3); }
         
-        /* --- SKANNERIN FYYSINEN MASKI (V2.19) --- */
-        #scan-modal-content { 
-            width: 100%; height: 100%; 
-            position: relative; /* Tärkeä maskia varten */
-            padding: 0; background: #000; display: block; overflow: hidden;
-        }
+        /* SCANNER STYLES - SAFE */
+        #scan-modal-content { width: 98%; max-width: 500px; height: 85vh; display: flex; flex-direction: column; padding: 10px; background: #111; }
+        #reader { width: 100%; flex-grow: 1; background: #000; margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); position: relative; }
+        #reader div[style*="position: absolute"] { border: none !important; box-shadow: none !important; }
+        #reader::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 2px; background: red; box-shadow: 0 0 10px red; z-index: 999; pointer-events: none; }
         
-        #reader { 
-            width: 100%; height: 100%; 
-            object-fit: cover;
-        }
-        
-        /* PAKOTETTU "LETTRBOX" - Tämä luo tummat alueet */
-        .scan-mask {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 280px;  /* Leveys viivakoodille */
-            height: 80px;  /* Korkeus viivakoodille */
-            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.85); /* Tämä tummentaa kaiken muun */
-            border: 2px solid var(--primary); /* Oranssi kehys */
-            border-radius: 8px;
-            z-index: 100;
-            pointer-events: none;
-        }
-        
-        /* Punainen laser-viiva */
-        .scan-laser {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 260px; height: 2px;
-            background: red;
-            box-shadow: 0 0 10px red;
-            z-index: 101;
-            animation: pulse 1.5s infinite;
-        }
-        
-        /* Sulje-nappi skannerin päällä */
-        .scan-close-btn {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--danger); color: white; padding: 15px 30px; 
-            border-radius: 30px; border: none; font-weight: bold; font-size: 1.2em;
-            z-index: 200; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        /* --- HISTORIA HEADER & LIST (V2.20) --- */
+        .hist-header {
+            display: grid;
+            grid-template-columns: 75px 1fr auto;
+            gap: 15px;
+            padding: 10px 12px;
+            background: #2c3e50; /* Hieman vaaleampi tausta erottuakseen */
+            border-bottom: 2px solid #495057;
+            font-size: 0.75em;
+            font-weight: 900;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            border-radius: 15px 15px 0 0; /* Pyöristetty vain ylhäältä */
+            margin-top: 20px;
+            letter-spacing: 1px;
         }
 
-        /* Piilota kirjaston roskat */
-        #reader div[style*="position: absolute"] { display: none !important; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        .hist-cont { 
+            margin-top: 0; /* Kiinni headerissa */
+            background: var(--dark-panel); 
+            border: 1px solid #495057; 
+            border-top: none; /* Ei tuplareunaa */
+            border-radius: 0 0 15px 15px; /* Pyöristetty vain alhaalta */
+            max-height: 250px; 
+            overflow-y: auto; 
+            padding: 5px; 
+        }
         
-        .hist-cont { margin-top: 20px; background: var(--dark-panel); border: 1px solid #495057; border-radius: 15px; max-height: 250px; overflow-y: auto; padding: 5px; }
         .hist-item { display: grid; grid-template-columns: 75px 1fr auto; gap: 15px; padding: 12px; border-bottom: 1px solid #495057; font-size: 0.9em; cursor: pointer; color: var(--text-light); align-items: center; }
         .h-id { font-weight: 900; color: var(--primary); letter-spacing: 1px; }
         .h-type { text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
@@ -130,7 +111,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.19</div>
+        <div class="vamm-sub">Press Brake Pro v2.20</div>
     </div>
     
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -178,7 +159,13 @@
     <button id="v-nappi" class="main-action btn-start" onclick="VAIHDA_VUORO()">Aloita Vuoro</button>
     <button class="main-action btn-save" onclick="tallennaKortti()">💾 Tallenna Kortti</button>
     
+    <div class="hist-header">
+        <span>KORTTI</span>
+        <span>LAJIMERKKI</span>
+        <span style="text-align:right">AIKA</span>
+    </div>
     <div class="hist-cont" id="h-lista"></div>
+    
     <button onclick="nollaaKaikki()" class="nollaa-btn">Nollaa koko historia</button>
     <button onclick="lisaaKolmeTestiKorttia()" class="btn-test">🧪 LISÄÄ 3 SATUNNAISTA KORTTIA</button>
     <button onclick="tallennaTiedostoon()" class="btn-save-file">📁 TALLENNA TIEDOSTOON</button>
@@ -198,26 +185,23 @@
     </div>
 </div>
 
-<div id="s-ruutu" class="overlay" style="background:black;">
-    <div id="scan-modal-content">
+<div id="s-ruutu" class="overlay">
+    <div class="modal" id="scan-modal-content">
+        <h3 style="margin-top:0; color:var(--text-light); margin-bottom:5px;">SKANNAA</h3>
+        <div id="scan-info" style="color:#aaa; font-size:0.8em; margin-bottom:10px;">Kohdista koodi punaiselle viivalle</div>
         <div id="reader"></div>
-        
-        <div class="scan-mask"></div>
-        <div class="scan-laser"></div>
-        
-        <button onclick="suljeSkanneri()" class="scan-close-btn">SULJE</button>
+        <button onclick="suljeSkanneri()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none; font-weight:bold; margin-top:10px; width:100%;">SULJE KAMERA</button>
     </div>
 </div>
 
 <script>
-    // --- YDINLOGIIKKA ---
     let appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, erikoistilaAloitus: 0, tarkennus: "" };
     let kKunta = "";
     let syoteBuffer = "";
     let html5QrcodeScanner = null;
     let skannausKohde = "";
 
-    // KRIITTINEN FUNKTIO: VAIHDA_VUORO
+    // KRIITTINEN FUNKTIO
     window.VAIHDA_VUORO = function() {
         try {
             if (!appState) { appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, erikoistilaAloitus: 0, tarkennus: "" }; }
@@ -241,7 +225,7 @@
 
     window.onload = function() {
         try {
-            if (!localStorage.getItem('v219_clean')) { localStorage.clear(); localStorage.setItem('v219_clean', 'true'); }
+            if (!localStorage.getItem('v220_clean')) { localStorage.clear(); localStorage.setItem('v220_clean', 'true'); }
             const saved = localStorage.getItem('pb_state_final');
             if (saved) { try { appState = JSON.parse(saved); } catch(e) { console.error("State reset"); } }
             ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
@@ -253,20 +237,16 @@
         } catch (error) { document.getElementById('error-display').style.display = 'block'; document.getElementById('error-display').innerText = "Virhe: " + error.message; }
     };
 
-    // --- SKANNERI V2.19 (HARD MASK) ---
     function avaaSkanneri(kohde) {
         if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
         if (typeof Html5Qrcode === 'undefined') { alert("Virhe: Skannerikirjasto puuttuu."); return; }
 
         skannausKohde = kohde;
-        document.getElementById('s-ruutu').style.display = 'block'; // Fullscreen
+        document.getElementById('s-ruutu').style.display = 'flex';
         
         try {
             if (!html5QrcodeScanner) { html5QrcodeScanner = new Html5Qrcode("reader"); }
-            
-            // Konfiguroidaan täyttämään ruutu, maski hoitaa rajauksen
-            const config = { fps: 10, qrbox: { width: 280, height: 80 }, aspectRatio: 1.0 };
-            
+            const config = { fps: 10, qrbox: { width: 280, height: 70 }, aspectRatio: 1.0 };
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
             .catch(err => { alert("Kamera ei aukea: " + err); suljeSkanneri(); });
         } catch (e) { alert("Skannerivirhe: " + e); suljeSkanneri(); }
@@ -278,10 +258,7 @@
             val = val.replace(/\s+/g, '');
             if (!/^\d{6}$/.test(val)) { alert("VIRHE: Koodi (" + val + ") ei ole 6-numeroinen!"); return; }
         }
-        soitaAani();
-        asetaArvo(skannausKohde, val);
-        tallennaTila();
-        suljeSkanneri();
+        soitaAani(); asetaArvo(skannausKohde, val); tallennaTila(); suljeSkanneri();
     }
     
     function onScanFailure(error) {}
@@ -292,13 +269,11 @@
         } else { document.getElementById('s-ruutu').style.display = 'none'; }
     }
 
-    // --- UI FUNKTIOT ---
     function avaaIkkuna(k) {
         if (appState.nykyinenTila && !['PROTO','HÄIRIÖ','HUOLTO'].includes(k)) { alert("Lopeta " + appState.nykyinenTila + " ensin!"); return; }
         if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
         kKunta = k; syoteBuffer = "";
         document.getElementById('n-ruutu').style.display = 'flex';
-        
         const onTeksti = ['lajike', 'muut', 'PROTO', 'HÄIRIÖ', 'HUOLTO'].includes(k);
         if (onTeksti) {
             document.getElementById('n-naytto').style.display = 'none';
@@ -387,53 +362,3 @@
         document.getElementById('dashDone').innerText = yhtMin.toFixed(0); document.getElementById('dashElapsed').innerText = Math.floor(safeSek/60);
         const dashPanel = document.getElementById('dashboardPanel'); const effNum = document.getElementById('dashEfficiency'); const statusTxt = document.getElementById('dashStatus');
         if (appState.nykyinenTila) {
-            dashPanel.className = "dashboard status-idle"; statusTxt.innerText = appState.nykyinenTila; effNum.innerText = "--"; effNum.style.color = "white";
-        } else {
-            let lukema = (tyotunnit > 0) ? (yhtMin / 60) / tyotunnit : 0; effNum.innerText = lukema.toFixed(2);
-            if (safeSek < 10) { dashPanel.className = "dashboard status-idle"; statusTxt.innerText = "ODOTTAA"; effNum.style.color = "white"; }
-            else if (lukema < 1.0) { dashPanel.className = "dashboard status-bad"; statusTxt.innerText = "HIDAS"; effNum.style.color = "var(--danger)"; }
-            else if (lukema <= 1.5) { dashPanel.className = "dashboard status-ok"; statusTxt.innerText = "OK"; effNum.style.color = "var(--warning)"; }
-            else { dashPanel.className = "dashboard status-good"; statusTxt.innerText = "TEHOKAS"; effNum.style.color = "var(--success)"; }
-        }
-        paivitaAikajana();
-    }
-
-    function paivitaAikajana() {
-        if (!appState || !appState.kaynnissa) { paivitaPalkki('bar-asetus', 0); paivitaPalkki('bar-taivutus', 0); paivitaPalkki('bar-muut', 0); return; }
-        let h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
-        let sumA = 0, sumT = 0, sumM = 0;
-        h.forEach(item => { if (item.detail) { const parts = item.detail.split('|'); parts.forEach(p => { if (p.includes("Asetus")) sumA += parseFloat(p.match(/[\d.]+/)[0]) || 0; if (p.includes("Taivutus")) sumT += parseFloat(p.match(/[\d.]+/)[0]) || 0; if (p.includes("Muut")) sumM += parseFloat(p.match(/[\d.]+/)[0]) || 0; }); } });
-        const totalWork = sumA + sumT + sumM;
-        if (totalWork === 0) { 
-            const c = document.getElementById('timelineContainer'); if(c) c.innerHTML = '<div class="seg seg-empty">Ei kirjattua työtä</div>'; 
-        } else {
-            const c = document.getElementById('timelineContainer');
-            if (c && c.querySelector('.seg-empty')) { c.innerHTML = `<div id="bar-asetus" class="seg seg-asetus" style="width: 0%"></div><div id="bar-taivutus" class="seg seg-taivutus" style="width: 0%"></div><div id="bar-muut" class="seg seg-muut" style="width: 0%"></div>`; }
-            const pA = (sumA / totalWork) * 100; const pT = (sumT / totalWork) * 100; const pM = (sumM / totalWork) * 100;
-            paivitaPalkki('bar-asetus', pA); paivitaPalkki('bar-taivutus', pT); paivitaPalkki('bar-muut', pM);
-        }
-    }
-
-    function paivitaPalkki(id, pros) { const el = document.getElementById(id); if(!el) return; if (pros < 5) { el.style.width = pros + "%"; el.innerText = ""; } else { el.style.width = pros + "%"; el.innerText = Math.round(pros) + "%"; } }
-
-    function paivitaUI() {
-        const btn = document.getElementById('v-nappi'); if(!btn) return;
-        btn.innerText = appState.kaynnissa ? "LOPETA VUORO" : "ALOITA VUORO"; btn.className = appState.kaynnissa ? "main-action btn-stop" : "main-action btn-start";
-        ['PROTO','HÄIRIÖ','HUOLTO'].forEach(t => { const el = document.getElementById('s-'+t); if(el) { if (appState.nykyinenTila === t) el.className = 'btn-spec active'; else if (appState.nykyinenTila) el.className = 'btn-spec disabled'; else el.className = 'btn-spec'; } });
-        const lukittu = !!appState.nykyinenTila; const aktiivinen = appState.kaynnissa && !lukittu;
-        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { const el = document.getElementById('box-'+id); if(el) { if (lukittu) el.className = 'info-box box-disabled'; else el.className = 'info-box' + (aktiivinen ? ' box-active' : ''); const btn = el.nextElementSibling; if(btn && btn.classList.contains('btn-scan')) { btn.style.pointerEvents = lukittu ? 'none' : 'auto'; btn.style.opacity = lukittu ? '0.5' : '1'; } } });
-    }
-
-    function nollaaKaikki() { if(confirm("Haluatko varmasti nollata koko jakson historian?")) { localStorage.clear(); location.reload(); } }
-    function asetaArvo(id, val) { const el = document.getElementById('v-' + id); if(el) { el.innerText = val; localStorage.setItem('pb_field_' + id, val); } }
-    function naytaValikko() { let m = document.getElementById('menu-spec'); m.style.display = (m.style.display === 'grid' ? 'none' : 'grid'); }
-    function poimiNum(t) { const n = t.match(/[\d.]+/); return n ? parseFloat(n[0]) : 0; }
-    
-    function lisaaKolmeTestiKorttia() { if(!appState.kaynnissa) { alert("Aloita ensin vuoro!"); return; } let h = JSON.parse(localStorage.getItem('pb_historia') || "[]"); const lajit = ["S355", "AISI304", "ALU 5754", "HARDOX", "S235"]; for(let i=0; i<3; i++) { const kortti = Math.floor(100000 + Math.random() * 900000); const laji = lajit[Math.floor(Math.random() * lajit.length)] + "-" + Math.floor(1 + Math.random() * 10); const a = Math.floor(5 + Math.random() * 20); const t = Math.floor(10 + Math.random() * 40); const m = Math.floor(Math.random() * 15); const yht = a + t + m; appState.kuitatutPankki += yht; const detailStr = `Asetus: ${a} | Taivutus: ${t} | Muut: ${m}`; h.unshift({ id: Date.now() + i, k: kortti.toString(), l: laji, a: yht + " MIN", detail: detailStr, klo: new Date().toLocaleTimeString().substr(0,5) }); } localStorage.setItem('pb_historia', JSON.stringify(h)); tallennaTila(); paivitaHistoriaLista(); paivitaAikajana(); kelloSykli(); }
-    
-    function tallennaTiedostoon() { const exportData = { version: "2.19", timestamp: new Date().toISOString(), appState: appState, history: JSON.parse(localStorage.getItem('pb_historia') || "[]") }; const dataStr = JSON.stringify(exportData, null, 2); const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr); const exportFileDefaultName = `press_brake_data_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`; let linkElement = document.createElement('a'); linkElement.setAttribute('href', dataUri); linkElement.setAttribute('download', exportFileDefaultName); document.body.appendChild(linkElement); linkElement.click(); document.body.removeChild(linkElement); }
-    
-    function tallennaTila() { localStorage.setItem('pb_state_final', JSON.stringify(appState)); }
-</script>
-</body>
-</html>
