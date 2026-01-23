@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.27 - REBOOT</title>
+    <title>Press Brake Pro v2.28 - CUSTOM MASK</title>
     
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript" defer></script>
+
     <style>
         :root { --bg: #222831; --card: #393e46; --dark-panel: #30475e; --primary: #FF6700; --accent: #FF8C33; --success: #00e676; --warning: #ffea00; --danger: #ff1744; --special: #78909c; --blue: #29b6f6; --text-light: #eeeeee; --text-muted: #adb5bd; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 10px; background: var(--bg); margin: 0; color: var(--text-light); -webkit-user-select: none; user-select: none; }
@@ -62,11 +64,56 @@
         .input-f { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 12px; text-align: center; font-size: 1.4em; font-weight: bold; box-sizing: border-box; background: var(--dark-panel); color: var(--text-light); }
         .input-f:focus { outline: none; box-shadow: 0 0 15px rgba(255, 103, 0, 0.3); }
         
-        /* SCANNER MODAL - CLEAN & WIDE */
-        #scan-modal-content { width: 98%; max-width: 500px; height: 85vh; display: flex; flex-direction: column; padding: 10px; background: #111; }
-        #reader { width: 100%; flex-grow: 1; background: #000; margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); position: relative; }
-        #reader div[style*="position: absolute"] { border: none !important; box-shadow: none !important; }
-        #reader::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 2px; background: red; box-shadow: 0 0 10px red; z-index: 999; pointer-events: none; }
+        /* --- TÄYDELLINEN SKANNERI-MASKI (V2.28) --- */
+        #scan-modal-content { 
+            width: 100%; height: 100%; 
+            padding: 0; background: #000; position: relative; display: flex; 
+            align-items: center; justify-content: center; overflow: hidden;
+        }
+        
+        #reader { 
+            width: 100% !important; height: 100% !important; border: none;
+        }
+        
+        #reader video { 
+            width: 100% !important; height: 100% !important; object-fit: cover !important; 
+        }
+        
+        /* PIILOTA KIRJASTON OMAT GRAFIIKAT (Vihreä laatikko) */
+        #reader div[style*="position: absolute"] { display: none !important; opacity: 0 !important; }
+        
+        /* OMA MASKI (Blackout + Reikä) */
+        .scan-mask-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
+            /* Tämä luo "reiän" keskelle */
+            background: radial-gradient(rgba(0,0,0,0) 140px, rgba(0,0,0,0.85) 150px);
+        }
+        
+        /* PUNAINEN TÄHTÄYSKEHYS (Kapea ja matala) */
+        .scan-box {
+            position: absolute; 
+            width: 280px; height: 50px; /* Erittäin matala viivakoodille */
+            border: 2px solid red; 
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.9); /* Musta verho ympärille */
+            z-index: 101; pointer-events: none;
+            border-radius: 8px;
+        }
+        
+        /* LASER-VIIVA */
+        .scan-line {
+            position: absolute; width: 260px; height: 2px; background: red;
+            box-shadow: 0 0 10px red; z-index: 102; pointer-events: none;
+            animation: scanAnim 2s infinite;
+        }
+        
+        .scan-close {
+            position: absolute; bottom: 30px; z-index: 200;
+            background: var(--danger); color: white; padding: 15px 40px; border-radius: 30px;
+            font-weight: bold; border: none; font-size: 1.2em;
+        }
+
+        @keyframes scanAnim { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         
         .hist-header { display: grid; grid-template-columns: 75px 1fr auto; gap: 15px; padding: 10px 12px; background: #2c3e50; border-bottom: 2px solid #495057; font-size: 0.75em; font-weight: 900; color: var(--text-muted); text-transform: uppercase; border-radius: 15px 15px 0 0; margin-top: 20px; letter-spacing: 1px; }
         .hist-cont { margin-top: 0; background: var(--dark-panel); border: 1px solid #495057; border-top: none; border-radius: 0 0 15px 15px; max-height: 300px; overflow-y: auto; padding: 0; }
@@ -87,7 +134,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.27</div>
+        <div class="vamm-sub">Press Brake Pro v2.28</div>
     </div>
     
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -141,8 +188,7 @@
     <button onclick="nollaaKaikki()" class="nollaa-btn">Nollaa koko historia</button>
     <button onclick="lisaaKolmeTestiKorttia()" class="btn-test">🧪 LISÄÄ 3 SATUNNAISTA KORTTIA</button>
     <button onclick="tallennaTiedostoon()" class="btn-save-file">📁 TALLENNA TIEDOSTOON</button>
-    
-    <button onclick="localStorage.clear(); location.reload();" class="btn-hard-reset">⚠️ HÄTÄ-NOLLAUS (PAINA TÄSTÄ)</button>
+    <button onclick="hataNollaus()" class="btn-hard-reset">⚠️ HÄTÄ-NOLLAUS (PAINA TÄSTÄ)</button>
 </div>
 
 <div id="n-ruutu" class="overlay">
@@ -156,36 +202,32 @@
     </div>
 </div>
 
-<div id="s-ruutu" class="overlay">
-    <div class="modal" id="scan-modal-content">
-        <h3 style="margin-top:0; color:var(--text-light); margin-bottom:5px;">SKANNAA</h3>
-        <div id="scan-info" style="color:#aaa; font-size:0.8em; margin-bottom:10px;">Kohdista koodi punaiselle viivalle</div>
+<div id="s-ruutu" class="overlay" style="background:black;">
+    <div id="scan-modal-content">
         <div id="reader"></div>
-        <button onclick="suljeSkanneri()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none; font-weight:bold; margin-top:10px; width:100%;">SULJE KAMERA</button>
+        
+        <div class="scan-box"></div>
+        <div class="scan-line"></div>
+        <button class="scan-close" onclick="suljeSkanneri()">SULJE</button>
     </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
 <script>
-    // --- 1. GLOBAALIT MUUTTUJAT ---
+    // 1. GLOBAALIT MUUTTUJAT
     var appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, erikoistilaAloitus: 0, tarkennus: "" };
     var kKunta = "";
     var syoteBuffer = "";
     var html5QrcodeScanner = null;
     var skannausKohde = "";
 
-    // --- 2. VAIHDA_VUORO (KRIITTINEN) ---
+    // 2. VAIHDA_VUORO (TURVALLINEN)
     window.VAIHDA_VUORO = function() {
         if (!appState) { appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, erikoistilaAloitus: 0, tarkennus: "" }; }
         if (!appState.kaynnissa) {
             if (confirm("Aloitetaanko uusi vuoro nyt?")) {
                 soitaAani();
                 appState.aloitusAika = Date.now(); appState.kaynnissa = true; appState.kuitatutPankki = 0; appState.nykyinenTila = null;
-                // Nollaus (vain jos elementit on olemassa)
-                if(document.getElementById('v-kortti')) {
-                    ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id){ asetaArvo(id, "-"); });
-                }
+                if (typeof asetaArvo === 'function') { ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id){ asetaArvo(id, "-"); }); }
                 tallennaTila(); if (typeof paivitaUI === 'function') paivitaUI(); if (typeof paivitaAikajana === 'function') paivitaAikajana();
             }
         } else { 
@@ -197,25 +239,22 @@
         }
     };
 
-    // --- 3. APUFUNKTIOT ---
+    // 3. APUFUNKTIOT
     function soitaAani() { try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(function(e){}); } catch(e){} }
+    function hataNollaus() { if(confirm("Tämä poistaa kaiken tiedon. Jatketaanko?")) { localStorage.clear(); location.reload(); } }
     function tallennaTila() { localStorage.setItem('pb_state_final', JSON.stringify(appState)); }
-    function nollaaKaikki() { if(confirm("Haluatko varmasti nollata koko jakson historian?")) { localStorage.clear(); location.reload(); } }
 
-    // --- 4. BOOTLOADER ---
+    // 4. BOOTLOADER
     window.onload = function() {
         try {
-            if (!localStorage.getItem('v227_clean')) { localStorage.clear(); localStorage.setItem('v227_clean', 'true'); }
+            if (!localStorage.getItem('v228_clean')) { localStorage.clear(); localStorage.setItem('v228_clean', 'true'); }
             var saved = localStorage.getItem('pb_state_final');
             if (saved) { try { appState = JSON.parse(saved); } catch(e) { console.error("Reset"); } }
-            
-            // Palautetaan arvot
             ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id) {
                 var val = localStorage.getItem('pb_field_' + id);
                 var el = document.getElementById('v-' + id);
                 if(val && el) el.innerText = val;
             });
-            
             if (!localStorage.getItem('pb_historia')) localStorage.setItem('pb_historia', '[]');
             paivitaHistoriaLista(); paivitaUI(); paivitaAikajana(); setInterval(kelloSykli, 1000);
         } catch (error) { 
@@ -224,7 +263,7 @@
         }
     };
 
-    // --- 5. TOIMINNOT ---
+    // 5. TOIMINNOT
     function kahdenMiehenTyo() {
         var val = parseFloat(syoteBuffer);
         if(!isNaN(val) && val > 0) {
@@ -263,14 +302,15 @@
     function suljeIkkuna() { document.getElementById('n-ruutu').style.display = 'none'; }
     function paivitaLive(v) {}
 
-    // --- SKANNERI ---
+    // --- SKANNERI (BLACKOUT FIX) ---
     function avaaSkanneri(kohde) {
         if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
         if (typeof Html5Qrcode === 'undefined') { alert("Virhe: Skannerikirjasto ei latautunut."); return; }
         skannausKohde = kohde; document.getElementById('s-ruutu').style.display = 'flex';
         try {
             if (!html5QrcodeScanner) { html5QrcodeScanner = new Html5Qrcode("reader"); }
-            var config = { fps: 10, qrbox: { width: 300, height: 60 }, aspectRatio: 1.0 };
+            // Käytetään isoa laatikkoa, maski hoitaa rajauksen
+            var config = { fps: 10, qrbox: { width: 280, height: 50 }, aspectRatio: 1.0 };
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure).catch(function(err){ alert("Kamera ei aukea: " + err); suljeSkanneri(); });
         } catch (e) { alert("Skannerivirhe: " + e); suljeSkanneri(); }
     }
@@ -375,7 +415,8 @@
     
     function lisaaKolmeTestiKorttia() { if(!appState.kaynnissa) { alert("Aloita ensin vuoro!"); return; } var h = JSON.parse(localStorage.getItem('pb_historia') || "[]"); var lajit = ["S355", "AISI304", "ALU 5754", "HARDOX", "S235"]; var tanaan = new Date().toLocaleDateString('fi-FI'); for(var i=0; i<3; i++) { var kortti = Math.floor(100000 + Math.random() * 900000); var laji = lajit[Math.floor(Math.random() * lajit.length)] + "-" + Math.floor(1 + Math.random() * 10); var a = Math.floor(5 + Math.random() * 20); var t = Math.floor(10 + Math.random() * 40); var m = Math.floor(Math.random() * 15); var yht = a + t + m; appState.kuitatutPankki += yht; var detailStr = `Asetus: ${a} | Taivutus: ${t} | Muut: ${m}`; h.unshift({ id: Date.now() + i, k: kortti.toString(), l: laji, a: yht + " MIN", detail: detailStr, klo: new Date().toLocaleTimeString().substr(0,5), pvm: tanaan }); } localStorage.setItem('pb_historia', JSON.stringify(h)); tallennaTila(); paivitaHistoriaLista(); paivitaAikajana(); kelloSykli(); }
     
-    function tallennaTiedostoon() { var exportData = { version: "2.27", timestamp: new Date().toISOString(), appState: appState, history: JSON.parse(localStorage.getItem('pb_historia') || "[]") }; var dataStr = JSON.stringify(exportData, null, 2); var dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr); var exportFileDefaultName = `press_brake_data_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`; var linkElement = document.createElement('a'); linkElement.setAttribute('href', dataUri); linkElement.setAttribute('download', exportFileDefaultName); document.body.appendChild(linkElement); linkElement.click(); document.body.removeChild(linkElement); }
+    function tallennaTiedostoon() { var exportData = { version: "2.28", timestamp: new Date().toISOString(), appState: appState, history: JSON.parse(localStorage.getItem('pb_historia') || "[]") }; var dataStr = JSON.stringify(exportData, null, 2); var dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr); var exportFileDefaultName = `press_brake_data_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`; var linkElement = document.createElement('a'); linkElement.setAttribute('href', dataUri); linkElement.setAttribute('download', exportFileDefaultName); document.body.appendChild(linkElement); linkElement.click(); document.body.removeChild(linkElement); }
 </script>
 </body>
 </html>
+
