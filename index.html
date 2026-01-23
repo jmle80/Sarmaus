@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.11 - VAMM Steel</title>
+    <title>Press Brake Pro v2.12 - ULTRA SAFE</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript" defer></script>
 
     <style>
         :root { --bg: #222831; --card: #393e46; --dark-panel: #30475e; --primary: #FF6700; --accent: #FF8C33; --success: #00e676; --warning: #ffea00; --danger: #ff1744; --special: #78909c; --text-light: #eeeeee; --text-muted: #adb5bd; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 10px; background: var(--bg); margin: 0; color: var(--text-light); }
-        .container { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-width: 450px; margin: auto; padding-bottom: 40px; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 10px; background: var(--bg); margin: 0; color: var(--text-light); -webkit-user-select: none; user-select: none; }
         
+        .container { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-width: 450px; margin: auto; padding-bottom: 50px; }
+
         .vamm-header { text-align: center; margin-bottom: 20px; }
         .vamm-logo { font-size: 2em; font-weight: bold; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
         .vamm-sub { font-size: 1em; color: var(--text-muted); }
@@ -22,10 +23,7 @@
         .dash-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.2); }
         .stat-val { font-size: 1.2em; font-weight: bold; display: block; color: var(--text-light); }
         
-        .status-idle { border-left-color: #555; }
-        .status-bad { border-left-color: var(--danger); }
-        .status-ok { border-left-color: var(--warning); }
-        .status-good { border-left-color: var(--success); }
+        .status-idle { border-left-color: #555; } .status-bad { border-left-color: var(--danger); } .status-ok { border-left-color: var(--warning); } .status-good { border-left-color: var(--success); }
 
         .timeline-wrapper { margin-bottom: 15px; background: var(--dark-panel); padding: 8px; border-radius: 12px; border: 1px solid #495057; }
         .timeline-bar { display: flex; height: 30px; background: #2c3036; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
@@ -54,23 +52,44 @@
 
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
         .modal { background: var(--card); padding: 25px; border-radius: 20px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        
-        /* NÄYTTÖLAATIKKO (Vain numeronäppäimistölle) */
         .display { font-size: 2em; background: var(--dark-panel); padding: 15px; margin-bottom: 15px; border-radius: 12px; min-height: 1.2em; font-family: monospace; font-weight: bold; color: var(--primary); display: block; }
         
         .key-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .key { padding: 15px; background: var(--dark-panel); border-radius: 10px; font-weight: bold; cursor: pointer; border: 1px solid #495057; font-size: 1.2em; box-shadow: 0 2px 5px rgba(0,0,0,0.2); color: var(--text-light); }
         .key-ok { background: var(--success); color: #003300; grid-column: 2; border: none; }
-        
-        /* TEKSTIKENTÄT (Korostettu syöttö) */
         .input-f { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 12px; text-align: center; font-size: 1.4em; font-weight: bold; box-sizing: border-box; background: var(--dark-panel); color: var(--text-light); }
         .input-f:focus { outline: none; box-shadow: 0 0 15px rgba(255, 103, 0, 0.3); }
         
-        /* SCANNER MODAL - RESPONSIVE */
+        /* SCANNER MODAL - TÄHTÄYSRISTIKKO */
         #scan-modal-content { width: 98%; max-width: 500px; height: 85vh; display: flex; flex-direction: column; padding: 10px; background: #111; }
-        #reader { width: 100%; flex-grow: 1; background: #000; margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(255,255,255,0.2); position: relative; }
+        #reader { 
+            width: 100%; flex-grow: 1; background: #000; margin-bottom: 10px; border-radius: 10px; overflow: hidden; position: relative; 
+        }
         
-        /* PIILOTA HTML5QRCODE VIHREÄ LAATIKKO */
+        /* Punainen tähtäysviiva (Vertical) */
+        #reader::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px; height: 100px; /* Korkea, kapea viiva */
+            background: rgba(255, 0, 0, 0.8);
+            box-shadow: 0 0 10px red;
+            z-index: 100;
+            pointer-events: none;
+        }
+        /* Vaakaviiva ristikkoa varten */
+        #reader::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px; height: 2px;
+            background: rgba(255, 0, 0, 0.8);
+            z-index: 100;
+            pointer-events: none;
+        }
+        
         #reader > div:nth-of-type(2) { box-shadow: none !important; border: none !important; }
         
         .hist-cont { margin-top: 20px; background: var(--dark-panel); border: 1px solid #495057; border-radius: 15px; max-height: 250px; overflow-y: auto; padding: 5px; }
@@ -87,7 +106,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.11</div>
+        <div class="vamm-sub">Press Brake Pro v2.12</div>
     </div>
     
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -146,7 +165,6 @@
     <div class="modal">
         <h3 id="n-otsikko" style="margin-top:0; color:var(--primary)">SYÖTÄ</h3>
         <div id="n-naytto" class="display"></div>
-        
         <div id="t-alue" style="display:none;">
             <input type="text" id="t-syotto" class="input-f" oninput="paivitaLive(this.value)">
             <input type="number" id="t-minuutit" class="input-f" placeholder="MINUUTIT" style="display:none;">
@@ -159,18 +177,18 @@
 <div id="s-ruutu" class="overlay">
     <div class="modal" id="scan-modal-content">
         <h3 style="margin-top:0; color:var(--text-light); margin-bottom:5px;">SKANNAA</h3>
-        <div id="scan-info" style="color:#aaa; font-size:0.8em; margin-bottom:10px;">Kohdista koodi keskelle</div>
+        <div id="scan-info" style="color:#aaa; font-size:0.8em; margin-bottom:10px;">Tähtää punaiseen ristikkoon</div>
         <div id="reader"></div>
         <button onclick="suljeSkanneri()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none; font-weight:bold; margin-top:10px; width:100%;">SULJE KAMERA</button>
     </div>
 </div>
 
 <script>
+    // --- GLOBAL ERROR HANDLER ---
     window.onerror = function(message, source, lineno, colno, error) {
-        const d = document.getElementById('error-display');
-        d.style.display = 'block';
-        d.innerHTML += `<p>VIRHE: ${message} (Rivi: ${lineno})</p>`;
-        return false;
+        // Älä estä suoritusta, mutta kirjaa virhe
+        console.error("Global Error:", message);
+        return false; 
     };
 
     let appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, erikoistilaAloitus: 0, tarkennus: "" };
@@ -179,98 +197,74 @@
     let html5QrcodeScanner = null;
     let skannausKohde = "";
 
-    bootloader();
+    // Käynnistetään heti DOM:n latauduttua
+    window.onload = function() {
+        bootloader();
+    };
 
     function bootloader() {
         try {
-            if (typeof Html5Qrcode === 'undefined') { console.warn("Skannerikirjastoa ei voitu ladata."); }
-            if (!localStorage.getItem('v211_clean')) { localStorage.clear(); localStorage.setItem('v211_clean', 'true'); }
+            if (!localStorage.getItem('v212_clean')) { localStorage.clear(); localStorage.setItem('v212_clean', 'true'); }
             const saved = localStorage.getItem('pb_state_final');
             if (saved) { try { appState = JSON.parse(saved); } catch(e) { console.error("State reset"); } }
+            
+            // Palauta kentät
             ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
                 const val = localStorage.getItem('pb_field_' + id);
                 if(val && document.getElementById('v-' + id)) { document.getElementById('v-' + id).innerText = val; }
             });
+            
             if (!localStorage.getItem('pb_historia')) localStorage.setItem('pb_historia', '[]');
-            paivitaHistoriaLista(); paivitaUI(); paivitaAikajana(); setInterval(kelloSykli, 1000);
+            
+            paivitaHistoriaLista(); 
+            paivitaUI(); 
+            paivitaAikajana(); 
+            setInterval(kelloSykli, 1000);
+            
         } catch (error) { 
-            document.getElementById('error-display').style.display = 'block';
-            document.getElementById('error-display').innerText = "Kriittinen virhe käynnistyksessä: " + error.message;
+            console.error("Bootloader failed", error);
+            alert("Käynnistysvirhe. Paina Hätä-Nollausta.");
         }
     }
 
-    // --- AVAA IKKUNA (Korjattu UI) ---
-    function avaaIkkuna(k) {
-        if (appState.nykyinenTila && !['PROTO','HÄIRIÖ','HUOLTO'].includes(k)) { alert("Lopeta " + appState.nykyinenTila + " ensin!"); return; }
-        if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
-        
-        kKunta = k; 
-        syoteBuffer = "";
-        
-        document.getElementById('n-ruutu').style.display = 'flex'; 
-        
-        // Logiikka näytön valintaan
-        const onTeksti = ['lajike', 'muut', 'PROTO', 'HÄIRIÖ', 'HUOLTO'].includes(k);
-        
-        // Jos tekstikenttä (esim. Muut/Lajimerkki), piilota erillinen näyttölaatikko ja näytä Input
-        if (onTeksti) {
-            document.getElementById('n-naytto').style.display = 'none';
-            document.getElementById('t-alue').style.display = 'block';
-            document.getElementById('k-alue').innerHTML = '<button class="key key-ok" style="grid-column: span 3" onclick="valmis()">OK</button>';
-            
-            const inp = document.getElementById('t-syotto');
-            inp.value = "";
-            inp.style.textTransform = (['PROTO','HÄIRIÖ','HUOLTO'].includes(k)) ? "none" : "uppercase";
-            setTimeout(() => inp.focus(), 200); // Fokusoi automaattisesti
-        } 
-        // Jos numeronäppäimistö (esim. Asetus/Taivutus), näytä näyttölaatikko
-        else {
-            document.getElementById('n-naytto').style.display = 'block';
-            document.getElementById('n-naytto').innerText = "";
-            document.getElementById('t-alue').style.display = 'none';
-            
-            // Luo näppäimistö
-            const grid = document.getElementById('k-alue'); grid.innerHTML = "";
-            ['1','2','3','4','5','6','7','8','9','C','0','.','OK'].forEach(n => {
-                let b = document.createElement('div'); b.className = 'key' + (n==='OK'?' key-ok':''); b.innerText = n;
-                b.onclick = () => { if(n==='C') syoteBuffer=""; else if(n==='OK') valmis(); else syoteBuffer+=n; document.getElementById('n-naytto').innerText = syoteBuffer; };
-                grid.appendChild(b);
-            });
+    // --- ÄÄNIMERKKI (TURVALLINEN) ---
+    function soitaAani() {
+        try {
+            const a = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=');
+            const p = a.play();
+            if (p !== undefined) {
+                p.catch(error => { console.log("Audio estetty (normaalia selaimissa):", error); });
+            }
+        } catch (e) {
+            console.log("Audio context virhe:", e);
         }
-        
-        // Erikoiskenttä Muut-minuuteille
-        document.getElementById('t-minuutit').style.display = (k === 'muut') ? 'block' : 'none';
-        if (k === 'muut') document.getElementById('t-minuutit').value = "";
-        
-        document.getElementById('n-otsikko').innerText = k.toUpperCase();
     }
 
-    function paivitaLive(v) { 
-        // Emme enää tarvitse tätä, koska teksti näkyy suoraan inputissa
-    }
-
-    // --- SKANNERI V2.11 (Käännetty 90 astetta) ---
+    // --- SKANNERI (Ultra Safe) ---
     function avaaSkanneri(kohde) {
         if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
-        if (typeof Html5Qrcode === 'undefined') { alert("Virhe: Skannerikirjasto ei latautunut. Käytä manuaalista syöttöä."); return; }
+        
+        if (typeof Html5Qrcode === 'undefined') {
+            alert("Skanneri ei ole valmis (kirjasto puuttuu). Tarkista netti tai käytä näppäimistöä.");
+            return;
+        }
 
         skannausKohde = kohde;
         document.getElementById('s-ruutu').style.display = 'flex';
-        document.getElementById('scan-info').innerText = (kohde === 'kortti') ? "ETSTIÄÄN 6-NUMEROISTA KOODIA" : "ETSITÄÄN LAJIMERKKIÄ";
         
         try {
             if (!html5QrcodeScanner) { html5QrcodeScanner = new Html5Qrcode("reader"); }
-            
-            // V2.11 MUUTOS: Käännetty lukualue (Kapea ja korkea)
-            const config = { 
-                fps: 10, 
-                qrbox: { width: 100, height: 200 }, // Käännetty pystyyn
-                aspectRatio: 1.0 
-            };
+            const config = { fps: 10, qrbox: { width: 100, height: 200 }, aspectRatio: 1.0 };
             
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-            .catch(err => { alert("Kameran käynnistys epäonnistui: " + err); suljeSkanneri(); });
-        } catch (e) { alert("Skannerivirhe: " + e); suljeSkanneri(); }
+            .catch(err => {
+                alert("Kamera ei aukea. Syy: " + err);
+                suljeSkanneri();
+            });
+        } catch (e) {
+            alert("Kameravirhe: " + e);
+            suljeSkanneri();
+        }
     }
 
     function onScanSuccess(decodedText) {
@@ -279,7 +273,7 @@
             val = val.replace(/\s+/g, '');
             if (!/^\d{6}$/.test(val)) { alert("VIRHE: Koodi (" + val + ") ei ole 6-numeroinen!"); return; }
         }
-        try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{}); } catch(e){}
+        soitaAani();
         asetaArvo(skannausKohde, val);
         tallennaTila();
         suljeSkanneri();
@@ -293,28 +287,113 @@
         } else { document.getElementById('s-ruutu').style.display = 'none'; }
     }
 
-    // --- LOGIIKKA ---
-    function hataNollaus() { if(confirm("Tämä poistaa kaiken tiedon ja korjaa jumiutuneen ohjelman. Jatketaanko?")) { localStorage.clear(); location.reload(); } }
-    function tallennaTila() { localStorage.setItem('pb_state_final', JSON.stringify(appState)); }
+    // --- UI FUNKTIOT ---
+    function avaaIkkuna(k) {
+        if (appState.nykyinenTila && !['PROTO','HÄIRIÖ','HUOLTO'].includes(k)) { alert("Lopeta " + appState.nykyinenTila + " ensin!"); return; }
+        if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
+        kKunta = k; syoteBuffer = "";
+        document.getElementById('n-ruutu').style.display = 'flex';
+        
+        const onTeksti = ['lajike', 'muut', 'PROTO', 'HÄIRIÖ', 'HUOLTO'].includes(k);
+        if (onTeksti) {
+            document.getElementById('n-naytto').style.display = 'none';
+            document.getElementById('t-alue').style.display = 'block';
+            document.getElementById('k-alue').innerHTML = '<button class="key key-ok" style="grid-column: span 3" onclick="valmis()">OK</button>';
+            const inp = document.getElementById('t-syotto'); inp.value = "";
+            inp.style.textTransform = (['PROTO','HÄIRIÖ','HUOLTO'].includes(k)) ? "none" : "uppercase";
+            setTimeout(() => inp.focus(), 200);
+        } else {
+            document.getElementById('n-naytto').style.display = 'block';
+            document.getElementById('n-naytto').innerText = "";
+            document.getElementById('t-alue').style.display = 'none';
+            const grid = document.getElementById('k-alue'); grid.innerHTML = "";
+            ['1','2','3','4','5','6','7','8','9','C','0','.','OK'].forEach(n => {
+                let b = document.createElement('div'); b.className = 'key' + (n==='OK'?' key-ok':''); b.innerText = n;
+                b.onclick = () => { if(n==='C') syoteBuffer=""; else if(n==='OK') valmis(); else syoteBuffer+=n; document.getElementById('n-naytto').innerText = syoteBuffer; };
+                grid.appendChild(b);
+            });
+        }
+        document.getElementById('t-minuutit').style.display = (k === 'muut') ? 'block' : 'none';
+        if (k === 'muut') document.getElementById('t-minuutit').value = "";
+        document.getElementById('n-otsikko').innerText = k.toUpperCase();
+    }
+
+    function paivitaLive(v) {}
+
+    function valmis() {
+        let v = (document.getElementById('t-alue').style.display === 'block') ? document.getElementById('t-syotto').value : syoteBuffer;
+        if (['lajike', 'muut', 'kortti', 'asetus', 'taivutus'].includes(kKunta)) v = v.toUpperCase();
+        if (kKunta === 'kortti' && v.length !== 6) { alert("KORTTI ON 6 NUMEROA!"); return; }
+        if (['PROTO', 'HÄIRIÖ', 'HUOLTO'].includes(kKunta)) { appState.nykyinenTila = kKunta; appState.tarkennus = v; appState.erikoistilaAloitus = Date.now(); } 
+        else { let d = v; if (kKunta === 'muut') d += " " + (document.getElementById('t-minuutit').value || 0) + " MIN"; else if (['asetus','taivutus'].includes(kKunta)) d += " MIN"; asetaArvo(kKunta, d); }
+        tallennaTila(); paivitaUI(); suljeIkkuna();
+    }
+
+    function suljeIkkuna() { document.getElementById('n-ruutu').style.display = 'none'; }
+
+    // --- TALLENNUS JA LOGIIKKA ---
+    function tallennaKortti() {
+        if (document.getElementById('v-kortti').innerText === "-") return;
+        const aVal = poimiNum(document.getElementById('v-asetus').innerText); const tVal = poimiNum(document.getElementById('v-taivutus').innerText); const mVal = poimiNum(document.getElementById('v-muut').innerText);
+        const yht = aVal + tVal + mVal; appState.kuitatutPankki += yht;
+        lisaaHistRivi(document.getElementById('v-kortti').innerText, document.getElementById('v-lajike').innerText, yht + " MIN", aVal, tVal, mVal);
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { asetaArvo(id, "-"); }); tallennaTila(); kelloSykli();
+    }
+
+    function lisaaHistRivi(k, l, yht, as, tai, mu) {
+        let h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        const detailStr = (as > 0 || tai > 0 || mu > 0) ? `Asetus: ${as} | Taivutus: ${tai} | Muut: ${mu}` : null;
+        h.unshift({ id: Date.now(), k, l, a: yht, detail: detailStr, klo: new Date().toLocaleTimeString().substr(0,5) });
+        localStorage.setItem('pb_historia', JSON.stringify(h)); paivitaHistoriaLista();
+    }
+
+    function paivitaHistoriaLista() {
+        let h = []; try { h = JSON.parse(localStorage.getItem('pb_historia') || "[]"); } catch(e){}
+        let html = "";
+        h.forEach((i, idx) => { 
+            html += `<div class="hist-item" onclick="naytaTiedot(${idx})"><div class="h-id">${i.k}</div><div class="h-type">${i.l}</div><div class="h-time">${i.a} <span style="opacity:0.6;font-weight:400">(${i.klo})</span></div></div>`;
+        });
+        document.getElementById('h-lista').innerHTML = html;
+    }
+
+    function naytaTiedot(idx) {
+        const h = JSON.parse(localStorage.getItem('pb_historia')); const i = h[idx];
+        let viesti = `${i.k} ${i.l ? '- '+i.l : ''}\n------------------\n`; viesti += i.detail ? i.detail : "Erikoistila"; viesti += `\n------------------\nHaluatko poistaa tämän rivin?`;
+        if (confirm(viesti)) { 
+            const minuutit = parseFloat(i.a) || 0; if (i.detail) { appState.kuitatutPankki = Math.max(0, appState.kuitatutPankki - minuutit); tallennaTila(); }
+            h.splice(idx, 1); localStorage.setItem('pb_historia', JSON.stringify(h)); paivitaHistoriaLista(); kelloSykli(); 
+        }
+    }
+
+    // --- VAIHDA VUORO (VAKAA) ---
+    function VAIHDA_VUORO() {
+        if (!appState.kaynnissa) {
+            if (confirm("Aloitetaanko uusi vuoro nyt?")) {
+                soitaAani();
+                appState.aloitusAika = Date.now(); appState.kaynnissa = true; appState.kuitatutPankki = 0; appState.nykyinenTila = null;
+                ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { asetaArvo(id, "-"); });
+                tallennaTila(); paivitaUI(); paivitaAikajana();
+            }
+        } else { if (confirm("Haluatko varmasti lopettaa vuoron?")) { appState.kaynnissa = false; tallennaTila(); paivitaUI(); location.reload(); } }
+    }
+
+    function tilaVaihda(t) {
+        if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
+        if (appState.nykyinenTila === t) {
+            const min = Math.round((Date.now() - appState.erikoistilaAloitus) / 60000);
+            lisaaHistRivi(t, appState.tarkennus, min + " MIN", 0, 0, 0); 
+            appState.nykyinenTila = null; appState.tarkennus = ""; tallennaTila(); paivitaUI();
+        } else if (appState.nykyinenTila) { alert("Lopeta ensin tila: " + appState.nykyinenTila); } else { avaaIkkuna(t); }
+    }
 
     function kelloSykli() {
         if (!appState || !appState.kaynnissa) { const el = document.getElementById('kelloDisplay'); if(el) el.innerText = "00:00"; return; }
-        const nyt = Date.now();
-        const sek = Math.floor((nyt - appState.aloitusAika) / 1000);
-        const safeSek = Math.max(0, sek);
-        const h = Math.floor(safeSek / 3600).toString().padStart(2, '0');
-        const m = Math.floor((safeSek % 3600) / 60).toString().padStart(2, '0');
+        const nyt = Date.now(); const sek = Math.floor((nyt - appState.aloitusAika) / 1000); const safeSek = Math.max(0, sek);
+        const h = Math.floor(safeSek / 3600).toString().padStart(2, '0'); const m = Math.floor((safeSek % 3600) / 60).toString().padStart(2, '0');
         document.getElementById('kelloDisplay').innerText = `${h}:${m}`;
-        
-        const yhtMin = appState.kuitatutPankki;
-        const tyotunnit = Math.max(safeSek, 1) / 3600;
-        document.getElementById('dashDone').innerText = yhtMin.toFixed(0);
-        document.getElementById('dashElapsed').innerText = Math.floor(safeSek/60);
-
-        const dashPanel = document.getElementById('dashboardPanel');
-        const effNum = document.getElementById('dashEfficiency');
-        const statusTxt = document.getElementById('dashStatus');
-
+        const yhtMin = appState.kuitatutPankki; const tyotunnit = Math.max(safeSek, 1) / 3600;
+        document.getElementById('dashDone').innerText = yhtMin.toFixed(0); document.getElementById('dashElapsed').innerText = Math.floor(safeSek/60);
+        const dashPanel = document.getElementById('dashboardPanel'); const effNum = document.getElementById('dashEfficiency'); const statusTxt = document.getElementById('dashStatus');
         if (appState.nykyinenTila) {
             dashPanel.className = "dashboard status-idle"; statusTxt.innerText = appState.nykyinenTila; effNum.innerText = "--"; effNum.style.color = "white";
         } else {
@@ -331,47 +410,37 @@
         if (!appState || !appState.kaynnissa) { paivitaPalkki('bar-asetus', 0); paivitaPalkki('bar-taivutus', 0); paivitaPalkki('bar-muut', 0); return; }
         let h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
         let sumA = 0, sumT = 0, sumM = 0;
-        h.forEach(item => {
-            if (item.detail) {
-                const parts = item.detail.split('|');
-                parts.forEach(p => {
-                    if (p.includes("Asetus")) sumA += parseFloat(p.match(/[\d.]+/)[0]) || 0;
-                    if (p.includes("Taivutus")) sumT += parseFloat(p.match(/[\d.]+/)[0]) || 0;
-                    if (p.includes("Muut")) sumM += parseFloat(p.match(/[\d.]+/)[0]) || 0;
-                });
-            }
-        });
+        h.forEach(item => { if (item.detail) { const parts = item.detail.split('|'); parts.forEach(p => { if (p.includes("Asetus")) sumA += parseFloat(p.match(/[\d.]+/)[0]) || 0; if (p.includes("Taivutus")) sumT += parseFloat(p.match(/[\d.]+/)[0]) || 0; if (p.includes("Muut")) sumM += parseFloat(p.match(/[\d.]+/)[0]) || 0; }); } });
         const totalWork = sumA + sumT + sumM;
-        if (totalWork === 0) { 
-            const c = document.getElementById('timelineContainer'); if(c) c.innerHTML = '<div class="seg seg-empty">Ei kirjattua työtä</div>'; 
-        } else {
-            const c = document.getElementById('timelineContainer');
-            if (c && c.querySelector('.seg-empty')) { c.innerHTML = `<div id="bar-asetus" class="seg seg-asetus" style="width: 0%"></div><div id="bar-taivutus" class="seg seg-taivutus" style="width: 0%"></div><div id="bar-muut" class="seg seg-muut" style="width: 0%"></div>`; }
+        const container = document.getElementById('timelineContainer');
+        if (totalWork === 0) { if(container) container.innerHTML = '<div class="seg seg-empty">Ei kirjattua työtä</div>'; } 
+        else {
+            if (container && container.querySelector('.seg-empty')) { container.innerHTML = `<div id="bar-asetus" class="seg seg-asetus" style="width: 0%"></div><div id="bar-taivutus" class="seg seg-taivutus" style="width: 0%"></div><div id="bar-muut" class="seg seg-muut" style="width: 0%"></div>`; }
             const pA = (sumA / totalWork) * 100; const pT = (sumT / totalWork) * 100; const pM = (sumM / totalWork) * 100;
             paivitaPalkki('bar-asetus', pA); paivitaPalkki('bar-taivutus', pT); paivitaPalkki('bar-muut', pM);
         }
     }
 
-    function paivitaPalkki(id, pros) {
-        const el = document.getElementById(id); if(!el) return;
-        if (pros < 5) { el.style.width = pros + "%"; el.innerText = ""; } 
-        else { el.style.width = pros + "%"; el.innerText = Math.round(pros) + "%"; }
+    function paivitaPalkki(id, pros) { const el = document.getElementById(id); if(!el) return; if (pros < 5) { el.style.width = pros + "%"; el.innerText = ""; } else { el.style.width = pros + "%"; el.innerText = Math.round(pros) + "%"; } }
+
+    function paivitaUI() {
+        const btn = document.getElementById('v-nappi'); if(!btn) return;
+        btn.innerText = appState.kaynnissa ? "LOPETA VUORO" : "ALOITA VUORO"; btn.className = appState.kaynnissa ? "main-action btn-stop" : "main-action btn-start";
+        ['PROTO','HÄIRIÖ','HUOLTO'].forEach(t => { const el = document.getElementById('s-'+t); if(el) { if (appState.nykyinenTila === t) el.className = 'btn-spec active'; else if (appState.nykyinenTila) el.className = 'btn-spec disabled'; else el.className = 'btn-spec'; } });
+        const lukittu = !!appState.nykyinenTila; const aktiivinen = appState.kaynnissa && !lukittu;
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { const el = document.getElementById('box-'+id); if(el) { if (lukittu) el.className = 'info-box box-disabled'; else el.className = 'info-box' + (aktiivinen ? ' box-active' : ''); const btn = el.nextElementSibling; if(btn && btn.classList.contains('btn-scan')) { btn.style.pointerEvents = lukittu ? 'none' : 'auto'; btn.style.opacity = lukittu ? '0.5' : '1'; } } });
     }
 
-    function VAIHDA_VUORO() {
-        if (!appState.kaynnissa) {
-            if (confirm("Aloitetaanko uusi vuoro nyt?")) {
-                try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(()=>{}); } catch(e){}
-                appState.aloitusAika = Date.now(); appState.kaynnissa = true; appState.kuitatutPankki = 0; appState.nykyinenTila = null;
-                ['kortti','lajike','asetus','taivutus','muut'].forEach(id => { asetaArvo(id, "-"); });
-                tallennaTila(); paivitaUI(); paivitaAikajana();
-            }
-        } else { if (confirm("Haluatko varmasti lopettaa vuoron?")) { appState.kaynnissa = false; tallennaTila(); paivitaUI(); location.reload(); } }
-    }
+    function hataNollaus() { if(confirm("Tämä poistaa kaiken tiedon ja korjaa jumiutuneen ohjelman. Jatketaanko?")) { localStorage.clear(); location.reload(); } }
+    function nollaaKaikki() { if(confirm("Haluatko varmasti nollata koko jakson historian?")) { localStorage.clear(); location.reload(); } }
+    function asetaArvo(id, val) { const el = document.getElementById('v-' + id); if(el) { el.innerText = val; localStorage.setItem('pb_field_' + id, val); } }
+    function naytaValikko() { let m = document.getElementById('menu-spec'); m.style.display = (m.style.display === 'grid' ? 'none' : 'grid'); }
+    function poimiNum(t) { const n = t.match(/[\d.]+/); return n ? parseFloat(n[0]) : 0; }
+    
+    function lisaaKolmeTestiKorttia() { if(!appState.kaynnissa) { alert("Aloita ensin vuoro!"); return; } let h = JSON.parse(localStorage.getItem('pb_historia') || "[]"); const lajit = ["S355", "AISI304", "ALU 5754", "HARDOX", "S235"]; for(let i=0; i<3; i++) { const kortti = Math.floor(100000 + Math.random() * 900000); const laji = lajit[Math.floor(Math.random() * lajit.length)] + "-" + Math.floor(1 + Math.random() * 10); const a = Math.floor(5 + Math.random() * 20); const t = Math.floor(10 + Math.random() * 40); const m = Math.floor(Math.random() * 15); const yht = a + t + m; appState.kuitatutPankki += yht; const detailStr = `Asetus: ${a} | Taivutus: ${t} | Muut: ${m}`; h.unshift({ id: Date.now() + i, k: kortti.toString(), l: laji, a: yht + " MIN", detail: detailStr, klo: new Date().toLocaleTimeString().substr(0,5) }); } localStorage.setItem('pb_historia', JSON.stringify(h)); tallennaTila(); paivitaHistoriaLista(); paivitaAikajana(); kelloSykli(); }
+    
+    function tallennaTiedostoon() { const exportData = { version: "2.12", timestamp: new Date().toISOString(), appState: appState, history: JSON.parse(localStorage.getItem('pb_historia') || "[]") }; const dataStr = JSON.stringify(exportData, null, 2); const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr); const exportFileDefaultName = `press_brake_data_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`; let linkElement = document.createElement('a'); linkElement.setAttribute('href', dataUri); linkElement.setAttribute('download', exportFileDefaultName); document.body.appendChild(linkElement); linkElement.click(); document.body.removeChild(linkElement); }
+</script>
+</body>
+</html>
 
-    function tilaVaihda(t) {
-        if (!appState.kaynnissa) { alert("Aloita vuoro ensin!"); return; }
-        if (appState.nykyinenTila === t) {
-            const min = Math.round((Date.now() - appState.erikoistilaAloitus) / 60
-
-                                   
