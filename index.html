@@ -37,6 +37,7 @@
             margin-bottom: 20px;
         }
 
+        /* Neutraali status-paneeli (ei vihreää taustaa) */
         .status-panel {
             text-align: center;
             margin-bottom: 20px;
@@ -115,41 +116,32 @@
             position: relative;
         }
 
+        /* Kameran etsimen vihreä raita poistettu */
         #reader__scan_region {
             border: none !important; 
             box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.4) !important; 
             background: transparent !important;
         }
+        
         #reader__dashboard_section_csr span {
             display: none !important;
         }
 
-        /* Historia - Taulukko */
-        /* Mahdollistetaan taulukon rullaus jos lista on pitkä */
-        .history-wrapper {
-            max-height: 500px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-        }
-
+        /* Historia - Alkuperäinen taulukko */
         table {
             width: 100%;
             border-collapse: collapse;
-        }
-
-        /* Kiinnitetty yläreuna (Sticky Header) */
-        th {
-            background-color: #e9ecef;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            border-bottom: 2px solid #ccc;
+            margin-top: 20px;
         }
 
         th, td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
         }
 
         /* Mobiilioptimointi taulukolle */
@@ -182,15 +174,12 @@
                 font-weight: bold;
                 content: attr(data-label);
             }
-            /* Mobiilissa poistetaan sticky header koska taulukko hajoaa blockeiksi */
-            th { position: static; }
-            .history-wrapper { max-height: none; border: none; }
         }
     </style>
 </head>
 <body>
 
-    <div id="version-display">Versio 3.3 (Uudet sarakkeet)</div>
+    <div id="version-display">Versio 2.2 (Palautettu)</div>
 
     <div class="container">
         <h1>Työvuoroseuranta</h1>
@@ -229,20 +218,20 @@
 
     <div class="container">
         <h2>Historia</h2>
-        <div class="history-wrapper">
-            <table id="history-table">
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">Pvm</th>
-                        <th style="width: 20%;">Kortti</th>
-                        <th style="width: 15%;">Laji</th>
-                        <th style="width: 50%;">Aika (Aloitus - Lopetus | Kesto)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
-        </div>
+        <table id="history-table">
+            <thead>
+                <tr>
+                    <th>Pvm</th>
+                    <th>Aloitus</th>
+                    <th>Lopetus</th>
+                    <th>Kesto</th>
+                    <th>Kortti</th>
+                    <th>Laji</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
     </div>
 
     <script>
@@ -252,7 +241,7 @@
         let html5QrCode = null;
         let isScanning = false;
         
-        // Ääniefekti (Web Audio API)
+        // Luodaan ääniefekti (Web Audio API)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep() {
             if (audioCtx.state === 'suspended') {
@@ -262,13 +251,11 @@
             const gainNode = audioCtx.createGain();
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-            
             oscillator.type = 'sine';
-            oscillator.frequency.value = 880; 
-            gainNode.gain.value = 0.1; 
-            
+            oscillator.frequency.value = 880; // A5
+            gainNode.gain.value = 0.1;
             oscillator.start();
-            setTimeout(() => { oscillator.stop(); }, 200); 
+            setTimeout(() => { oscillator.stop(); }, 200); // 200ms piippaus
         }
 
         // --- ALUSTUS ---
@@ -277,6 +264,7 @@
             setInterval(updateLiveClock, 1000);
             loadHistory();
             
+            // Palautetaan tila jos sivu latautuu uudelleen kesken vuoron
             const savedStart = localStorage.getItem('currentShiftStart');
             if (savedStart) {
                 shiftStartTime = new Date(savedStart);
@@ -284,10 +272,12 @@
                 document.getElementById('status-text').textContent = "Vuoro käynnissä";
                 document.getElementById('status-text').style.color = "green";
                 
+                // Palautetaan inputtien arvot jos tallessa
                 document.getElementById('card-number').value = localStorage.getItem('currentCard') || '';
                 document.getElementById('type-mark').value = localStorage.getItem('currentType') || '';
             }
 
+            // Input kuuntelijat
             document.getElementById('card-number').addEventListener('input', validateCardNumber);
             document.getElementById('type-mark').addEventListener('input', forceUpperCase);
         };
@@ -314,15 +304,21 @@
 
         // --- VALIDIOINTI ---
         function validateCardNumber(e) {
+            // Sallitaan vain numerot, max 6
             let value = e.target.value.replace(/[^0-9]/g, '');
             if (value.length > 6) value = value.slice(0, 6);
             e.target.value = value;
+            
+            // Tallennetaan välimuistiin
             if (shiftStartTime) localStorage.setItem('currentCard', value);
         }
 
         function forceUpperCase(e) {
+            // Muutetaan kaikki kirjaimet isoiksi
             let value = e.target.value.toUpperCase();
             e.target.value = value;
+            
+            // Tallennetaan välimuistiin
             if (shiftStartTime) localStorage.setItem('currentType', value);
         }
 
@@ -333,11 +329,12 @@
                 return;
             }
 
-            playBeep(); // Checklist: Ääni alussa
+            playBeep(); // Ääni alussa
 
             shiftStartTime = new Date();
             localStorage.setItem('currentShiftStart', shiftStartTime);
             
+            // Tallennetaan nykyiset syötteet
             localStorage.setItem('currentCard', document.getElementById('card-number').value);
             localStorage.setItem('currentType', document.getElementById('type-mark').value);
 
@@ -359,13 +356,14 @@
                 return;
             }
 
-            playBeep(); // Checklist: Ääni lopussa
-
             const endTime = new Date();
             const durationMs = endTime - shiftStartTime;
             
             const diffDate = new Date(durationMs);
-            const durationStr = `${diffDate.getUTCHours().toString().padStart(2, '0')}:${diffDate.getUTCMinutes().toString().padStart(2, '0')}:${diffDate.getUTCSeconds().toString().padStart(2, '0')}`;
+            const h = diffDate.getUTCHours().toString().padStart(2, '0');
+            const m = diffDate.getUTCMinutes().toString().padStart(2, '0');
+            const s = diffDate.getUTCSeconds().toString().padStart(2, '0');
+            const durationStr = `${h}:${m}:${s}`;
 
             const entry = {
                 date: shiftStartTime.toLocaleDateString('fi-FI'),
@@ -378,6 +376,7 @@
 
             saveToHistory(entry);
             
+            // Nollaus
             shiftStartTime = null;
             clearInterval(shiftTimerInterval);
             document.getElementById('duration-timer').textContent = "Kesto: 00:00:00";
@@ -394,4 +393,133 @@
 
         // --- HISTORIA ---
         function saveToHistory(entry) {
-            let history
+            let history = JSON.parse(localStorage.getItem('shiftHistory') || "[]");
+            history.push(entry);
+            localStorage.setItem('shiftHistory', JSON.stringify(history));
+            addHistoryRow(entry);
+        }
+
+        function loadHistory() {
+            let history = JSON.parse(localStorage.getItem('shiftHistory') || "[]");
+            const tbody = document.querySelector('#history-table tbody');
+            tbody.innerHTML = "";
+            history.slice().reverse().forEach(entry => addHistoryRow(entry));
+        }
+
+        function addHistoryRow(entry) {
+            const tbody = document.querySelector('#history-table tbody');
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td data-label="Pvm">${entry.date}</td>
+                <td data-label="Aloitus">${entry.start}</td>
+                <td data-label="Lopetus">${entry.end}</td>
+                <td data-label="Kesto">${entry.duration}</td>
+                <td data-label="Kortti">${entry.card}</td>
+                <td data-label="Laji">${entry.type}</td>
+            `;
+            
+            if (tbody.firstChild) {
+                tbody.insertBefore(row, tbody.firstChild);
+            } else {
+                tbody.appendChild(row);
+            }
+        }
+
+        function clearHistory() {
+            // Checklist: Vahvistuskysymys
+            if (confirm("Haluatko varmasti nollata koko jakson historian? (Do you really want to reset the entire period history?)")) {
+                localStorage.removeItem('shiftHistory');
+                loadHistory();
+            }
+        }
+
+        // --- VARMUUSKOPIOINTI ---
+        function downloadBackup() {
+            const history = localStorage.getItem('shiftHistory') || "[]";
+            const blob = new Blob([history], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "tyovuorot_backup_" + new Date().toISOString().slice(0,10) + ".json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function restoreBackup(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        if(confirm("Tämä korvaa nykyisen historian. Oletko varma?")) {
+                            localStorage.setItem('shiftHistory', JSON.stringify(data));
+                            loadHistory();
+                            alert("Varmuuskopio palautettu onnistuneesti!");
+                        }
+                    } else {
+                        alert("Virheellinen tiedostomuoto.");
+                    }
+                } catch (err) {
+                    alert("Virhe tiedoston luvussa: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- SKANNERI ---
+        function toggleScanner() {
+            const readerElem = document.getElementById('reader');
+            
+            if (isScanning) {
+                if (html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        readerElem.style.display = "none";
+                        isScanning = false;
+                        document.querySelector('.btn-scan').textContent = "Skannaa viivakoodi";
+                    }).catch(err => {
+                        console.error("Stop failed", err);
+                    });
+                }
+            } else {
+                readerElem.style.display = "block";
+                
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
+
+                // Checklist: Vaakaskanneri & 16:9
+                const config = { 
+                    fps: 10, 
+                    qrbox: { width: 300, height: 150 }, 
+                    aspectRatio: 1.777778 
+                };
+                
+                html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    config, 
+                    onScanSuccess
+                ).then(() => {
+                    isScanning = true;
+                    document.querySelector('.btn-scan').textContent = "Sulje kamera";
+                }).catch(err => {
+                    alert("Kameran käynnistys epäonnistui: " + err);
+                    readerElem.style.display = "none";
+                });
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            playBeep(); // Ääni skannauksessa
+            document.getElementById('card-number').value = decodedText;
+            validateCardNumber({ target: document.getElementById('card-number') });
+            toggleScanner();
+        }
+
+    </script>
+</body>
+</html>
