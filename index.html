@@ -3,18 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v1.85</title>
+    <title>Press Brake Pro v1.86</title>
     <style>
         :root { --bg: #f4f7f9; --card: #ffffff; --primary: #1a237e; --accent: #2196f3; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --special: #607d8b; }
         body { font-family: sans-serif; padding: 10px; background: var(--bg); margin: 0; }
-        .version-tag { color: white; background: #e91e63; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 0.8em; margin-bottom: 10px; display: inline-block; }
+        .version-tag { color: white; background: #000; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 0.8em; margin-bottom: 10px; display: inline-block; }
         .container { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        
         .timer-box { background: #1e1e2f; padding: 20px; border-radius: 15px; border: 2px solid #333; text-align: center; margin: 10px 0; }
         .timer { font-size: 4.5em; font-weight: bold; font-family: 'Courier New', monospace; color: #50fa7b; line-height: 1; letter-spacing: 2px; }
+        
         #j-box { background: #eee; border: 1px solid #ccc; padding: 12px; margin: 10px 0; border-radius: 12px; text-align: center; font-weight: bold; min-height: 110px; display: flex; flex-direction: column; justify-content: center; transition: all 0.3s; }
         .lukema-naytto { font-size: 2.8em; margin: 2px 0; }
+        
+        /* TIMELINE STYLES */
+        .timeline-wrapper { margin: 15px 0; background: #eceff1; padding: 10px; border-radius: 12px; border: 1px solid #ddd; }
+        .timeline-bar { display: flex; height: 25px; background: #ddd; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
+        .seg { height: 100%; transition: width 0.5s ease; }
+        .seg-asetus { background: var(--accent); } /* Sininen */
+        .seg-taivutus { background: var(--success); } /* Vihreä */
+        .seg-erikois { background: var(--danger); } /* Punainen */
+        .timeline-legend { display: flex; justify-content: space-between; font-size: 0.7em; color: #555; font-weight: bold; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
+
         @keyframes blink-panel { 0% { background-color: var(--success); } 50% { background-color: #81c784; } 100% { background-color: var(--success); } }
         .blink { animation: blink-panel 1s infinite; color: white !important; }
+
         .info-box { background: #fff; border: 1px solid #ddd; padding: 14px; margin: 6px 0; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; border-left: 5px solid #ccc; font-weight: 600; }
         .box-active { border-left-color: var(--accent); background: #f0f8ff; }
         .special-menu { display: none; background: #eceff1; padding: 10px; border-radius: 10px; margin: 10px 0; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -38,7 +52,7 @@
 <body onload="alustaOhjelma()">
 
 <div class="container">
-    <div class="version-tag">VERSIO 1.85</div>
+    <div class="version-tag">VERSIO 1.86</div>
     
     <div class="timer-box">
         <div id="kelloDisplay" class="timer">00:00</div>
@@ -48,6 +62,19 @@
         <div id="j-tila">ODOTTAA</div>
         <div id="j-lukema" class="lukema-naytto">0.00</div>
         <div id="j-kuitatut" style="font-size: 0.8em; color: #555;">KUITATUT: 0 MIN | AIKA: 0 MIN</div>
+    </div>
+
+    <div class="timeline-wrapper">
+        <div class="timeline-bar">
+            <div id="bar-asetus" class="seg seg-asetus" style="width: 0%"></div>
+            <div id="bar-taivutus" class="seg seg-taivutus" style="width: 0%"></div>
+            <div id="bar-erikois" class="seg seg-erikois" style="width: 0%"></div>
+        </div>
+        <div class="timeline-legend">
+            <span><span class="dot" style="background:var(--accent)"></span>ASETUS</span>
+            <span><span class="dot" style="background:var(--success)"></span>TAIVUTUS</span>
+            <span><span class="dot" style="background:var(--danger)"></span>HÄIRIÖ</span>
+        </div>
     </div>
 
     <button onclick="naytaValikko()" style="background: var(--special); color: white; padding: 10px;">ERITYISTILAT</button>
@@ -105,6 +132,7 @@
         });
         paivitaHistoriaLista();
         paivitaUI();
+        paivitaAikajana(); // Päivitä jana heti alussa
         setInterval(sykli, 1000);
     }
 
@@ -139,6 +167,48 @@
         else { b.style.background = "#4caf50"; b.style.color = "white"; document.getElementById('j-tila').innerText = "TEHOKAS"; if (lukema >= 2.0) b.classList.add('blink'); }
     }
 
+    // --- AIKAJANA LOGIIKKA ---
+    function paivitaAikajana() {
+        if (!appState.kaynnissa) {
+            document.getElementById('bar-asetus').style.width = "0%";
+            document.getElementById('bar-taivutus').style.width = "0%";
+            document.getElementById('bar-erikois').style.width = "0%";
+            return;
+        }
+
+        const h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        let sumAsetus = 0;
+        let sumTaivutus = 0;
+        let sumErikois = 0;
+
+        h.forEach(item => {
+            // Jos on "detail", kyseessä on normikortti
+            if (item.detail) {
+                // Parsitaan "Asetus: 5 | Taivutus: 10..."
+                const parts = item.detail.split('|');
+                parts.forEach(p => {
+                    if (p.includes("Asetus")) sumAsetus += parseFloat(p.match(/[\d.]+/)[0]) || 0;
+                    if (p.includes("Taivutus")) sumTaivutus += parseFloat(p.match(/[\d.]+/)[0]) || 0;
+                });
+            } else {
+                // Erikoistila
+                sumErikois += parseFloat(item.a.match(/[\d.]+/)[0]) || 0;
+            }
+        });
+
+        // Lasketaan suhteet kokonaisaikaan
+        const nyt = Date.now();
+        const kokonaisMinuutit = Math.max(1, (nyt - appState.aloitusAika) / 60000);
+
+        const prosAsetus = Math.min(100, (sumAsetus / kokonaisMinuutit) * 100);
+        const prosTaivutus = Math.min(100, (sumTaivutus / kokonaisMinuutit) * 100);
+        const prosErikois = Math.min(100, (sumErikois / kokonaisMinuutit) * 100);
+
+        document.getElementById('bar-asetus').style.width = prosAsetus + "%";
+        document.getElementById('bar-taivutus').style.width = prosTaivutus + "%";
+        document.getElementById('bar-erikois').style.width = prosErikois + "%";
+    }
+
     function tallennaKortti() {
         if (document.getElementById('v-kortti').innerText === "-") return;
         const aVal = poimiNum(document.getElementById('v-asetus').innerText);
@@ -154,6 +224,7 @@
             localStorage.removeItem('pb_field_'+id);
         });
         tallennaTila();
+        paivitaAikajana(); // Päivitä jana tallennuksessa
     }
 
     function tilaVaihda(t) {
@@ -162,7 +233,7 @@
             const min = Math.round((Date.now() - appState.erikoistilaAloitus) / 60000);
             lisaaHistRivi(t, appState.tarkennus, min, 0, 0, 0);
             appState.nykyinenTila = null;
-            tallennaTila(); paivitaUI();
+            tallennaTila(); paivitaUI(); paivitaAikajana(); // Päivitä jana
         } else { avaaIkkuna(t); }
     }
 
@@ -217,7 +288,9 @@
 
     function lisaaHistRivi(k, l, yht, as, tai, mu) {
         let h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
-        h.unshift({ id: Date.now(), k, l, a: yht + " MIN", detail: `Asetus: ${as} | Taivutus: ${tai} | Muut: ${mu}`, klo: new Date().toLocaleTimeString().substr(0,5) });
+        // Jos normikortti, tallenna detail. Jos erikoistila, ei detailia.
+        const detailStr = (as > 0 || tai > 0 || mu > 0) ? `Asetus: ${as} | Taivutus: ${tai} | Muut: ${mu}` : null;
+        h.unshift({ id: Date.now(), k, l, a: yht + " MIN", detail: detailStr, klo: new Date().toLocaleTimeString().substr(0,5) });
         localStorage.setItem('pb_historia', JSON.stringify(h));
         paivitaHistoriaLista();
     }
@@ -235,7 +308,21 @@
         let viesti = `${i.k} - ${i.l}\n------------------\n`;
         viesti += i.detail ? i.detail : "Erikoistila";
         viesti += `\n------------------\nHaluatko poistaa tämän rivin?`;
-        if (confirm(viesti)) { h.splice(idx, 1); localStorage.setItem('pb_historia', JSON.stringify(h)); paivitaHistoriaLista(); }
+        if (confirm(viesti)) { 
+            h.splice(idx, 1); 
+            localStorage.setItem('pb_historia', JSON.stringify(h)); 
+            
+            // Päivitä pankki poiston yhteydessä (yksinkertaistettu: vähentää kokonaisminuutit)
+            const minuutit = parseFloat(i.a.match(/[\d.]+/)[0]) || 0;
+            // Vain jos ei ole erikoistila (koska erikoistilat eivät mene pankkiin tässä logiikassa)
+            if (i.detail) {
+                appState.kuitatutPankki = Math.max(0, appState.kuitatutPankki - minuutit);
+                tallennaTila();
+            }
+            
+            paivitaHistoriaLista(); 
+            paivitaAikajana();
+        }
     }
 
     function paivitaUI() {
@@ -256,3 +343,4 @@
 </script>
 </body>
 </html>
+
