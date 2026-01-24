@@ -3,81 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.32 - STRUCTURE FIX</title>
+    <title>Press Brake Pro v2.33 - CRASH PROOF</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
-        /* 1. PERUSTYYLIT & VÄRIT */
-        :root { 
-            --bg: #222831; 
-            --card: #393e46; 
-            --dark-panel: #30475e; 
-            --primary: #FF6700; 
-            --accent: #FF8C33; 
-            --success: #00e676; 
-            --warning: #ffea00; 
-            --danger: #ff1744; 
-            --special: #78909c; 
-            --blue: #29b6f6; 
-            --text-light: #eeeeee; 
-            --text-muted: #adb5bd; 
-        }
+        /* TYYLIT */
+        :root { --bg: #222831; --card: #393e46; --dark-panel: #30475e; --primary: #FF6700; --accent: #FF8C33; --success: #00e676; --warning: #ffea00; --danger: #ff1744; --special: #78909c; --blue: #29b6f6; --text-light: #eeeeee; --text-muted: #adb5bd; }
+        * { box-sizing: border-box; touch-action: manipulation; } /* Parantaa nappien toimivuutta mobiilissa */
+        body { font-family: 'Segoe UI', Roboto, sans-serif; padding: 10px; background: var(--bg); margin: 0; color: var(--text-light); -webkit-user-select: none; user-select: none; min-height: 100vh; }
         
-        * { box-sizing: border-box; } /* Estää elementtien hajoamisen */
+        .container { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-width: 480px; margin: 0 auto; padding-bottom: 80px; position: relative; }
 
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            padding: 10px; 
-            background: var(--bg); 
-            margin: 0; 
-            color: var(--text-light); 
-            -webkit-user-select: none; 
-            user-select: none; 
-            min-height: 100vh;
-        }
-
-        .container { 
-            background: var(--card); 
-            padding: 15px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
-            max-width: 480px; 
-            margin: 0 auto; 
-            padding-bottom: 80px; 
-            position: relative;
-        }
-
-        /* 2. HEADER */
         .vamm-header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #555; padding-bottom: 10px; }
         .vamm-logo { font-size: 1.8em; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
         .vamm-sub { font-size: 0.9em; color: var(--text-muted); }
 
-        /* 3. MITTARISTO */
-        .dashboard { 
-            background: var(--dark-panel); 
-            color: var(--text-light); 
-            border-radius: 15px; 
-            padding: 15px; 
-            text-align: center; 
-            margin-bottom: 15px; 
-            border-left: 6px solid #555; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
+        .dashboard { background: var(--dark-panel); color: var(--text-light); border-radius: 15px; padding: 15px; text-align: center; margin-bottom: 15px; border-left: 6px solid #555; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .dash-header { font-size: 0.9em; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 5px; }
         .dash-clock { font-size: 3.0em; font-weight: 700; font-family: 'Courier New', monospace; line-height: 1; margin: 5px 0; color: #fff; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .dash-efficiency { font-size: 2.2em; font-weight: 800; display: block; margin-top: 5px; }
         .dash-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
         .stat-val { font-size: 1.1em; font-weight: bold; display: block; }
         .stat-label { font-size: 0.7em; opacity: 0.7; }
+        .status-idle { border-left-color: #555; } .status-bad { border-left-color: var(--danger); } .status-ok { border-left-color: var(--warning); } .status-good { border-left-color: var(--success); }
 
-        /* Tilavärit */
-        .status-idle { border-left-color: #555; } 
-        .status-bad { border-left-color: var(--danger); } 
-        .status-ok { border-left-color: var(--warning); } 
-        .status-good { border-left-color: var(--success); }
-
-        /* 4. AIKAJANA */
         .timeline-wrapper { margin-bottom: 15px; background: #222; padding: 10px; border-radius: 12px; border: 1px solid #444; }
         .timeline-bar { display: flex; height: 25px; background: #333; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
         .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.7em; color: rgba(0,0,0,0.7); overflow: hidden; }
@@ -85,7 +35,6 @@
         .timeline-legend { display: flex; justify-content: space-around; font-size: 0.7em; color: #aaa; font-weight: bold; }
         .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
 
-        /* 5. NAPIT JA LAATIKOT */
         .info-row { display: flex; gap: 10px; margin-bottom: 8px; }
         .info-box { flex-grow: 1; background: var(--dark-panel); padding: 12px; border-radius: 10px; border: 1px solid #555; border-left: 4px solid #ccc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .info-box b { font-size: 1.1em; }
@@ -98,24 +47,20 @@
         .btn-spec { padding: 10px; border: none; border-radius: 5px; background: var(--special); color: white; font-weight: bold; cursor: pointer; }
         .btn-spec.active { background: var(--danger); box-shadow: 0 0 5px red; }
 
-        /* PÄÄTOIMINNOT */
-        .main-action { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-size: 1.1em; font-weight: 900; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
+        .main-action { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-size: 1.1em; font-weight: 900; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; display: block; }
         .btn-start { background: var(--success); color: #003300; }
         .btn-stop { background: var(--danger); color: white; }
         .btn-save { background: var(--primary); color: white; }
 
-        /* HISTORIA */
         .hist-header { display: grid; grid-template-columns: 80px 1fr 60px; padding: 8px; background: #2c3e50; font-size: 0.75em; font-weight: bold; color: #ccc; border-radius: 10px 10px 0 0; margin-top: 20px; }
         .hist-cont { background: #2a2e33; max-height: 300px; overflow-y: auto; border: 1px solid #444; border-top: none; border-radius: 0 0 10px 10px; }
         .hist-item { display: grid; grid-template-columns: 80px 1fr 60px; padding: 10px 8px; border-bottom: 1px solid #444; font-size: 0.9em; align-items: center; }
         .date-divider { background: #111; color: var(--primary); padding: 4px; text-align: center; font-size: 0.75em; font-weight: bold; border-top: 1px solid #444; border-bottom: 1px solid #444; }
 
-        /* ALAREUNAN NAPIT */
         .bottom-tools { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         .btn-tool { padding: 10px; background: #333; color: #aaa; border: 1px dashed #555; border-radius: 8px; cursor: pointer; width: 100%; }
-        .btn-hard-reset { background: #5a0000; color: #ffcccc; border: 1px solid red; font-weight: bold; padding: 15px; }
+        .btn-hard-reset { background: #5a0000; color: #ffcccc; border: 1px solid red; font-weight: bold; padding: 15px; cursor: pointer; }
 
-        /* MODALS */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal { background: var(--card); padding: 20px; border-radius: 15px; width: 320px; text-align: center; border: 1px solid #555; }
         .display { background: #222; color: var(--primary); padding: 15px; font-size: 2em; font-family: monospace; font-weight: bold; margin-bottom: 15px; border-radius: 8px; min-height: 60px; }
@@ -126,12 +71,12 @@
         .btn-2man { width: 100%; background: var(--blue); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
         .input-f { width: 100%; padding: 10px; background: #222; border: 2px solid var(--primary); color: white; font-size: 1.2em; text-align: center; margin-bottom: 10px; border-radius: 8px; }
 
-        /* SKANNERI (v2.29 FIX) */
+        /* SKANNERI */
         #s-ruutu { background: #000; }
         #scan-modal-content { width: 100%; height: 100%; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #reader { width: 100% !important; height: 100% !important; border: none !important; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-        #reader div { display: none !important; } /* Piilota kirjaston omat elementit */
+        #reader div { display: none !important; } 
         
         .scan-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(rgba(0,0,0,0) 140px, rgba(0,0,0,0.9) 150px); pointer-events: none; z-index: 10; }
         .scan-box { position: absolute; width: 280px; height: 80px; border: 2px solid red; box-shadow: 0 0 0 2000px rgba(0,0,0,0.9); z-index: 11; border-radius: 8px; pointer-events: none; }
@@ -144,10 +89,9 @@
 <body>
 
 <div class="container">
-    
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.32</div>
+        <div class="vamm-sub">Press Brake Pro v2.33</div>
     </div>
 
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -197,4 +141,354 @@
         <button class="btn-tool" onclick="nollaaKaikki()">Nollaa historia</button>
         <button class="btn-tool" onclick="lisaaTestiDataa()">🧪 Lisää testidataa</button>
         <button class="btn-tool" onclick="tallennaTiedosto()">📁 Tallenna tiedostoon</button>
-        <button class="btn-hard-reset" onclick="hard
+        <button class="btn-hard-reset" onclick="hardReset()">⚠️ HÄTÄ-NOLLAUS</button>
+    </div>
+</div>
+
+<div id="n-ruutu" class="overlay">
+    <div class="modal">
+        <h3 id="n-otsikko" style="margin-top:0; color:var(--primary)">SYÖTÄ</h3>
+        <div id="n-naytto" class="display"></div>
+        
+        <div id="extra-btns" style="display:none;">
+            <button class="btn-2man" onclick="kahdenMiehenTyo()">👥 2-MIEHEN TYÖ (½ AIKA)</button>
+        </div>
+
+        <div id="t-alue" style="display:none;">
+            <input type="text" id="t-syotto" class="input-f" placeholder="TEKSTI...">
+            <input type="number" id="t-minuutit" class="input-f" placeholder="MINUUTIT" style="display:none;">
+        </div>
+
+        <div id="k-alue" class="key-grid"></div>
+        <button onclick="suljeIkkuna()" style="margin-top:15px; background:none; border:none; color:#888; cursor:pointer;">PERUUTA</button>
+    </div>
+</div>
+
+<div id="s-ruutu" class="overlay">
+    <div id="scan-modal-content">
+        <div id="reader"></div>
+        <div class="scan-box"></div>
+        <div class="scan-line"></div>
+        <button class="scan-btn-close" onclick="suljeSkanneri()">SULJE</button>
+    </div>
+</div>
+
+<script>
+    // --- GLOBAALIT MUUTTUJAT ---
+    var appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null };
+    var kKunta = "";
+    var syoteBuffer = "";
+    var html5QrcodeScanner = null;
+    var skannausKohde = "";
+
+    // --- ALOITA VUORO (TURVALLINEN) ---
+    window.VAIHDA_VUORO = function() {
+        // Varmistus, että tila on olemassa
+        if(!appState) appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null };
+        
+        if (!appState.kaynnissa) {
+            if (confirm("Aloitetaanko uusi vuoro?")) {
+                startSound();
+                appState.kaynnissa = true;
+                appState.aloitusAika = Date.now();
+                appState.kuitatutPankki = 0;
+                appState.nykyinenTila = null;
+                resetFields();
+                saveState();
+                updateUI();
+            }
+        } else {
+            if (confirm("Lopetetaanko vuoro?")) {
+                appState.kaynnissa = false;
+                saveState();
+                updateUI();
+                location.reload();
+            }
+        }
+    };
+
+    function startSound() { try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT1vT19vT18=').play().catch(e=>{}); } catch(e){} }
+    function hardReset() { if(confirm("Hätä-nollaus poistaa kaiken. Jatketaanko?")) { localStorage.clear(); location.reload(); } }
+    function saveState() { localStorage.setItem('pb_state_final', JSON.stringify(appState)); }
+    function resetFields() {
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
+            setText('v-'+id, "-"); localStorage.setItem('pb_field_'+id, "-");
+        });
+    }
+    function setText(id, txt) { var e = document.getElementById(id); if(e) e.innerText = txt; }
+
+    // --- LATAUS ---
+    window.onload = function() {
+        try {
+            if(!localStorage.getItem('v233_clean')) { localStorage.clear(); localStorage.setItem('v233_clean', 'true'); }
+            
+            var saved = localStorage.getItem('pb_state_final');
+            if(saved) {
+                try {
+                    appState = JSON.parse(saved);
+                } catch(e) {
+                    console.log("Muisti korruptoitunut, nollataan");
+                    appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null };
+                }
+            }
+            
+            ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
+                var v = localStorage.getItem('pb_field_'+id);
+                if(v) setText('v-'+id, v);
+            });
+            
+            updateUI();
+            renderHistory();
+            renderTimeline();
+            setInterval(updateClock, 1000);
+        } catch(e) { 
+            console.error(e);
+            alert("Virhe käynnistyksessä. Paina HÄTÄ-NOLLAUS jos ongelma jatkuu.");
+        }
+    };
+
+    // --- UI LOGIIKKA ---
+    function updateUI() {
+        var btn = document.getElementById('v-nappi');
+        if(appState.kaynnissa) {
+            btn.innerText = "LOPETA VUORO"; btn.className = "main-action btn-stop";
+        } else {
+            btn.innerText = "ALOITA VUORO"; btn.className = "main-action btn-start";
+        }
+        
+        var locked = !appState.kaynnissa || !!appState.nykyinenTila;
+        
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(id => {
+            var box = document.getElementById('box-'+id);
+            if(box) box.className = locked ? 'info-box box-disabled' : 'info-box';
+        });
+        
+        // Erikoistilat
+        ['PROTO','HÄIRIÖ','HUOLTO'].forEach(t => {
+            var b = document.getElementById('s-'+t);
+            if(b) {
+                if(appState.nykyinenTila === t) b.className = 'btn-spec active';
+                else if(appState.nykyinenTila) b.className = 'btn-spec disabled';
+                else b.className = 'btn-spec';
+            }
+        });
+    }
+
+    function updateClock() {
+        if(!appState.kaynnissa) return;
+        var now = Date.now();
+        var diff = Math.floor((now - appState.aloitusAika)/1000);
+        if(diff < 0) diff = 0;
+        
+        var h = Math.floor(diff/3600).toString().padStart(2,'0');
+        var m = Math.floor((diff%3600)/60).toString().padStart(2,'0');
+        var s = Math.floor(diff%60).toString().padStart(2,'0');
+        setText('kelloDisplay', h+":"+m+":"+s);
+        
+        // Tehokkuus
+        var workedHours = diff / 3600;
+        var efficiency = (workedHours > 0) ? (appState.kuitatutPankki / 60) / workedHours : 0;
+        setText('dashEfficiency', efficiency.toFixed(2));
+        setText('dashDone', appState.kuitatutPankki.toFixed(0));
+        setText('dashElapsed', (diff/60).toFixed(0));
+        
+        renderTimeline();
+    }
+
+    // --- SKANNERI ---
+    function avaaSkanneri(target) {
+        if(!appState.kaynnissa) return alert("Aloita vuoro ensin!");
+        skannausKohde = target;
+        document.getElementById('s-ruutu').style.display = 'flex';
+        
+        if(!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
+        
+        var config = { fps: 10, qrbox: { width: 280, height: 80 }, aspectRatio: 1.0 };
+        html5QrcodeScanner.start({ facingMode: "environment" }, config, (txt) => {
+            var val = txt.trim().toUpperCase();
+            if(skannausKohde === 'kortti') {
+                val = val.replace(/\s+/g,'');
+                if(!/^\d{6}$/.test(val)) return alert("Koodin oltava 6 numeroa!");
+            }
+            startSound();
+            setText('v-'+skannausKohde, val);
+            localStorage.setItem('pb_field_'+skannausKohde, val);
+            suljeSkanneri();
+        }, (err) => {}).catch(err => { alert("Kameravirhe"); suljeSkanneri(); });
+    }
+    
+    function suljeSkanneri() {
+        if(html5QrcodeScanner) html5QrcodeScanner.stop().then(() => document.getElementById('s-ruutu').style.display='none').catch(()=>{ document.getElementById('s-ruutu').style.display='none'; });
+        else document.getElementById('s-ruutu').style.display='none';
+    }
+
+    // --- SYÖTTÖIKKUNA ---
+    function avaaIkkuna(k) {
+        if(!appState.kaynnissa) return alert("Aloita vuoro!");
+        kKunta = k; syoteBuffer = "";
+        document.getElementById('n-ruutu').style.display = 'flex';
+        document.getElementById('extra-btns').style.display = (k==='taivutus') ? 'block' : 'none';
+        
+        var isText = ['lajike','muut'].includes(k);
+        document.getElementById('n-naytto').style.display = isText ? 'none' : 'block';
+        document.getElementById('t-alue').style.display = isText ? 'block' : 'none';
+        document.getElementById('n-naytto').innerText = "";
+        document.getElementById('t-syotto').value = "";
+        
+        var grid = document.getElementById('k-alue');
+        grid.innerHTML = "";
+        if(!isText) {
+            ['1','2','3','4','5','6','7','8','9','C','0','OK'].forEach(n => {
+                var b = document.createElement('div'); 
+                b.className = (n==='OK')?'key key-ok':'key'; 
+                b.innerText = n;
+                b.onclick = function() { if(n==='C') syoteBuffer=""; else if(n==='OK') inputReady(); else syoteBuffer+=n; document.getElementById('n-naytto').innerText = syoteBuffer; };
+                grid.appendChild(b);
+            });
+        } else {
+            grid.innerHTML = '<div class="key key-ok" style="grid-column:1/-1" onclick="inputReady()">OK</div>';
+        }
+    }
+    
+    function inputReady() {
+        var val = (document.getElementById('t-alue').style.display === 'block') ? document.getElementById('t-syotto').value : syoteBuffer;
+        if(kKunta === 'kortti' && val.length !== 6) return alert("6 numeroa!");
+        
+        var suffix = (['asetus','taivutus'].includes(kKunta)) ? " MIN" : "";
+        if(kKunta === 'muut') suffix = " " + (document.getElementById('t-minuutit').value||0) + " MIN";
+        
+        var finalVal = val.toUpperCase() + suffix;
+        setText('v-'+kKunta, finalVal);
+        localStorage.setItem('pb_field_'+kKunta, finalVal);
+        suljeIkkuna();
+    }
+    
+    function suljeIkkuna() { document.getElementById('n-ruutu').style.display = 'none'; }
+    function kahdenMiehenTyo() {
+        var v = parseFloat(syoteBuffer);
+        if(v > 0) { syoteBuffer = (v/2).toString(); document.getElementById('n-naytto').innerText = syoteBuffer; inputReady(); }
+    }
+
+    // --- TALLENNUS JA HISTORIA ---
+    function tallennaKortti() {
+        if(document.getElementById('v-kortti').innerText === "-") return;
+        var as = parseFloat(document.getElementById('v-asetus').innerText)||0;
+        var ta = parseFloat(document.getElementById('v-taivutus').innerText)||0;
+        var mu = parseFloat(document.getElementById('v-muut').innerText)||0;
+        var total = as + ta + mu;
+        
+        appState.kuitatutPankki += total;
+        
+        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        h.unshift({
+            id: Date.now(),
+            k: document.getElementById('v-kortti').innerText,
+            l: document.getElementById('v-lajike').innerText,
+            a: total + " MIN",
+            detail: `As:${as}|Ta:${ta}|Mu:${mu}`,
+            pvm: new Date().toLocaleDateString('fi-FI'),
+            klo: new Date().toLocaleTimeString().substr(0,5)
+        });
+        localStorage.setItem('pb_historia', JSON.stringify(h));
+        
+        resetFields();
+        saveState();
+        renderHistory();
+        renderTimeline();
+    }
+
+    function renderHistory() {
+        var h = JSON.parse(localStorage.getItem('pb_historia')||"[]");
+        var div = document.getElementById('h-lista');
+        div.innerHTML = "";
+        var lastDate = "";
+        h.forEach((i, idx) => {
+            if(i.pvm !== lastDate) {
+                div.innerHTML += `<div class="date-divider">${i.pvm || "?"}</div>`;
+                lastDate = i.pvm;
+            }
+            div.innerHTML += `<div class="hist-item" onclick="delHist(${idx})">
+                <div class="h-id">${i.k}</div><div class="h-type">${i.l}</div><div class="h-time">${i.a}</div>
+            </div>`;
+        });
+    }
+    
+    function delHist(idx) {
+        if(confirm("Poistetaanko rivi?")) {
+            var h = JSON.parse(localStorage.getItem('pb_historia'));
+            var item = h[idx];
+            var min = parseFloat(item.a)||0;
+            appState.kuitatutPankki -= min;
+            h.splice(idx, 1);
+            localStorage.setItem('pb_historia', JSON.stringify(h));
+            saveState();
+            renderHistory();
+            renderTimeline();
+        }
+    }
+
+    function renderTimeline() {
+        var h = JSON.parse(localStorage.getItem('pb_historia')||"[]");
+        var as=0, ta=0, mu=0;
+        h.forEach(i => {
+            if(i.detail) {
+                var p = i.detail.split('|');
+                p.forEach(x => {
+                    if(x.startsWith('As')) as += parseFloat(x.split(':')[1])||0;
+                    if(x.startsWith('Ta')) ta += parseFloat(x.split(':')[1])||0;
+                    if(x.startsWith('Mu')) mu += parseFloat(x.split(':')[1])||0;
+                });
+            }
+        });
+        var tot = as+ta+mu;
+        if(tot > 0) {
+            document.getElementById('bar-asetus').style.width = (as/tot*100)+"%";
+            document.getElementById('bar-taivutus').style.width = (ta/tot*100)+"%";
+            document.getElementById('bar-muut').style.width = (mu/tot*100)+"%";
+        }
+    }
+
+    function toggleMenu() {
+        var m = document.getElementById('menu-spec');
+        m.style.display = (m.style.display === 'grid') ? 'none' : 'grid';
+    }
+    
+    function tilaVaihda(t) {
+        if(!appState.kaynnissa) return alert("Aloita vuoro!");
+        if(appState.nykyinenTila === t) {
+            var dur = Math.round((Date.now() - appState.erikoistilaAloitus)/60000);
+            var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+            h.unshift({
+                id: Date.now(),
+                k: t, l: "ERIKOISTILA", a: dur + " MIN",
+                pvm: new Date().toLocaleDateString('fi-FI'),
+                klo: new Date().toLocaleTimeString().substr(0,5)
+            });
+            localStorage.setItem('pb_historia', JSON.stringify(h));
+            appState.nykyinenTila = null;
+        } else if(!appState.nykyinenTila) {
+            appState.nykyinenTila = t;
+            appState.erikoistilaAloitus = Date.now();
+        }
+        saveState();
+        updateUI();
+        renderHistory();
+    }
+    
+    function nollaaKaikki() { if(confirm("Nollataanko historia?")) { localStorage.setItem('pb_historia','[]'); renderHistory(); renderTimeline(); } }
+    function lisaaTestiDataa() { 
+        document.getElementById('v-kortti').innerText = "123456";
+        document.getElementById('v-lajike').innerText = "TESTI";
+        document.getElementById('v-asetus').innerText = "10 MIN";
+        document.getElementById('v-taivutus').innerText = "20 MIN";
+        tallennaKortti();
+    }
+    function tallennaTiedosto() {
+        var data = JSON.stringify(JSON.parse(localStorage.getItem('pb_historia')), null, 2);
+        var blob = new Blob([data], {type: "application/json"});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = "data.json"; a.click();
+    }
+</script>
+</body>
+</html>
