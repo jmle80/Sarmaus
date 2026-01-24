@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.29 - SCANNER TUNE-UP</title>
+    <title>Press Brake Pro v2.30 - SECONDS</title>
     
     <style>
         :root { --bg: #222831; --card: #393e46; --dark-panel: #30475e; --primary: #FF6700; --accent: #FF8C33; --success: #00e676; --warning: #ffea00; --danger: #ff1744; --special: #78909c; --blue: #29b6f6; --text-light: #eeeeee; --text-muted: #adb5bd; }
@@ -15,7 +15,10 @@
         .vamm-sub { font-size: 1em; color: var(--text-muted); }
 
         .dashboard { background: var(--dark-panel); color: var(--text-light); border-radius: 20px; padding: 20px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 6px solid #555; transition: border-color 0.5s ease; margin-bottom: 15px; }
-        .dash-clock { font-size: 4em; font-weight: 700; font-family: 'Courier New', monospace; line-height: 1; margin: 5px 0; text-shadow: 0 0 10px rgba(0,0,0,0.3); }
+        
+        /* KELLON TYYLI (v2.30 - Pienennetty fonttia sekuntien takia) */
+        .dash-clock { font-size: 3.2em; font-weight: 700; font-family: 'Courier New', monospace; line-height: 1; margin: 5px 0; text-shadow: 0 0 10px rgba(0,0,0,0.3); }
+        
         .dash-efficiency { font-size: 2.5em; font-weight: 800; margin-right: 10px; }
         .dash-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.2); }
         .stat-val { font-size: 1.2em; font-weight: bold; display: block; color: var(--text-light); }
@@ -84,14 +87,13 @@
         .scan-mask-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 100;
-            /* Tämä luo "reiän" keskelle */
             background: radial-gradient(rgba(0,0,0,0) 140px, rgba(0,0,0,0.85) 150px);
         }
         
         /* PUNAINEN TÄHTÄYSKEHYS (Korkeampi: 80px) */
         .scan-box {
             position: absolute; 
-            width: 280px; height: 80px; /* KORKEAMPI */
+            width: 280px; height: 80px; 
             border: 2px solid red; 
             box-shadow: 0 0 0 2000px rgba(0,0,0,0.9); /* Musta verho ympärille */
             z-index: 101; pointer-events: none;
@@ -100,8 +102,8 @@
         
         /* LASER-VIIVA (Ohuempi: 1px) */
         .scan-line {
-            position: absolute; width: 260px; height: 1px; /* OHUEMPI */ background: red;
-            box-shadow: 0 0 6px red; /* Terävämpi hohde */ z-index: 102; pointer-events: none;
+            position: absolute; width: 260px; height: 1px; background: red;
+            box-shadow: 0 0 6px red; z-index: 102; pointer-events: none;
             animation: scanAnim 2s infinite;
         }
         
@@ -132,24 +134,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.29</div>
+        <div class="vamm-sub">Press Brake Pro v2.30</div>
     </div>
     
-    <div id="dashboardPanel" class="dashboard status-idle">
-        <div class="dash-header"><span>TYÖVUORO</span><span id="dashStatus">ODOTTAA</span></div>
-        <div id="kelloDisplay" class="dash-clock">00:00</div>
-        <div class="dash-main-stat"><span id="dashEfficiency" class="dash-efficiency">0.00</span><span class="dash-status-text">TEHO</span></div>
-        <div class="dash-footer">
-            <div class="stat-item"><span id="dashDone" class="stat-val">0</span><span class="stat-label">VALMIIT (MIN)</span></div>
-            <div class="stat-item"><span id="dashElapsed" class="stat-val">0</span><span class="stat-label">AIKA (MIN)</span></div>
-        </div>
-    </div>
-
-    <div class="timeline-wrapper">
-        <div class="timeline-bar" id="timelineContainer">
-            <div id="bar-asetus" class="seg seg-asetus" style="width: 0%"></div>
-            <div id="bar-taivutus" class="seg seg-taivutus" style="width: 0%"></div>
-            <div id="bar-muut" class="seg seg-muut" style="width: 0%"></div>
-        </div>
-        <div class="timeline-legend">
-            <span id="leg-asetus"><span
+    <div id="dashboardPanel" class="
