@@ -3,138 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.30 - SECONDS</title>
+    <title>Press Brake Pro v2.32 - STRUCTURE FIX</title>
     
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <style>
-        :root { --bg: #222831; --card: #393e46; --dark-panel: #30475e; --primary: #FF6700; --accent: #FF8C33; --success: #00e676; --warning: #ffea00; --danger: #ff1744; --special: #78909c; --blue: #29b6f6; --text-light: #eeeeee; --text-muted: #adb5bd; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 10px; background: var(--bg); margin: 0; color: var(--text-light); -webkit-user-select: none; user-select: none; }
-        .container { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-width: 450px; margin: auto; padding-bottom: 60px; }
-
-        .vamm-header { text-align: center; margin-bottom: 20px; }
-        .vamm-logo { font-size: 2em; font-weight: bold; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
-        .vamm-sub { font-size: 1em; color: var(--text-muted); }
-
-        .dashboard { background: var(--dark-panel); color: var(--text-light); border-radius: 20px; padding: 20px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 6px solid #555; transition: border-color 0.5s ease; margin-bottom: 15px; }
+        /* 1. PERUSTYYLIT & VÄRIT */
+        :root { 
+            --bg: #222831; 
+            --card: #393e46; 
+            --dark-panel: #30475e; 
+            --primary: #FF6700; 
+            --accent: #FF8C33; 
+            --success: #00e676; 
+            --warning: #ffea00; 
+            --danger: #ff1744; 
+            --special: #78909c; 
+            --blue: #29b6f6; 
+            --text-light: #eeeeee; 
+            --text-muted: #adb5bd; 
+        }
         
-        /* KELLON TYYLI (v2.30 - Pienennetty fonttia sekuntien takia) */
-        .dash-clock { font-size: 3.2em; font-weight: 700; font-family: 'Courier New', monospace; line-height: 1; margin: 5px 0; text-shadow: 0 0 10px rgba(0,0,0,0.3); }
-        
-        .dash-efficiency { font-size: 2.5em; font-weight: 800; margin-right: 10px; }
-        .dash-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.2); }
-        .stat-val { font-size: 1.2em; font-weight: bold; display: block; color: var(--text-light); }
-        
-        .status-idle { border-left-color: #555; } .status-bad { border-left-color: var(--danger); } .status-ok { border-left-color: var(--warning); } .status-good { border-left-color: var(--success); }
+        * { box-sizing: border-box; } /* Estää elementtien hajoamisen */
 
-        .timeline-wrapper { margin-bottom: 15px; background: var(--dark-panel); padding: 8px; border-radius: 12px; border: 1px solid #495057; }
-        .timeline-bar { display: flex; height: 30px; background: #2c3036; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
-        .seg { height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.8); font-weight: bold; font-size: 0.8em; white-space: nowrap; overflow: hidden; transition: width 0.5s ease; }
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            padding: 10px; 
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text-light); 
+            -webkit-user-select: none; 
+            user-select: none; 
+            min-height: 100vh;
+        }
+
+        .container { 
+            background: var(--card); 
+            padding: 15px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            max-width: 480px; 
+            margin: 0 auto; 
+            padding-bottom: 80px; 
+            position: relative;
+        }
+
+        /* 2. HEADER */
+        .vamm-header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        .vamm-logo { font-size: 1.8em; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
+        .vamm-sub { font-size: 0.9em; color: var(--text-muted); }
+
+        /* 3. MITTARISTO */
+        .dashboard { 
+            background: var(--dark-panel); 
+            color: var(--text-light); 
+            border-radius: 15px; 
+            padding: 15px; 
+            text-align: center; 
+            margin-bottom: 15px; 
+            border-left: 6px solid #555; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .dash-header { font-size: 0.9em; font-weight: bold; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .dash-clock { font-size: 3.0em; font-weight: 700; font-family: 'Courier New', monospace; line-height: 1; margin: 5px 0; color: #fff; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .dash-efficiency { font-size: 2.2em; font-weight: 800; display: block; margin-top: 5px; }
+        .dash-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .stat-val { font-size: 1.1em; font-weight: bold; display: block; }
+        .stat-label { font-size: 0.7em; opacity: 0.7; }
+
+        /* Tilavärit */
+        .status-idle { border-left-color: #555; } 
+        .status-bad { border-left-color: var(--danger); } 
+        .status-ok { border-left-color: var(--warning); } 
+        .status-good { border-left-color: var(--success); }
+
+        /* 4. AIKAJANA */
+        .timeline-wrapper { margin-bottom: 15px; background: #222; padding: 10px; border-radius: 12px; border: 1px solid #444; }
+        .timeline-bar { display: flex; height: 25px; background: #333; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
+        .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.7em; color: rgba(0,0,0,0.7); overflow: hidden; }
         .seg-asetus { background-color: var(--accent); } .seg-taivutus { background-color: var(--success); } .seg-muut { background-color: var(--warning); }
-        .timeline-legend { display: flex; justify-content: center; gap: 15px; font-size: 0.7em; color: var(--text-muted); font-weight: bold; margin-top: 4px; }
+        .timeline-legend { display: flex; justify-content: space-around; font-size: 0.7em; color: #aaa; font-weight: bold; }
         .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
 
-        .info-row { display: flex; gap: 10px; align-items: stretch; margin: 5px 0; }
-        .info-box { background: var(--dark-panel); border: 1px solid #495057; padding: 12px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; border-left: 4px solid #ccc; font-weight: 600; transition: transform 0.1s; color: var(--text-light); flex-grow: 1; margin: 0; }
-        .box-active { border-left-color: var(--primary); background: #393e46; }
-        .box-disabled { opacity: 0.5; pointer-events: none; background: #343a40; }
+        /* 5. NAPIT JA LAATIKOT */
+        .info-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .info-box { flex-grow: 1; background: var(--dark-panel); padding: 12px; border-radius: 10px; border: 1px solid #555; border-left: 4px solid #ccc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .info-box b { font-size: 1.1em; }
+        .box-active { border-left-color: var(--primary); background: #3f4650; }
+        .box-disabled { opacity: 0.5; pointer-events: none; background: #2a2e33; }
+        
+        .btn-scan { width: 50px; background: #393e46; border: 1px solid #555; border-radius: 10px; font-size: 1.5em; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-light); }
 
-        .btn-scan { background: #393e46; border: 1px solid #495057; color: var(--primary); border-radius: 10px; width: 55px; font-size: 1.5em; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        .special-menu { display: none; background: var(--dark-panel); padding: 10px; border-radius: 10px; margin: 10px 0; grid-template-columns: repeat(3, 1fr); gap: 8px; border: 1px solid #495057; }
-        .btn-spec { padding: 10px; font-size: 0.8em; border: none; border-radius: 8px; cursor: pointer; background: var(--special); color: white; font-weight: bold; }
-        .btn-spec.active { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
-        .btn-spec.disabled { opacity: 0.3; pointer-events: none; }
+        .special-menu { display: none; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px; background: #222; padding: 10px; border-radius: 10px; }
+        .btn-spec { padding: 10px; border: none; border-radius: 5px; background: var(--special); color: white; font-weight: bold; cursor: pointer; }
+        .btn-spec.active { background: var(--danger); box-shadow: 0 0 5px red; }
 
-        button.main-action { width: 100%; padding: 16px; margin: 8px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-size: 1em; }
-        .btn-start { background: var(--success); color: #003300; } .btn-stop { background: var(--danger); color: white; } .btn-save { background: var(--primary); color: white; }
-        
-        .btn-test { background: #393e46; color: var(--text-muted); font-size: 0.8em; padding: 12px; margin-top: 15px; border: 1px dashed #495057; width: 100%; cursor: pointer; border-radius: 12px; font-weight: bold; }
-        .btn-save-file { background: var(--dark-panel); color: var(--primary); font-size: 0.9em; padding: 12px; margin-top: 10px; border: 2px solid var(--primary); width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; border-radius: 12px; letter-spacing: 1px; }
-        .btn-hard-reset { background: #b71c1c; color: white; font-size: 0.8em; padding: 15px; margin-top: 30px; border: 2px solid #ff5252; width: 100%; cursor: pointer; text-transform: uppercase; border-radius: 12px; font-weight: bold; }
+        /* PÄÄTOIMINNOT */
+        .main-action { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-size: 1.1em; font-weight: 900; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
+        .btn-start { background: var(--success); color: #003300; }
+        .btn-stop { background: var(--danger); color: white; }
+        .btn-save { background: var(--primary); color: white; }
 
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
-        .modal { background: var(--card); padding: 25px; border-radius: 20px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        
-        .display { display: none; font-size: 2em; background: var(--dark-panel); padding: 15px; margin-bottom: 15px; border-radius: 12px; min-height: 1.2em; font-family: monospace; font-weight: bold; color: var(--primary); }
-        
-        .btn-2man { width: 100%; background: var(--blue); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; margin-bottom: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 0.9em; }
-        .btn-2man:active { transform: scale(0.98); opacity: 0.9; }
+        /* HISTORIA */
+        .hist-header { display: grid; grid-template-columns: 80px 1fr 60px; padding: 8px; background: #2c3e50; font-size: 0.75em; font-weight: bold; color: #ccc; border-radius: 10px 10px 0 0; margin-top: 20px; }
+        .hist-cont { background: #2a2e33; max-height: 300px; overflow-y: auto; border: 1px solid #444; border-top: none; border-radius: 0 0 10px 10px; }
+        .hist-item { display: grid; grid-template-columns: 80px 1fr 60px; padding: 10px 8px; border-bottom: 1px solid #444; font-size: 0.9em; align-items: center; }
+        .date-divider { background: #111; color: var(--primary); padding: 4px; text-align: center; font-size: 0.75em; font-weight: bold; border-top: 1px solid #444; border-bottom: 1px solid #444; }
 
-        .key-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .key { padding: 15px; background: var(--dark-panel); border-radius: 10px; font-weight: bold; cursor: pointer; border: 1px solid #495057; font-size: 1.2em; box-shadow: 0 2px 5px rgba(0,0,0,0.2); color: var(--text-light); }
-        .key-ok { background: var(--success); color: #003300; grid-column: 2; border: none; }
-        .input-f { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid var(--primary); border-radius: 12px; text-align: center; font-size: 1.4em; font-weight: bold; box-sizing: border-box; background: var(--dark-panel); color: var(--text-light); }
-        .input-f:focus { outline: none; box-shadow: 0 0 15px rgba(255, 103, 0, 0.3); }
-        
-        /* --- SKANNERI-MASKI (V2.29) --- */
-        #scan-modal-content { 
-            width: 100%; height: 100%; 
-            padding: 0; background: #000; position: relative; display: flex; 
-            align-items: center; justify-content: center; overflow: hidden;
-        }
-        
-        #reader { 
-            width: 100% !important; height: 100% !important; border: none !important; /* Varmistus vihreän raidan poistoon */
-        }
-        
-        #reader video { 
-            width: 100% !important; height: 100% !important; object-fit: cover !important; 
-        }
-        
-        /* PIILOTA KIRJASTON OMAT GRAFIIKAT (Vihreä laatikko) */
-        #reader div[style*="position: absolute"] { display: none !important; opacity: 0 !important; border: none !important; }
-        
-        /* OMA MASKI (Blackout + Reikä) */
-        .scan-mask-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 100;
-            background: radial-gradient(rgba(0,0,0,0) 140px, rgba(0,0,0,0.85) 150px);
-        }
-        
-        /* PUNAINEN TÄHTÄYSKEHYS (Korkeampi: 80px) */
-        .scan-box {
-            position: absolute; 
-            width: 280px; height: 80px; 
-            border: 2px solid red; 
-            box-shadow: 0 0 0 2000px rgba(0,0,0,0.9); /* Musta verho ympärille */
-            z-index: 101; pointer-events: none;
-            border-radius: 8px;
-        }
-        
-        /* LASER-VIIVA (Ohuempi: 1px) */
-        .scan-line {
-            position: absolute; width: 260px; height: 1px; background: red;
-            box-shadow: 0 0 6px red; z-index: 102; pointer-events: none;
-            animation: scanAnim 2s infinite;
-        }
-        
-        .scan-close {
-            position: absolute; bottom: 30px; z-index: 200;
-            background: var(--danger); color: white; padding: 15px 40px; border-radius: 30px;
-            font-weight: bold; border: none; font-size: 1.2em;
-        }
+        /* ALAREUNAN NAPIT */
+        .bottom-tools { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .btn-tool { padding: 10px; background: #333; color: #aaa; border: 1px dashed #555; border-radius: 8px; cursor: pointer; width: 100%; }
+        .btn-hard-reset { background: #5a0000; color: #ffcccc; border: 1px solid red; font-weight: bold; padding: 15px; }
 
-        @keyframes scanAnim { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        /* MODALS */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal { background: var(--card); padding: 20px; border-radius: 15px; width: 320px; text-align: center; border: 1px solid #555; }
+        .display { background: #222; color: var(--primary); padding: 15px; font-size: 2em; font-family: monospace; font-weight: bold; margin-bottom: 15px; border-radius: 8px; min-height: 60px; }
         
-        .hist-header { display: grid; grid-template-columns: 75px 1fr auto; gap: 15px; padding: 10px 12px; background: #2c3e50; border-bottom: 2px solid #495057; font-size: 0.75em; font-weight: 900; color: var(--text-muted); text-transform: uppercase; border-radius: 15px 15px 0 0; margin-top: 20px; letter-spacing: 1px; }
-        .hist-cont { margin-top: 0; background: var(--dark-panel); border: 1px solid #495057; border-top: none; border-radius: 0 0 15px 15px; max-height: 300px; overflow-y: auto; padding: 0; }
-        .date-divider { background: #222831; color: var(--primary); padding: 5px 12px; font-size: 0.8em; font-weight: bold; border-bottom: 1px solid #495057; border-top: 1px solid #495057; text-align: center; letter-spacing: 1px; }
-        .hist-item { display: grid; grid-template-columns: 75px 1fr auto; gap: 15px; padding: 12px; border-bottom: 1px solid #495057; font-size: 0.9em; cursor: pointer; color: var(--text-light); align-items: center; }
-        .h-id { font-weight: 900; color: var(--primary); letter-spacing: 1px; }
-        .h-type { text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-        .h-time { text-align: right; color: var(--text-muted); font-size: 0.9em; }
+        .key-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .key { background: #444; padding: 15px; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid #555; }
+        .key-ok { background: var(--success); color: #003300; border: none; }
+        .btn-2man { width: 100%; background: var(--blue); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+        .input-f { width: 100%; padding: 10px; background: #222; border: 2px solid var(--primary); color: white; font-size: 1.2em; text-align: center; margin-bottom: 10px; border-radius: 8px; }
+
+        /* SKANNERI (v2.29 FIX) */
+        #s-ruutu { background: #000; }
+        #scan-modal-content { width: 100%; height: 100%; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #reader { width: 100% !important; height: 100% !important; border: none !important; }
+        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        #reader div { display: none !important; } /* Piilota kirjaston omat elementit */
         
-        #error-display { display:none; background: #b71c1c; color: white; padding: 20px; margin: 20px; border-radius: 10px; border: 2px solid red; font-family: monospace; z-index: 2000; position: fixed; top:0; left:0; right:0; }
-        .nollaa-btn { color: var(--text-muted); font-size: 0.75em; background: none; text-decoration: underline; margin-top: 10px; width: 100%; border:none; cursor: pointer; }
+        .scan-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(rgba(0,0,0,0) 140px, rgba(0,0,0,0.9) 150px); pointer-events: none; z-index: 10; }
+        .scan-box { position: absolute; width: 280px; height: 80px; border: 2px solid red; box-shadow: 0 0 0 2000px rgba(0,0,0,0.9); z-index: 11; border-radius: 8px; pointer-events: none; }
+        .scan-line { position: absolute; width: 260px; height: 1px; background: red; box-shadow: 0 0 6px red; z-index: 12; animation: scan 2s infinite; pointer-events: none; }
+        .scan-btn-close { position: absolute; bottom: 40px; z-index: 20; background: red; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
+        
+        @keyframes scan { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<div id="error-display"></div>
-
 <div class="container">
+    
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.30</div>
+        <div class="vamm-sub">Press Brake Pro v2.32</div>
     </div>
+
+    <div id="dashboardPanel" class="dashboard status-idle">
+        <div class="dash-header"><span>TYÖVUORO</span><span id="dashStatus">ODOTTAA</span></div>
+        <div id="kelloDisplay" class="dash-clock">00:00:00</div>
+        <div class="dash-efficiency" id="dashEfficiency">0.00</div>
+        <div class="dash-footer">
+            <div><span id="dashDone" class="stat-val">0</span><span class="stat-label">VALMIIT (MIN)</span></div>
+            <div><span id="dashElapsed" class="stat-val">0</span><span class="stat-label">AIKA (MIN)</span></div>
+        </div>
+    </div>
+
+    <div class="timeline-wrapper">
+        <div class="timeline-bar" id="timelineContainer">
+            <div id="bar-asetus" class="seg seg-asetus" style="width:0%"></div>
+            <div id="bar-taivutus" class="seg seg-taivutus" style="width:0%"></div>
+            <div id="bar-muut" class="seg seg-muut" style="width:0%"></div>
+        </div>
+        <div class="timeline-legend">
+            <span><span class="dot" style="background:var(--accent)"></span>ASETUS</span>
+            <span><span class="dot" style="background:var(--success)"></span>TAIVUTUS</span>
+            <span><span class="dot" style="background:var(--warning)"></span>MUUT</span>
+        </div>
+    </div>
+
+    <button onclick="toggleMenu()" style="width:100%; padding:10px; background:var(--special); border:none; border-radius:8px; color:white; font-weight:bold; margin-bottom:10px;">ERITYISTILAT</button>
     
-    <div id="dashboardPanel" class="
+    <div id="menu-spec" class="special-menu">
+        <button id="s-PROTO" class="btn-spec" onclick="tilaVaihda('PROTO')">PROTO</button>
+        <button id="s-HÄIRIÖ" class="btn-spec" onclick="tilaVaihda('HÄIRIÖ')">HÄIRIÖ</button>
+        <button id="s-HUOLTO" class="btn-spec" onclick="tilaVaihda('HUOLTO')">HUOLTO</button>
+    </div>
+
+    <div class="info-row"><div id="box-kortti" class="info-box" onclick="avaaIkkuna('kortti')"><span>KORTTI</span><b id="v-kortti">-</b></div><button class="btn-scan" onclick="avaaSkanneri('kortti')">📷</button></div>
+    <div class="info-row"><div id="box-lajike" class="info-box" onclick="avaaIkkuna('lajike')"><span>LAJIMERKKI</span><b id="v-lajike">-</b></div><button class="btn-scan" onclick="avaaSkanneri('lajike')">📷</button></div>
+    <div class="info-row"><div id="box-asetus" class="info-box" onclick="avaaIkkuna('asetus')"><span>ASETUS</span><b id="v-asetus">-</b></div></div>
+    <div class="info-row"><div id="box-taivutus" class="info-box" onclick="avaaIkkuna('taivutus')"><span>TAIVUTUS</span><b id="v-taivutus">-</b></div></div>
+    <div class="info-row"><div id="box-muut" class="info-box" onclick="avaaIkkuna('muut')"><span>MUUT</span><b id="v-muut">-</b></div></div>
+
+    <button id="v-nappi" class="main-action btn-start" onclick="VAIHDA_VUORO()">ALOITA VUORO</button>
+    <button class="main-action btn-save" onclick="tallennaKortti()">💾 TALLENNA KORTTI</button>
+
+    <div class="hist-header"><span>KORTTI</span><span>LAJI</span><span style="text-align:right">AIKA</span></div>
+    <div id="h-lista" class="hist-cont"></div>
+
+    <div class="bottom-tools">
+        <button class="btn-tool" onclick="nollaaKaikki()">Nollaa historia</button>
+        <button class="btn-tool" onclick="lisaaTestiDataa()">🧪 Lisää testidataa</button>
+        <button class="btn-tool" onclick="tallennaTiedosto()">📁 Tallenna tiedostoon</button>
+        <button class="btn-hard-reset" onclick="hard
