@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.33 - CRASH PROOF</title>
+    <title>Press Brake Pro v2.34 - TRANSPARENT SCANNER</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
-        /* TYYLIT */
+        /* --- PERUSRAKENNE --- */
         :root { --bg: #222831; --card: #393e46; --dark-panel: #30475e; --primary: #FF6700; --accent: #FF8C33; --success: #00e676; --warning: #ffea00; --danger: #ff1744; --special: #78909c; --blue: #29b6f6; --text-light: #eeeeee; --text-muted: #adb5bd; }
-        * { box-sizing: border-box; touch-action: manipulation; } /* Parantaa nappien toimivuutta mobiilissa */
+        * { box-sizing: border-box; touch-action: manipulation; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; padding: 10px; background: var(--bg); margin: 0; color: var(--text-light); -webkit-user-select: none; user-select: none; min-height: 100vh; }
         
         .container { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-width: 480px; margin: 0 auto; padding-bottom: 80px; position: relative; }
@@ -71,16 +71,45 @@
         .btn-2man { width: 100%; background: var(--blue); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
         .input-f { width: 100%; padding: 10px; background: #222; border: 2px solid var(--primary); color: white; font-size: 1.2em; text-align: center; margin-bottom: 10px; border-radius: 8px; }
 
-        /* SKANNERI */
+        /* --- SKANNERIN CSS (V2.34 - TRANSPARENT & CLEAN) --- */
         #s-ruutu { background: #000; }
         #scan-modal-content { width: 100%; height: 100%; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        
         #reader { width: 100% !important; height: 100% !important; border: none !important; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-        #reader div { display: none !important; } 
         
-        .scan-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(rgba(0,0,0,0) 140px, rgba(0,0,0,0.9) 150px); pointer-events: none; z-index: 10; }
-        .scan-box { position: absolute; width: 280px; height: 80px; border: 2px solid red; box-shadow: 0 0 0 2000px rgba(0,0,0,0.9); z-index: 11; border-radius: 8px; pointer-events: none; }
-        .scan-line { position: absolute; width: 260px; height: 1px; background: red; box-shadow: 0 0 6px red; z-index: 12; animation: scan 2s infinite; pointer-events: none; }
+        /* TÄMÄ POISTAA VIHREÄN RAIDAN */
+        /* Valitse kaikki divit, spanit ja kuvat readerin sisältä, jotka EIVÄT ole video */
+        #reader *:not(video) { 
+            display: none !important; 
+            border: none !important; 
+            box-shadow: none !important; 
+            background: none !important;
+        }
+        
+        /* MASKI - VAALENNETTU (0.5) */
+        .scan-mask { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            /* REIKÄ KESKELLÄ: Keskellä 100% läpinäkyvä, ulkoreunalla 50% musta */
+            background: radial-gradient(rgba(0,0,0,0) 140px, rgba(0,0,0,0.5) 150px); 
+            pointer-events: none; z-index: 10; 
+        }
+        
+        /* KEHYS (80px korkea, punainen) */
+        .scan-box { 
+            position: absolute; width: 280px; height: 80px; 
+            border: 2px solid red; 
+            /* Tämä luo "reunavarjon" jos radial-gradient ei toimi kaikissa selaimissa */
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); 
+            z-index: 11; border-radius: 8px; pointer-events: none; 
+        }
+        
+        .scan-line { 
+            position: absolute; width: 260px; height: 1px; 
+            background: red; box-shadow: 0 0 6px red; 
+            z-index: 12; animation: scan 2s infinite; pointer-events: none; 
+        }
+        
         .scan-btn-close { position: absolute; bottom: 40px; z-index: 20; background: red; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
         
         @keyframes scan { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
@@ -91,7 +120,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.33</div>
+        <div class="vamm-sub">Press Brake Pro v2.34</div>
     </div>
 
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -167,6 +196,7 @@
 <div id="s-ruutu" class="overlay">
     <div id="scan-modal-content">
         <div id="reader"></div>
+        <div class="scan-mask"></div>
         <div class="scan-box"></div>
         <div class="scan-line"></div>
         <button class="scan-btn-close" onclick="suljeSkanneri()">SULJE</button>
@@ -220,7 +250,7 @@
     // --- LATAUS ---
     window.onload = function() {
         try {
-            if(!localStorage.getItem('v233_clean')) { localStorage.clear(); localStorage.setItem('v233_clean', 'true'); }
+            if(!localStorage.getItem('v234_clean')) { localStorage.clear(); localStorage.setItem('v234_clean', 'true'); }
             
             var saved = localStorage.getItem('pb_state_final');
             if(saved) {
@@ -359,136 +389,4 @@
         
         var finalVal = val.toUpperCase() + suffix;
         setText('v-'+kKunta, finalVal);
-        localStorage.setItem('pb_field_'+kKunta, finalVal);
-        suljeIkkuna();
-    }
-    
-    function suljeIkkuna() { document.getElementById('n-ruutu').style.display = 'none'; }
-    function kahdenMiehenTyo() {
-        var v = parseFloat(syoteBuffer);
-        if(v > 0) { syoteBuffer = (v/2).toString(); document.getElementById('n-naytto').innerText = syoteBuffer; inputReady(); }
-    }
-
-    // --- TALLENNUS JA HISTORIA ---
-    function tallennaKortti() {
-        if(document.getElementById('v-kortti').innerText === "-") return;
-        var as = parseFloat(document.getElementById('v-asetus').innerText)||0;
-        var ta = parseFloat(document.getElementById('v-taivutus').innerText)||0;
-        var mu = parseFloat(document.getElementById('v-muut').innerText)||0;
-        var total = as + ta + mu;
-        
-        appState.kuitatutPankki += total;
-        
-        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
-        h.unshift({
-            id: Date.now(),
-            k: document.getElementById('v-kortti').innerText,
-            l: document.getElementById('v-lajike').innerText,
-            a: total + " MIN",
-            detail: `As:${as}|Ta:${ta}|Mu:${mu}`,
-            pvm: new Date().toLocaleDateString('fi-FI'),
-            klo: new Date().toLocaleTimeString().substr(0,5)
-        });
-        localStorage.setItem('pb_historia', JSON.stringify(h));
-        
-        resetFields();
-        saveState();
-        renderHistory();
-        renderTimeline();
-    }
-
-    function renderHistory() {
-        var h = JSON.parse(localStorage.getItem('pb_historia')||"[]");
-        var div = document.getElementById('h-lista');
-        div.innerHTML = "";
-        var lastDate = "";
-        h.forEach((i, idx) => {
-            if(i.pvm !== lastDate) {
-                div.innerHTML += `<div class="date-divider">${i.pvm || "?"}</div>`;
-                lastDate = i.pvm;
-            }
-            div.innerHTML += `<div class="hist-item" onclick="delHist(${idx})">
-                <div class="h-id">${i.k}</div><div class="h-type">${i.l}</div><div class="h-time">${i.a}</div>
-            </div>`;
-        });
-    }
-    
-    function delHist(idx) {
-        if(confirm("Poistetaanko rivi?")) {
-            var h = JSON.parse(localStorage.getItem('pb_historia'));
-            var item = h[idx];
-            var min = parseFloat(item.a)||0;
-            appState.kuitatutPankki -= min;
-            h.splice(idx, 1);
-            localStorage.setItem('pb_historia', JSON.stringify(h));
-            saveState();
-            renderHistory();
-            renderTimeline();
-        }
-    }
-
-    function renderTimeline() {
-        var h = JSON.parse(localStorage.getItem('pb_historia')||"[]");
-        var as=0, ta=0, mu=0;
-        h.forEach(i => {
-            if(i.detail) {
-                var p = i.detail.split('|');
-                p.forEach(x => {
-                    if(x.startsWith('As')) as += parseFloat(x.split(':')[1])||0;
-                    if(x.startsWith('Ta')) ta += parseFloat(x.split(':')[1])||0;
-                    if(x.startsWith('Mu')) mu += parseFloat(x.split(':')[1])||0;
-                });
-            }
-        });
-        var tot = as+ta+mu;
-        if(tot > 0) {
-            document.getElementById('bar-asetus').style.width = (as/tot*100)+"%";
-            document.getElementById('bar-taivutus').style.width = (ta/tot*100)+"%";
-            document.getElementById('bar-muut').style.width = (mu/tot*100)+"%";
-        }
-    }
-
-    function toggleMenu() {
-        var m = document.getElementById('menu-spec');
-        m.style.display = (m.style.display === 'grid') ? 'none' : 'grid';
-    }
-    
-    function tilaVaihda(t) {
-        if(!appState.kaynnissa) return alert("Aloita vuoro!");
-        if(appState.nykyinenTila === t) {
-            var dur = Math.round((Date.now() - appState.erikoistilaAloitus)/60000);
-            var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
-            h.unshift({
-                id: Date.now(),
-                k: t, l: "ERIKOISTILA", a: dur + " MIN",
-                pvm: new Date().toLocaleDateString('fi-FI'),
-                klo: new Date().toLocaleTimeString().substr(0,5)
-            });
-            localStorage.setItem('pb_historia', JSON.stringify(h));
-            appState.nykyinenTila = null;
-        } else if(!appState.nykyinenTila) {
-            appState.nykyinenTila = t;
-            appState.erikoistilaAloitus = Date.now();
-        }
-        saveState();
-        updateUI();
-        renderHistory();
-    }
-    
-    function nollaaKaikki() { if(confirm("Nollataanko historia?")) { localStorage.setItem('pb_historia','[]'); renderHistory(); renderTimeline(); } }
-    function lisaaTestiDataa() { 
-        document.getElementById('v-kortti').innerText = "123456";
-        document.getElementById('v-lajike').innerText = "TESTI";
-        document.getElementById('v-asetus').innerText = "10 MIN";
-        document.getElementById('v-taivutus').innerText = "20 MIN";
-        tallennaKortti();
-    }
-    function tallennaTiedosto() {
-        var data = JSON.stringify(JSON.parse(localStorage.getItem('pb_historia')), null, 2);
-        var blob = new Blob([data], {type: "application/json"});
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a'); a.href = url; a.download = "data.json"; a.click();
-    }
-</script>
-</body>
-</html>
+        localStorage.setItem('pb_field_'+kKunta,
