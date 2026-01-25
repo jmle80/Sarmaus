@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.44 - DIGITAL TIME</title>
+    <title>Press Brake Pro v2.46 - SAFETY SWITCH</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -59,10 +59,32 @@
         .hist-item { display: grid; grid-template-columns: 80px 1fr 60px; padding: 10px 8px; border-bottom: 1px solid #444; font-size: 0.9em; align-items: center; }
         .date-divider { background: #111; color: var(--primary); padding: 4px; text-align: center; font-size: 0.75em; font-weight: bold; border-top: 1px solid #444; border-bottom: 1px solid #444; }
 
-        .bottom-tools { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .bottom-tools { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; border-top: 2px solid #444; padding-top: 15px; }
         .btn-tool { padding: 10px; background: #333; color: #aaa; border: 1px dashed #555; border-radius: 8px; cursor: pointer; width: 100%; }
-        .btn-hard-reset { background: #5a0000; color: #ffcccc; border: 1px solid red; font-weight: bold; padding: 15px; cursor: pointer; }
+        
+        /* --- TURVAKYTKIN TYYLIT (v2.46) --- */
+        .safety-wrapper { display: flex; align-items: center; justify-content: space-between; background: #222; padding: 10px; border-radius: 12px; margin-top: 20px; border: 1px solid #444; }
+        .safety-label { font-weight: bold; color: #aaa; font-size: 0.9em; }
+        
+        /* The Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; -webkit-transition: .4s; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; -webkit-transition: .4s; transition: .4s; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:focus + .slider { box-shadow: 0 0 1px var(--primary); }
+        input:checked + .slider:before { -webkit-transform: translateX(22px); -ms-transform: translateX(22px); transform: translateX(22px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
 
+        .btn-hard-reset { 
+            background: #b71c1c; color: white; border: 2px solid #ff5252; 
+            font-weight: bold; padding: 15px; cursor: pointer; 
+            border-radius: 12px; text-transform: uppercase;
+            transition: opacity 0.3s;
+        }
+
+        /* MODAL */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal { background: var(--card); padding: 20px; border-radius: 15px; width: 320px; text-align: center; border: 1px solid #555; }
         .display { background: #222; color: var(--primary); padding: 15px; font-size: 2em; font-family: monospace; font-weight: bold; margin-bottom: 15px; border-radius: 8px; min-height: 60px; }
@@ -76,7 +98,7 @@
         .input-f { width: 100%; padding: 15px; background: #222; border: 2px solid var(--primary); color: white; font-size: 1.2em; text-align: center; margin-bottom: 10px; border-radius: 8px; }
         .btn-jatka { width: 100%; background: var(--primary); color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; cursor: pointer; margin-top: 10px; }
 
-        /* UUSI AIKA-MODAL DIGITAALINEN */
+        /* AIKA-MODAL */
         .time-display { font-size: 3em; font-weight: bold; color: var(--primary); margin: 20px 0; letter-spacing: 2px; font-family: monospace; }
         .time-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
         .time-key { background: #444; padding: 15px; font-size: 1.5em; font-weight: bold; border-radius: 8px; border: 1px solid #555; color: #eee; cursor: pointer; }
@@ -105,7 +127,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.44</div>
+        <div class="vamm-sub">Press Brake Pro v2.46</div>
     </div>
 
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -155,7 +177,15 @@
         <button class="btn-tool" onclick="nollaaKaikki()">Nollaa historia</button>
         <button class="btn-tool" onclick="lisaaMassiivinenTestidata()">🧪 Lisää testidataa (10pv)</button>
         <button class="btn-tool" onclick="tallennaTiedosto()">📁 Tallenna tiedostoon</button>
-        <button class="btn-hard-reset" onclick="hardReset()">⚠️ HÄTÄ-NOLLAUS</button>
+        
+        <div class="safety-wrapper">
+            <span class="safety-label">AVAA LUKITUS >></span>
+            <label class="switch">
+                <input type="checkbox" id="safety-lock" onchange="toggleResetBtn()">
+                <span class="slider round"></span>
+            </label>
+        </div>
+        <button id="btn-hard-reset" class="btn-hard-reset" onclick="hardReset()" disabled style="opacity: 0.3;">⚠️ HÄTÄ-NOLLAUS</button>
     </div>
 </div>
 
@@ -213,7 +243,20 @@
     var skannausKohde = "";
     var muuSeliteTemp = "";
     
-    // --- UUSI DIGITAALINEN KELLO ---
+    // --- TURVAKYTKIN LOGIIKKA (v2.46) ---
+    function toggleResetBtn() {
+        var chk = document.getElementById('safety-lock');
+        var btn = document.getElementById('btn-hard-reset');
+        if(chk.checked) {
+            btn.disabled = false;
+            btn.style.opacity = "1";
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = "0.3";
+        }
+    }
+
+    // --- DIGITAALINEN KELLO ---
     var timeBuffer = "";
     var timeCallback = null;
 
@@ -221,7 +264,6 @@
         document.getElementById('time-modal').style.display = 'flex';
         document.getElementById('tm-otsikko').innerText = otsikko;
         
-        // Aseta oletukseksi nykyinen aika
         const now = new Date();
         const h = now.getHours().toString().padStart(2,'0');
         const m = now.getMinutes().toString().padStart(2,'0');
@@ -241,7 +283,6 @@
     }
 
     function updateTimeDisplay() {
-        // Muotoile HH:MM
         let display = "--:--";
         if(timeBuffer.length > 0) {
             let padded = timeBuffer.padEnd(4, '-');
@@ -251,26 +292,15 @@
     }
 
     function timeConfirm() {
-        if(timeBuffer.length !== 4) {
-            alert("Syötä 4 numeroa (HHMM)");
-            return;
-        }
+        if(timeBuffer.length !== 4) { alert("Syötä 4 numeroa!"); return; }
         
         const hh = parseInt(timeBuffer.substring(0,2));
         const mm = parseInt(timeBuffer.substring(2,4));
         
-        if(hh > 23 || mm > 59) {
-            alert("Virheellinen kellonaika!");
-            timeBuffer = "";
-            updateTimeDisplay();
-            return;
-        }
+        if(hh > 23 || mm > 59) { alert("Virheellinen aika!"); timeBuffer = ""; updateTimeDisplay(); return; }
         
-        // Luo aikaleima tälle päivälle
         const d = new Date();
-        d.setHours(hh);
-        d.setMinutes(mm);
-        d.setSeconds(0);
+        d.setHours(hh); d.setMinutes(mm); d.setSeconds(0);
         
         document.getElementById('time-modal').style.display = 'none';
         if(timeCallback) timeCallback(d.getTime());
@@ -298,7 +328,7 @@
             pyydaAika("VUORON LOPETUS", (ts) => {
                 luoPDF(ts).then(() => {
                     setTimeout(() => {
-                        if(confirm("Raportti luotu. Nollataanko ja aloitetaan uusi?")) {
+                        if(confirm("Raportti luotu. Nollataanko?")) {
                             appState.kaynnissa = false;
                             saveState();
                             updateUI();
@@ -325,7 +355,6 @@
                     klo: new Date(ts).toLocaleTimeString().substr(0,5)
                 });
                 localStorage.setItem('pb_historia', JSON.stringify(h));
-                
                 appState.nykyinenTila = null;
                 saveState(); updateUI(); renderHistory();
             });
@@ -349,14 +378,19 @@
         let sumA=0, sumT=0, sumM=0, sumE=0;
         
         h.forEach(row => {
+            let val = parseFloat(row.a) || 0;
             if (row.l === "ERIKOISTILA") {
-                sumE += parseFloat(row.a) || 0;
+                sumE += val;
             } else if (row.detail) {
                 const parts = row.detail.split('|');
                 parts.forEach(p => {
                     if(p.startsWith('As')) sumA += parseFloat(p.split(':')[1])||0;
                     if(p.startsWith('Ta')) sumT += parseFloat(p.split(':')[1])||0;
-                    if(p.startsWith('Mu')) sumM += parseFloat(p.split(':')[1])||0; 
+                    if(p.startsWith('Mu')) {
+                        let content = p.split(':')[1] || "";
+                        let num = parseFloat(content.match(/[\d.]+/)) || 0;
+                        sumM += num;
+                    }
                 });
             }
         });
@@ -423,7 +457,7 @@
         doc.save(`raportti_${pvm}.pdf`);
     }
 
-    // --- MUUT PERUSFUNKTIOT ---
+    // --- PERUSFUNKTIOT ---
     function updateUI() {
         var btn = document.getElementById('v-nappi');
         if(appState.kaynnissa) {
@@ -479,7 +513,11 @@
                 p.forEach(function(x) {
                     if(x.startsWith('As')) as += parseFloat(x.split(':')[1])||0;
                     if(x.startsWith('Ta')) ta += parseFloat(x.split(':')[1])||0;
-                    if(x.startsWith('Mu')) mu += parseFloat(x.split(':')[1])||0;
+                    if(x.startsWith('Mu')) {
+                        let content = x.split(':')[1] || "";
+                        let num = parseFloat(content.match(/[\d.]+/)) || 0;
+                        mu += num;
+                    }
                 });
             }
         });
@@ -604,12 +642,7 @@
         if(!isText) {
             ['1','2','3','4','5','6','7','8','9','C','0','.', 'OK'].forEach(function(n) {
                 var b = document.createElement('div'); b.className = (n==='OK')?'key key-ok':'key'; b.innerText = n;
-                b.onclick = function() { 
-                    if(n==='C') syoteBuffer=""; 
-                    else if(n==='OK') inputReady(); 
-                    else syoteBuffer+=n; 
-                    document.getElementById('n-naytto').innerText = syoteBuffer; 
-                };
+                b.onclick = function() { if(n==='C') syoteBuffer=""; else if(n==='OK') inputReady(); else syoteBuffer+=n; document.getElementById('n-naytto').innerText = syoteBuffer; };
                 grid.appendChild(b);
             });
         } else {
@@ -711,7 +744,7 @@
 
     window.onload = function() {
         try {
-            if(!localStorage.getItem('v244_clean')) { localStorage.clear(); localStorage.setItem('v244_clean', 'true'); }
+            if(!localStorage.getItem('v246_clean')) { localStorage.clear(); localStorage.setItem('v246_clean', 'true'); }
             var saved = localStorage.getItem('pb_state_final');
             if(saved) { try { appState = JSON.parse(saved); } catch(e) { console.log("Muisti korruptoitunut"); appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null }; } }
             ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id) { var v = localStorage.getItem('pb_field_'+id); if(v) setText('v-'+id, v); });
