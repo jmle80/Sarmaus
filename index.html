@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.38 - ORDER FIX</title>
+    <title>Press Brake Pro v2.39 - SMART OTHERS</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
@@ -38,7 +38,7 @@
 
         .info-row { display: flex; gap: 10px; margin-bottom: 8px; }
         .info-box { flex-grow: 1; background: var(--dark-panel); padding: 12px; border-radius: 10px; border: 1px solid #555; border-left: 4px solid #ccc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .info-box b { font-size: 1.1em; }
+        .info-box b { font-size: 1.1em; text-align: right; }
         .box-active { border-left-color: var(--primary); background: #3f4650; }
         .box-disabled { opacity: 0.5; pointer-events: none; background: #2a2e33; }
         
@@ -72,7 +72,9 @@
         .key-ok { background: var(--success); color: #003300; border: none; grid-column: 1 / -1; margin-top: 5px; }
         
         .btn-2man { width: 100%; background: var(--blue); color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
-        .input-f { width: 100%; padding: 10px; background: #222; border: 2px solid var(--primary); color: white; font-size: 1.2em; text-align: center; margin-bottom: 10px; border-radius: 8px; }
+        .input-f { width: 100%; padding: 15px; background: #222; border: 2px solid var(--primary); color: white; font-size: 1.2em; text-align: center; margin-bottom: 10px; border-radius: 8px; }
+        
+        .btn-jatka { width: 100%; background: var(--primary); color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; cursor: pointer; margin-top: 10px; }
 
         /* SKANNERI */
         #s-ruutu { background: #000; }
@@ -94,7 +96,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.38</div>
+        <div class="vamm-sub">Press Brake Pro v2.39</div>
     </div>
 
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -151,6 +153,7 @@
 <div id="n-ruutu" class="overlay">
     <div class="modal">
         <h3 id="n-otsikko" style="margin-top:0; color:var(--primary)">SYÖTÄ</h3>
+        
         <div id="n-naytto" class="display"></div>
         
         <div id="extra-btns" style="display:none;">
@@ -158,12 +161,13 @@
         </div>
 
         <div id="t-alue" style="display:none;">
-            <input type="text" id="t-syotto" class="input-f" placeholder="TEKSTI...">
+            <input type="text" id="t-syotto" class="input-f" placeholder="Kirjoita...">
+            <button id="btn-jatka-muut" class="btn-jatka" style="display:none" onclick="siirryAikaan()">JATKA AIKAAN >></button>
         </div>
 
         <div id="k-alue" class="key-grid"></div>
+        
         <button onclick="suljeIkkuna()" style="margin-top:15px; background:none; border:none; color:#888; cursor:pointer;">PERUUTA</button>
-        <input type="number" id="t-minuutit" style="display:none;">
     </div>
 </div>
 
@@ -184,8 +188,9 @@
     var syoteBuffer = "";
     var html5QrcodeScanner = null;
     var skannausKohde = "";
+    var muuSeliteTemp = ""; // Väliaikainen tallennus
 
-    // --- 2. FUNKTIOMÄÄRITTELYT (Luetaan muistiin ensin) ---
+    // --- 2. FUNKTIOT ---
 
     function updateUI() {
         var btn = document.getElementById('v-nappi');
@@ -311,16 +316,46 @@
         }
     }
 
-    // --- IKKUNAT ---
+    // --- 3. IKKUNAT JA SYÖTTÖ (ÄLYKÄS MUUT) ---
     function avaaIkkuna(k) {
         if(!appState.kaynnissa) return alert("Aloita vuoro!");
         kKunta = k; syoteBuffer = "";
+        muuSeliteTemp = ""; // Nollaa välimuisti
+        
         document.getElementById('n-ruutu').style.display = 'flex';
         document.getElementById('extra-btns').style.display = (k==='taivutus') ? 'block' : 'none';
         
+        // JOS "MUUT", NÄYTÄ ENSIN TEKSTIN SYÖTTÖ
+        if (k === 'muut') {
+            document.getElementById('n-otsikko').innerText = "MUU TYÖ - KUVAUS";
+            document.getElementById('n-naytto').style.display = 'none';
+            document.getElementById('k-alue').style.display = 'none'; // Piilota numerot
+            
+            var tArea = document.getElementById('t-alue');
+            tArea.style.display = 'block';
+            
+            var inp = document.getElementById('t-syotto');
+            // Hae muistista edellinen selite
+            var saved = localStorage.getItem('pb_muu_memory') || "";
+            inp.value = saved; 
+            inp.placeholder = "Esim. Siivous";
+            
+            // Näytä JATKA-nappi
+            document.getElementById('btn-jatka-muut').style.display = 'block';
+            
+            // Fokusoi, jotta näppis aukeaa
+            setTimeout(function(){ inp.focus(); }, 300);
+            return; 
+        }
+
+        // NORMAALI TOIMINTA (Kortti, Lajike, Asetus, Taivutus)
+        document.getElementById('n-otsikko').innerText = k.toUpperCase();
         var isText = (k === 'lajike');
         document.getElementById('n-naytto').style.display = isText ? 'none' : 'block';
         document.getElementById('t-alue').style.display = isText ? 'block' : 'none';
+        document.getElementById('k-alue').style.display = isText ? 'none' : 'grid';
+        document.getElementById('btn-jatka-muut').style.display = 'none';
+        
         document.getElementById('n-naytto').innerText = "";
         document.getElementById('t-syotto').value = "";
         
@@ -340,16 +375,69 @@
                 grid.appendChild(b);
             });
         } else {
+            // Lajikkeelle OK-nappi
             grid.innerHTML = '<div class="key key-ok" style="grid-column:1/-1" onclick="inputReady()">OK</div>';
+            grid.style.display = 'grid'; // Näytä OK-nappi lajikkeellekin
         }
     }
     
+    // --- UUSI: SIIRRY MUUT-VAIHEESTA AIKAAN ---
+    function siirryAikaan() {
+        var val = document.getElementById('t-syotto').value;
+        if (!val) val = "Muu työ";
+        
+        // Tallenna muistiin
+        localStorage.setItem('pb_muu_memory', val);
+        muuSeliteTemp = val; // Tallenna väliaikaisesti
+        
+        // Vaihda näkymä numeronäppäimistöön
+        document.getElementById('n-otsikko').innerText = val.toUpperCase() + " - AIKA (MIN)";
+        document.getElementById('t-alue').style.display = 'none';
+        document.getElementById('btn-jatka-muut').style.display = 'none';
+        
+        document.getElementById('n-naytto').style.display = 'block';
+        document.getElementById('k-alue').style.display = 'grid';
+        document.getElementById('n-naytto').innerText = "";
+        syoteBuffer = "";
+        
+        // Renderöi numeronäppäimet
+        var grid = document.getElementById('k-alue');
+        grid.innerHTML = "";
+        ['1','2','3','4','5','6','7','8','9','C','0','.', 'OK'].forEach(function(n) {
+            var b = document.createElement('div'); 
+            b.className = (n==='OK')?'key key-ok':'key'; 
+            b.innerText = n;
+            b.onclick = function() { 
+                if(n==='C') syoteBuffer=""; 
+                else if(n==='OK') inputReady(); 
+                else syoteBuffer+=n; 
+                document.getElementById('n-naytto').innerText = syoteBuffer; 
+            };
+            grid.appendChild(b);
+        });
+    }
+    
     function inputReady() {
-        var val = (document.getElementById('t-alue').style.display === 'block') ? document.getElementById('t-syotto').value : syoteBuffer;
+        var val = "";
+        // Jos ollaan MUUT-tilassa ja aika on syötetty
+        if (kKunta === 'muut' && muuSeliteTemp !== "") {
+            val = syoteBuffer; // Aika
+            // Näytä laatikossa: "SIIVOUS 15 MIN"
+            var displayStr = muuSeliteTemp.toUpperCase() + " " + val + " MIN";
+            setText('v-'+kKunta, displayStr);
+            localStorage.setItem('pb_field_'+kKunta, displayStr); // Tallenna koko rimpsu
+            suljeIkkuna();
+            return;
+        }
+
+        // Normaali toiminta
+        val = (document.getElementById('t-alue').style.display === 'block') ? document.getElementById('t-syotto').value : syoteBuffer;
+        
         if(kKunta === 'kortti' && val.length !== 6) return alert("6 numeroa!");
         
-        var suffix = (['asetus','taivutus','muut'].includes(kKunta)) ? " MIN" : "";
+        var suffix = (['asetus','taivutus'].includes(kKunta)) ? " MIN" : "";
         var finalVal = val.toUpperCase() + suffix;
+        
         setText('v-'+kKunta, finalVal);
         localStorage.setItem('pb_field_'+kKunta, finalVal);
         suljeIkkuna();
@@ -387,23 +475,31 @@
         else document.getElementById('s-ruutu').style.display='none';
     }
 
-    // --- MUUT ---
+    // --- TALLENNUS ---
     function tallennaKortti() {
         if(document.getElementById('v-kortti').innerText === "-") return;
         var as = parseFloat(document.getElementById('v-asetus').innerText)||0;
         var ta = parseFloat(document.getElementById('v-taivutus').innerText)||0;
-        var mu = parseFloat(document.getElementById('v-muut').innerText)||0;
+        
+        // MUUT-kentän parsiminen (Voi olla "SIIVOUS 15 MIN" tai vanha "15 MIN")
+        var muText = document.getElementById('v-muut').innerText;
+        var mu = poimiNum(muText); // Poimii numeron tekstin seasta
+        
         var total = as + ta + mu;
         
         appState.kuitatutPankki += total;
         
         var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        
+        // Jos Muut-kentässä on tekstiä (muuta kuin "-"), käytä sitä detaljina
+        var muDetail = (mu > 0) ? muText : "0"; 
+        
         h.unshift({
             id: Date.now(),
             k: document.getElementById('v-kortti').innerText,
             l: document.getElementById('v-lajike').innerText,
             a: total + " MIN",
-            detail: `As:${as}|Ta:${ta}|Mu:${mu}`,
+            detail: `As:${as}|Ta:${ta}|Mu:${muDetail}`, // Tallenna selite historiaan
             pvm: new Date().toLocaleDateString('fi-FI'),
             klo: new Date().toLocaleTimeString().substr(0,5)
         });
@@ -467,7 +563,7 @@
     // --- 3. KÄYNNISTYS (window.onload AIVAN LOPUSSA) ---
     window.onload = function() {
         try {
-            if(!localStorage.getItem('v238_clean')) { localStorage.clear(); localStorage.setItem('v238_clean', 'true'); }
+            if(!localStorage.getItem('v239_clean')) { localStorage.clear(); localStorage.setItem('v239_clean', 'true'); }
             
             var saved = localStorage.getItem('pb_state_final');
             if(saved) {
