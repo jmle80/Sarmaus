@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v2.41 - PRO REPORT</title>
+    <title>Press Brake Pro v2.42 - DATA FIX</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
@@ -95,7 +95,7 @@
         .scan-line { position: absolute; width: 260px; height: 1px; background: red; box-shadow: 0 0 6px red; z-index: 12; animation: scan 2s infinite; pointer-events: none; }
         .scan-btn-close { position: absolute; bottom: 40px; z-index: 20; background: red; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
         
-        /* PIILOTETTU CANVAS KAAVIOLLE */
+        /* PIILOTETTU CANVAS */
         #tempChart { position: absolute; left: -9999px; }
 
         @keyframes scan { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
@@ -108,7 +108,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v2.41</div>
+        <div class="vamm-sub">Press Brake Pro v2.42</div>
     </div>
 
     <div id="dashboardPanel" class="dashboard status-idle">
@@ -281,16 +281,10 @@
         var effElem = document.getElementById('dashEfficiency');
         effElem.innerText = efficiency.toFixed(2);
         
-        // --- LIIKENNEVALOT ---
-        if (efficiency >= 1.5) {
-            effElem.style.color = "var(--success)"; // VIHREÄ
-        } else if (efficiency >= 1.0) {
-            effElem.style.color = "var(--warning)"; // KELTAINEN
-        } else if (workedHours > 0.05) { 
-            effElem.style.color = "var(--danger)"; // PUNAINEN (jos töitä tehty > 3 min)
-        } else {
-            effElem.style.color = "white";
-        }
+        if (efficiency >= 1.5) { effElem.style.color = "var(--success)"; } 
+        else if (efficiency >= 1.0) { effElem.style.color = "var(--warning)"; } 
+        else if (workedHours > 0.05) { effElem.style.color = "var(--danger)"; } 
+        else { effElem.style.color = "white"; }
 
         document.getElementById('dashDone').innerText = appState.kuitatutPankki.toFixed(0);
         document.getElementById('dashElapsed').innerText = (diff/60).toFixed(0);
@@ -298,14 +292,14 @@
         renderTimeline();
     }
 
-    // --- UUSI: PDF RAPORTTI KAAVIOLLE ---
+    // --- PDF RAPORTTI ---
     async function luoPDF() {
         if (!window.jspdf) { alert("PDF-kirjasto latautuu, odota hetki..."); return; }
         
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        // 1. Laske datat kaaviota varten
+        // 1. Datan keräys
         const h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
         let sumA=0, sumT=0, sumM=0, sumE=0;
         
@@ -322,9 +316,8 @@
             }
         });
 
-        // 2. Piirrä kaavio piilossa olevaan kankaaseen
+        // 2. Piirrä kaavio
         const ctx = document.getElementById('tempChart').getContext('2d');
-        // Tuhotaan vanha jos on
         if (window.myPieChart) window.myPieChart.destroy();
         
         window.myPieChart = new Chart(ctx, {
@@ -340,13 +333,10 @@
             options: { animation: false, responsive: false }
         });
 
-        // Odotetaan hetki että Chart.js piirtää
         await new Promise(r => setTimeout(r, 500));
-        
-        // 3. Muunna kaavio kuvaksi
         const chartImg = document.getElementById('tempChart').toDataURL("image/png");
 
-        // 4. Luo PDF sisältö
+        // 3. Luo PDF
         doc.setFontSize(18);
         doc.text("VAMM STEEL OY - VUORORAPORTTI", 14, 20);
         
@@ -364,17 +354,9 @@
         doc.text(`Todellinen työaika: ${totalTime} min`, 14, 48);
         doc.text(`Joutuisuus (Teho): ${eff}`, 14, 54);
         
-        // Lisää kaavio
         doc.addImage(chartImg, 'PNG', 120, 25, 70, 70);
         
-        // Taulukko
-        const tableBody = h.map(row => [
-            row.klo,
-            row.k,
-            row.l,
-            row.detail || "-",
-            row.a
-        ]);
+        const tableBody = h.map(row => [row.klo, row.k, row.l, row.detail || "-", row.a]);
 
         doc.autoTable({
             startY: 100,
@@ -416,43 +398,35 @@
         }
     }
 
-    // --- UUSI: MASSIIVINEN TESTIDATA (10 PÄIVÄÄ) ---
+    // --- KORJATTU TESTIDATA (v2.42) ---
     function lisaaMassiivinenTestidata() {
         if(!confirm("Luodaanko 10 päivän testihistoria? (Voi kestää hetken)")) return;
         
-        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        // NIMETTY UUDELLEEN: historiaLista (oli h), jotta ei sekoitu tuntiin (h)
+        var historiaLista = JSON.parse(localStorage.getItem('pb_historia') || "[]");
         const cards = ["102030", "554433", "998877", "123123", "456456", "789789"];
         const mats = ["S355 5mm", "AISI304 2mm", "ALU 3mm", "HARDOX 8mm", "S235 10mm"];
         const muutTasks = ["SIIVOUS", "PALAVERI", "HUOLTO", "JÄRJESTELY", "MATERIAALIHAKU", "KOULUTUS"];
         
-        // Loopataan 10 päivää taaksepäin
         for(let d = 0; d < 10; d++) {
             const dayDate = new Date();
             dayDate.setDate(dayDate.getDate() - d);
             const dateStr = dayDate.toLocaleDateString('fi-FI');
             
-            // Arvo korttien määrä per päivä (15-40)
             const cardCount = Math.floor(Math.random() * 25) + 15;
-            // Arvo päivän teho (1.0 - 3.0) -> vaikuttaa aikoihin
-            const efficiency = 1.0 + Math.random() * 2.0; 
             
             for(let i=0; i<cardCount; i++) {
                 const k = cards[Math.floor(Math.random()*cards.length)];
                 const l = mats[Math.floor(Math.random()*mats.length)];
-                
-                // Onko tämä "Muut" vai tuotantoa? (10% todennäköisyys Muut)
                 const isOther = Math.random() < 0.1;
                 
                 let as, ta, mu, detail;
                 
                 if(isOther) {
-                    as=0; ta=0;
-                    mu = Math.floor(Math.random()*30) + 10;
+                    as=0; ta=0; mu = Math.floor(Math.random()*30) + 10;
                     const taskName = muutTasks[Math.floor(Math.random()*muutTasks.length)];
                     detail = `As:0|Ta:0|Mu:${taskName} ${mu} MIN`;
                 } else {
-                    // Tuotantoaika riippuu "tehosta" (mitä isompi teho, sitä pienempi aika suhteessa pankkiin)
-                    // Mutta tässä simuloidaan vain kirjauksia
                     as = Math.floor((Math.random() * 10 + 5));
                     ta = Math.floor((Math.random() * 20 + 10));
                     mu = 0;
@@ -460,14 +434,14 @@
                 }
                 
                 const total = as+ta+mu;
-                if(!isOther) appState.kuitatutPankki += total; // Lisätään pankkiin vain jos ei ole 'muut' (yksinkertaistus)
+                if(!isOther) appState.kuitatutPankki += total; 
 
-                // Arvo kellonaika (06:00 - 14:00)
-                const h = Math.floor(Math.random()*8)+6;
-                const min = Math.floor(Math.random()*60);
-                const timeStr = `${h.toString().padStart(2,'0')}:${min.toString().padStart(2,'0')}`;
+                // NIMETTY UUDELLEEN: kelloTunti (oli h)
+                const kelloTunti = Math.floor(Math.random()*8)+6;
+                const kelloMin = Math.floor(Math.random()*60);
+                const timeStr = `${kelloTunti.toString().padStart(2,'0')}:${kelloMin.toString().padStart(2,'0')}`;
 
-                h.push({
+                historiaLista.push({
                     id: Date.now() + Math.random(),
                     k: isOther ? "MUU TYÖ" : k,
                     l: isOther ? "-" : l,
@@ -479,10 +453,10 @@
             }
         }
         
-        // Järjestä aika-järjestykseen
-        h.sort((a,b) => b.id - a.id);
+        historiaLista.sort((a,b) => b.id - a.id);
         
-        localStorage.setItem('pb_historia', JSON.stringify(h));
+        localStorage.setItem('pb_historia', JSON.stringify(historiaLista));
+        saveState(); // Tallennetaan myös pankin saldo
         renderHistory();
         renderTimeline();
         alert("Testidata luotu onnistuneesti!");
@@ -638,7 +612,7 @@
 
     window.onload = function() {
         try {
-            if(!localStorage.getItem('v241_clean')) { localStorage.clear(); localStorage.setItem('v241_clean', 'true'); }
+            if(!localStorage.getItem('v242_clean')) { localStorage.clear(); localStorage.setItem('v242_clean', 'true'); }
             var saved = localStorage.getItem('pb_state_final');
             if(saved) { try { appState = JSON.parse(saved); } catch(e) { console.log("Muisti korruptoitunut"); appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null }; } }
             ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id) { var v = localStorage.getItem('pb_field_'+id); if(v) setText('v-'+id, v); });
