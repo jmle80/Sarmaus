@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Press Brake Pro v3.3 - STABLE</title>
+    <title>Press Brake Pro v3.4 - REPAIR</title>
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -31,7 +31,6 @@
         /* DASHBOARD */
         .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .dashboard-box { background: var(--dark-panel); color: var(--text-light); border-radius: 15px; padding: 15px 5px; text-align: center; border-left: 4px solid #555; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; }
-        #dash-period { border-left-color: var(--blue); }
         .dash-title { font-size: 0.75em; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
         .dash-value { font-size: 2.5em; font-weight: 800; line-height: 1; text-shadow: 0 0 10px rgba(0,0,0,0.3); transition: color 0.5s; }
         .dash-sub-label { font-size: 0.7em; color: #aaa; margin-top: 5px; }
@@ -89,6 +88,7 @@
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal { background: var(--card); padding: 20px; border-radius: 15px; width: 320px; text-align: center; border: 1px solid #555; }
         .modal-wide { background: var(--card); padding: 20px; border-radius: 15px; width: 95%; max-width: 600px; text-align: center; border: 1px solid #555; max-height: 90vh; display:flex; flex-direction:column; overflow-y: auto; }
+        
         .display { background: #222; color: var(--primary); padding: 15px; font-size: 2em; font-family: monospace; font-weight: bold; margin-bottom: 15px; border-radius: 8px; min-height: 60px; }
         .key-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         .key { background: #444; padding: 15px; font-size: 1.4em; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid #555; color: var(--text-light); }
@@ -98,9 +98,11 @@
         .input-f { width: 100%; padding: 15px; background: #222; border: 2px solid var(--primary); color: white; font-size: 1.2em; text-align: center; margin-bottom: 10px; border-radius: 8px; box-sizing: border-box; }
         .btn-jatka { width: 100%; background: var(--primary); color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1em; cursor: pointer; margin-top: 10px; }
         .search-bar { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #555; background: #222; color: white; margin-bottom: 10px; font-size: 1em; text-align: center; }
+
         .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .edit-label { text-align: left; font-size: 0.8em; color: #aaa; margin-bottom: 2px; }
         .edit-input { width: 100%; background: #333; border: 1px solid #555; padding: 10px; color: white; border-radius: 5px; box-sizing: border-box; }
+
         .time-display { font-size: 3em; font-weight: bold; color: var(--primary); margin: 20px 0; letter-spacing: 2px; font-family: monospace; }
         .time-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
         .time-key { background: #444; padding: 15px; font-size: 1.5em; font-weight: bold; border-radius: 8px; border: 1px solid #555; color: #eee; cursor: pointer; }
@@ -150,7 +152,7 @@
 <div class="container">
     <div class="vamm-header">
         <div class="vamm-logo">VAMM STEEL OY</div>
-        <div class="vamm-sub">Press Brake Pro v3.3</div>
+        <div class="vamm-sub">Press Brake Pro v3.4</div>
     </div>
 
     <div id="kelloDisplay" class="main-clock">00:00:00</div>
@@ -365,6 +367,12 @@
 </div>
 
 <script>
+    // VIRHEENSIEPPAUS
+    window.onerror = function(msg, url, line) {
+        alert("VIRHE: " + msg + "\nRivi: " + line + "\n\nPaina HÄTÄ-NOLLAUS jos toistuu.");
+        return true; 
+    };
+
     // --- PÄÄMUUTTUJAT ---
     var appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, jaksoAlku: null, jaksoLoppu: null };
     var kKunta = "", syoteBuffer = "", html5QrcodeScanner = null, skannausKohde = "", muuSeliteTemp = "";
@@ -379,14 +387,12 @@
     };
     let segments = []; 
 
-    // --- TYÖKALUPAKKI LOGIIKKA ---
     function avaaTyokalut() {
         document.getElementById('toolbox-modal').style.display = 'flex';
         setTimeout(() => { 
             const c = document.getElementById('profileCanvas'); 
             if(c) {
-                c.width = c.parentElement.offsetWidth; 
-                c.height = 250; 
+                c.width = c.parentElement.offsetWidth; c.height = 250; 
                 if(segments.length === 0) { addSegment(100,0); addSegment(50,90); }
                 updateProfile();
             }
@@ -559,7 +565,7 @@
         else if(a&&b) { r.innerText=`C: ${(Math.sqrt(a*a+b*b)).toFixed(2)}\nKulma: ${(Math.atan(a/b)*180/Math.PI).toFixed(1)}°`; }
     }
 
-    // --- PÄÄOHJELMA ---
+    // --- AUTOMAATTINEN JAKSO (v2.53) ---
     function paivitaPalkkajakso() {
         var nyt = new Date(); var y = nyt.getFullYear(); var m = nyt.getMonth(); var d = nyt.getDate();
         var start, end;
@@ -573,6 +579,7 @@
         localStorage.setItem('pb_last_period', otsikko);
     }
 
+    // --- ARKISTO ---
     function siirraArkistoon() {
         if(!confirm("Siirretäänkö arkistoon?"))return;
         var current = JSON.parse(localStorage.getItem('pb_historia') || "[]");
@@ -908,6 +915,8 @@
             renderHistory();
             renderTimeline();
             setInterval(updateClock, 1000);
+            
+            alert("Ohjelma käynnistyi onnistuneesti"); // SANITY CHECK
             
         } catch(e) {
             alert("Käynnistysvirhe: " + e);
