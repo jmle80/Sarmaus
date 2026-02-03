@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Press Brake Pro v3.5 - STABLE</title>
     
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* TYYLIT */
         :root { 
             --bg: #121212; --card: #1e1e1e; --dark-panel: #252525; 
             --primary: #FF6700; --accent: #FF8C33; --success: #00e676; 
@@ -28,7 +27,6 @@
         .vamm-logo { font-size: 1.8em; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
         .vamm-sub { font-size: 0.9em; color: var(--text-muted); }
 
-        /* DASHBOARD */
         .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .dashboard-box { background: var(--dark-panel); color: var(--text-light); border-radius: 15px; padding: 15px 5px; text-align: center; border-left: 4px solid #555; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; }
         .dash-title { font-size: 0.75em; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
@@ -37,7 +35,6 @@
         .dash-sub-val { font-size: 1.1em; font-weight: bold; color: white; }
         .main-clock { font-size: 2.5em; font-weight: 700; font-family: 'Courier New', monospace; text-align: center; margin: 0 0 15px 0; color: #fff; text-shadow: 0 0 10px rgba(0,0,0,0.5); background: #222; border-radius: 10px; padding: 5px; border: 1px solid #444; }
 
-        /* TIMELINE */
         .timeline-wrapper { margin-bottom: 15px; background: #222; padding: 10px; border-radius: 12px; border: 1px solid #444; }
         .timeline-bar { display: flex; height: 25px; background: #333; border-radius: 12px; overflow: hidden; margin-bottom: 5px; }
         .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.7em; color: rgba(0,0,0,0.7); overflow: hidden; }
@@ -45,7 +42,6 @@
         .timeline-legend { display: flex; justify-content: space-around; font-size: 0.7em; color: #aaa; font-weight: bold; }
         .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
 
-        /* BOXES */
         .info-row { display: flex; gap: 10px; margin-bottom: 8px; }
         .info-box { flex-grow: 1; background: var(--dark-panel); padding: 12px; border-radius: 10px; border: 1px solid #555; border-left: 4px solid #ccc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .info-box b { font-size: 1.1em; text-align: right; }
@@ -64,7 +60,8 @@
 
         .hist-header { display: grid; grid-template-columns: 80px 1fr 60px; padding: 8px; background: #2c3e50; font-size: 0.75em; font-weight: bold; color: #ccc; border-radius: 10px 10px 0 0; margin-top: 10px; }
         .hist-cont { background: #2a2e33; max-height: 300px; overflow-y: auto; border: 1px solid #444; border-top: none; border-radius: 0 0 10px 10px; }
-        .hist-item { display: grid; grid-template-columns: 80px 1fr 60px; padding: 10px 8px; border-bottom: 1px solid #444; font-size: 0.9em; align-items: center; }
+        .hist-item { display: grid; grid-template-columns: 80px 1fr 60px; padding: 10px 8px; border-bottom: 1px solid #444; font-size: 0.9em; align-items: center; cursor: pointer; }
+        .hist-item:hover { background: #333; }
         .date-divider { background: #111; color: var(--primary); padding: 4px; text-align: center; font-size: 0.75em; font-weight: bold; border-top: 1px solid #444; border-bottom: 1px solid #444; }
 
         .bottom-tools { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; border-top: 2px solid #444; padding-top: 15px; }
@@ -85,13 +82,12 @@
 
         .btn-hard-reset { background: #b71c1c; color: white; border: 2px solid #ff5252; font-weight: bold; padding: 15px; cursor: pointer; border-radius: 12px; text-transform: uppercase; transition: opacity 0.3s; }
 
-        /* MODALS */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal { background: var(--card); padding: 20px; border-radius: 15px; width: 320px; text-align: center; border: 1px solid #555; }
         .modal-wide { background: var(--card); padding: 20px; border-radius: 15px; width: 95%; max-width: 600px; text-align: center; border: 1px solid #555; max-height: 90vh; display:flex; flex-direction:column; overflow-y: auto; }
         
         .display { background: #222; color: var(--primary); padding: 15px; font-size: 2em; font-family: monospace; font-weight: bold; margin-bottom: 15px; border-radius: 8px; min-height: 60px; }
-        .key-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .key-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
         .key { background: #444; padding: 15px; font-size: 1.4em; font-weight: bold; border-radius: 8px; cursor: pointer; border: 1px solid #555; color: var(--text-light); }
         .key:active { background: #555; }
         .key-ok { background: var(--success); color: #003300; border: none; grid-column: 1 / -1; margin-top: 5px; }
@@ -109,23 +105,18 @@
         .time-key { background: #444; padding: 15px; font-size: 1.5em; font-weight: bold; border-radius: 8px; border: 1px solid #555; color: #eee; cursor: pointer; }
         .time-key:active { background: #666; }
 
-        /* SKANNERI */
         #s-ruutu { background: #000; }
         #scan-modal-content { width: 100%; height: 100%; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #reader { width: 100% !important; height: 100% !important; border: none !important; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
         #reader canvas { opacity: 0 !important; display: block !important; position: absolute; }
-        #reader__scan_region img, #reader__scan_region svg { display: none !important; } 
-        #reader div[style*="border"] { border: none !important; box-shadow: none !important; }
-        .scan-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(rgba(0,0,0,0) 120px, rgba(0,0,0,0.5) 130px); pointer-events: none; z-index: 10; }
-        .scan-box { position: absolute; width: 340px; height: 80px; border: 2px solid red; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); z-index: 11; border-radius: 8px; pointer-events: none; }
-        .scan-line { position: absolute; width: 320px; height: 1px; background: red; box-shadow: 0 0 6px red; z-index: 12; animation: scan 2s infinite; pointer-events: none; }
+        .scan-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.7) 30%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.7) 70%); pointer-events: none; z-index: 10; }
+        .scan-line { position: absolute; width: 100%; height: 2px; background: red; box-shadow: 0 0 10px red; z-index: 12; animation: scan 2s infinite linear; pointer-events: none; top: 50%; }
         .scan-btn-close { position: absolute; bottom: 40px; z-index: 20; background: red; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 1.2em; cursor: pointer; }
         
         #tempChart { position: absolute; left: -9999px; }
-        @keyframes scan { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @keyframes scan { 0% { top: 30%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 70%; opacity: 0; } }
 
-        /* TYÖKALUPAKKI */
         .tabs { display: flex; background: #222; border-radius: 8px; padding: 5px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #aaa; cursor: pointer; font-weight: bold; font-size: 14px; border-radius: 6px; min-width: 80px; }
         .tab-btn.active { background-color: var(--tb-blue); color: white; }
@@ -194,45 +185,45 @@
         </div>
     </div>
 
-    <button onclick="toggleMenu()" style="width:100%; padding:10px; background:var(--special); border:none; border-radius:8px; color:white; font-weight:bold; margin-bottom:10px;">ERITYISTILAT</button>
+    <button id="btn-erityis" style="width:100%; padding:10px; background:var(--special); border:none; border-radius:8px; color:white; font-weight:bold; margin-bottom:10px;">ERITYISTILAT</button>
     <div id="menu-spec" class="special-menu">
-        <button id="s-PROTO" class="btn-spec" onclick="tilaVaihda('PROTO')">PROTO</button>
-        <button id="s-HÄIRIÖ" class="btn-spec" onclick="tilaVaihda('HÄIRIÖ')">HÄIRIÖ</button>
-        <button id="s-HUOLTO" class="btn-spec" onclick="tilaVaihda('HUOLTO')">HUOLTO</button>
+        <button id="s-PROTO" class="btn-spec">PROTO</button>
+        <button id="s-HÄIRIÖ" class="btn-spec">HÄIRIÖ</button>
+        <button id="s-HUOLTO" class="btn-spec">HUOLTO</button>
     </div>
 
-    <div class="info-row"><div id="box-kortti" class="info-box" onclick="avaaIkkuna('kortti')"><span>KORTTI</span><b id="v-kortti">-</b></div><button class="btn-scan" onclick="avaaSkanneri('kortti')">📷</button></div>
-    <div class="info-row"><div id="box-lajike" class="info-box" onclick="avaaIkkuna('lajike')"><span>LAJIMERKKI</span><b id="v-lajike">-</b></div><button class="btn-scan" onclick="avaaSkanneri('lajike')">📷</button></div>
-    <div class="info-row"><div id="box-asetus" class="info-box" onclick="avaaIkkuna('asetus')"><span>ASETUS</span><b id="v-asetus">-</b></div></div>
-    <div class="info-row"><div id="box-taivutus" class="info-box" onclick="avaaIkkuna('taivutus')"><span>TAIVUTUS</span><b id="v-taivutus">-</b></div></div>
-    <div class="info-row"><div id="box-muut" class="info-box" onclick="avaaIkkuna('muut')"><span>MUUT</span><b id="v-muut">-</b></div></div>
+    <div class="info-row"><div id="box-kortti" class="info-box"><span>KORTTI</span><b id="v-kortti">-</b></div><button id="btn-scan-kortti" class="btn-scan">📷</button></div>
+    <div class="info-row"><div id="box-lajike" class="info-box"><span>LAJIMERKKI</span><b id="v-lajike">-</b></div><button id="btn-scan-lajike" class="btn-scan">📷</button></div>
+    <div class="info-row"><div id="box-asetus" class="info-box"><span>ASETUS</span><b id="v-asetus">-</b></div></div>
+    <div class="info-row"><div id="box-taivutus" class="info-box"><span>TAIVUTUS</span><b id="v-taivutus">-</b></div></div>
+    <div class="info-row"><div id="box-muut" class="info-box"><span>MUUT</span><b id="v-muut">-</b></div></div>
 
-    <button id="v-nappi" class="main-action btn-start" onclick="VAIHDA_VUORO()">ALOITA VUORO</button>
-    <button class="main-action btn-save" onclick="tallennaKortti()">💾 TALLENNA KORTTI</button>
+    <button id="v-nappi" class="main-action btn-start">ALOITA VUORO</button>
+    <button id="btn-tallenna" class="main-action btn-save">💾 TALLENNA KORTTI</button>
 
-    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Hae korttia, lajia tai pvm..." oninput="renderHistory()">
+    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Hae korttia, lajia tai pvm...">
 
     <div class="hist-header"><span>KORTTI</span><span>LAJI</span><span style="text-align:right">AIKA</span></div>
     <div id="h-lista" class="hist-cont"></div>
 
     <div class="bottom-tools">
-        <button class="btn-tool" onclick="siirraArkistoon()">NOLLAA NYKYINEN HISTORIA</button>
-        <button class="btn-tool" onclick="avaaArkisto()">📜 SELAA ARKISTOA</button>
-        <button class="btn-tool btn-toolbox" onclick="avaaTyokalut()">🛠️ TYÖKALUPAKKI</button>
-        <button class="btn-tool" onclick="lisaaMassiivinenTestidata()">🧪 Lisää testidataa (10pv)</button>
+        <button id="btn-nollaa" class="btn-tool">NOLLAA NYKYINEN HISTORIA</button>
+        <button id="btn-arkisto" class="btn-tool">📜 SELAA ARKISTOA</button>
+        <button id="btn-tyokalut" class="btn-tool btn-toolbox">🛠️ TYÖKALUPAKKI</button>
+        <button id="btn-testi" class="btn-tool">🧪 Lisää testidataa (10pv)</button>
         
-        <input type="file" id="file-input" style="display:none" onchange="lataaVarmuuskopio(this)">
-        <button class="btn-tool" onclick="document.getElementById('file-input').click()">📂 LATAA VARMUUSKOPIO</button>
-        <button class="btn-tool" onclick="tallennaTiedosto()">💾 TALLENNA VARMUUSKOPIO</button>
+        <input type="file" id="file-input" style="display:none">
+        <button id="btn-lataa" class="btn-tool">📂 LATAA VARMUUSKOPIO</button>
+        <button id="btn-tallenna-file" class="btn-tool">💾 TALLENNA VARMUUSKOPIO</button>
         
         <div class="safety-wrapper">
             <span class="safety-label">AVAA LUKITUS >></span>
             <label class="switch">
-                <input type="checkbox" id="safety-lock" onchange="toggleResetBtn()">
+                <input type="checkbox" id="safety-lock">
                 <span class="slider round"></span>
             </label>
         </div>
-        <button id="btn-hard-reset" class="btn-hard-reset" onclick="hardReset()" disabled style="opacity: 0.3;">⚠️ HÄTÄ-NOLLAUS</button>
+        <button id="btn-hard-reset" class="btn-hard-reset" disabled style="opacity: 0.3;">⚠️ HÄTÄ-NOLLAUS</button>
     </div>
 </div>
 
@@ -240,22 +231,733 @@
     <div class="modal-wide">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h2 style="margin:0; color:white;">SÄRMÄÄJÄN TYÖKALUPAKKI</h2>
-            <button onclick="suljeTyokalut()" style="background:none; border:none; color:#aaa; font-size:2em; cursor:pointer;">&times;</button>
+            <button id="btn-sulje-tyokalut" style="background:none; border:none; color:#aaa; font-size:2em; cursor:pointer;">&times;</button>
         </div>
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('profile')">Profiili</button>
-            <button class="tab-btn" onclick="switchTab('tonnage')">Voima</button>
-            <button class="tab-btn" onclick="switchTab('trigo')">Kulmat</button>
-            <button class="tab-btn" onclick="switchTab('extras')">Ekstrat</button>
+            <button class="tab-btn active" data-tab="profile">Profiili</button>
+            <button class="tab-btn" data-tab="tonnage">Voima</button>
+            <button class="tab-btn" data-tab="trigo">Kulmat</button>
+            <button class="tab-btn" data-tab="extras">Ekstrat</button>
         </div>
 
         <div id="profile" class="calculator active">
             <h2>Profiilin Oikaisu</h2>
             <div class="form-row">
-                <div class="form-group"><label>Materiaali</label><select id="p_material" onchange="applyMaterial('profile')"><option value="s235">S235</option><option value="dx51d">DX51D</option><option value="s355">S355</option><option value="dc01">DC01</option><option value="rst">RST</option><option value="hst">HST</option><option value="al">Alu</option></select></div>
-                <div class="form-group"><label>Vahvuus</label><input type="number" id="p_thick" value="3.0" step="0.1" onchange="checkVDie(); updateProfile();"></div>
-                <div class="form-group"><label>K-kerroin</label><input type="number" id="p_k" value="0.33" step="0.01" onchange="updateProfile()"></div>
+                <div class="form-group"><label>Materiaali</label><select id="p_material"><option value="s235">S235</option><option value="dx51d">DX51D</option><option value="s355">S355</option><option value="dc01">DC01</option><option value="rst">RST</option><option value="hst">HST</option><option value="al">Alu</option></select></div>
+                <div class="form-group"><label>Vahvuus</label><input type="number" id="p_thick" value="3.0" step="0.1"></div>
+                <div class="form-group"><label>K-kerroin</label><input type="number" id="p_k" value="0.33" step="0.01"></div>
             </div>
             <div class="tool-settings">
                 <div class="form-row">
-                    <div class="form-group"><label>Yläterä</label><select id="p_tool_select" onchange="applyTool()"><option value="1.0">Vakio R1.0</option><option value="1.0">LVD J15W (Suora)</option><option value="0.8">R0.8</option><option value="2.0">R2.0</option><option value="3.0">R3.0</option><option value="custom">Muu...</
+                    <div class="form-group"><label>Yläterä</label><select id="p_tool_select"><option value="1.0">Vakio R1.0</option><option value="0.8">R0.8</option><option value="2.0">R2.0</option><option value="3.0">R3.0</option><option value="custom">Muu...</option></select></div>
+                    <div class="form-group"><label>Yläterä R</label><input type="number" id="p_punch_r" value="1.0" step="0.1"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>V-ura</label><input type="number" id="p_v" value="24"><div id="v-warning" class="warning-text">⚠️ Pieni V!</div><div id="min-flange" style="color:var(--warning);font-size:0.8em">Min: 17mm</div></div>
+                    <div class="form-group"><label>Sisäsäde Ri</label><input type="number" id="p_rad" value="4.00" readonly></div>
+                </div>
+            </div>
+            <canvas id="profileCanvas"></canvas>
+            <div id="segments-container"></div>
+            <div class="form-row" style="margin-top:15px;">
+                <button id="btn-lisaa-sivu" class="btn-jatka" style="background:var(--tb-blue)">+ LISÄÄ SIVU</button>
+                <button id="btn-tyhjenna" class="btn-hard-reset" style="margin-top:0; padding:15px;">TYHJENNÄ</button>
+            </div>
+            <div id="total-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <div id="tonnage" class="calculator">
+            <h2>Voiman Tarve</h2>
+            <div class="form-group"><label>Materiaali</label><select id="m_material_select"><option value="s235">S235</option><option value="dx51d">DX51D</option><option value="s355">S355</option><option value="rst">RST</option></select></div>
+            <div class="form-row"><div class="form-group"><label>Vahvuus (mm)</label><input type="number" id="t_force" step="0.1"></div><div class="form-group"><label>Rm (N/mm²)</label><input type="number" id="m_force" value="420" readonly></div></div>
+            <div class="form-row"><div class="form-group"><label>Pituus (m)</label><input type="number" id="l_force" step="0.1" placeholder="2.5"></div><div class="form-group"><label>V-ura (mm)</label><input type="number" id="v_force" step="1" placeholder="24"></div></div>
+            <button id="btn-laske-voima" class="btn-jatka" style="background:var(--tb-accent); color:black">LASKE VOIMA</button>
+            <div id="res-force" class="result-box" style="display:none;"></div>
+        </div>
+
+        <div id="trigo" class="calculator">
+            <h2>Trigonometria</h2>
+            <div class="form-row"><div class="form-group"><label>Kulma (°)</label><input type="number" id="tri_deg"></div><div class="form-group"><label>Hypotenuusa C</label><input type="number" id="tri_c"></div></div>
+            <div class="form-row"><div class="form-group"><label>Korkeus A</label><input type="number" id="tri_a"></div><div class="form-group"><label>Vaaka B</label><input type="number" id="tri_b"></div></div>
+            <button id="btn-laske-trigo" class="btn-jatka">LASKE</button>
+            <div id="res-trigo" class="result-box" style="display:none; white-space: pre-line;"></div>
+        </div>
+
+        <div id="extras" class="calculator">
+            <h2>Ekstrat</h2>
+            <div class="tool-settings" style="border:1px solid var(--tb-blue);">
+                <h3 style="margin-top:0; color:var(--tb-blue);">Sarvipalat / Laatikko</h3>
+                <div style="font-size:0.8em; color:#aaa; margin-bottom:10px;">Laske yläteräpakan max leveys</div>
+                <div class="form-row"><div class="form-group"><label>Laatikko Sisälev. (mm)</label><input type="number" id="horn_box_w"></div><div class="form-group"><label>Sivulaippa Pit. (mm)</label><input type="number" id="horn_flange"></div></div>
+                <div class="form-group"><label>Välys (mm)</label><input type="number" id="horn_clearance" value="5"></div>
+                <button id="btn-laske-sarvi" class="btn-jatka">LASKE TERÄN LEVEYS</button>
+                <div id="res-horn" class="result-box" style="display:none;"></div>
+            </div>
+            <div class="tool-settings">
+                <h3>Askeltaivutus</h3>
+                <div class="form-row"><div class="form-group"><label>Säde R</label><input type="number" id="bump_r"></div><div class="form-group"><label>Kaari °</label><input type="number" id="bump_angle" value="90"></div><div class="form-group"><label>Isku</label><input type="number" id="bump_step" value="10"></div></div>
+                <button id="btn-laske-bump" class="btn-jatka">LASKE</button>
+                <div id="res-bump" class="result-box" style="display:none;"></div>
+            </div>
+            <div class="tool-settings">
+                <h3>Levypaino & Ristimitta</h3>
+                <div class="form-row"><div class="form-group"><label>Pit</label><input type="number" id="w_len"></div><div class="form-group"><label>Lev</label><input type="number" id="w_wid"></div><div class="form-group"><label>Vahv</label><input type="number" id="w_thk"></div></div>
+                <button id="btn-laske-paino" class="btn-jatka">PAINO</button>
+                <div id="res-weight" class="result-box" style="display:none;"></div>
+                <div style="margin-top:10px; border-top:1px dashed #555; padding-top:10px;">
+                    <div class="form-row"><div class="form-group"><label>Sivu A</label><input type="number" id="risti_a"></div><div class="form-group"><label>Sivu B</label><input type="number" id="risti_b"></div></div>
+                    <button id="btn-laske-risti" class="btn-jatka">RISTIMITTA</button>
+                    <div id="res-diag" class="result-box" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <button id="btn-sulje-tyokalut-2" style="margin-top:20px; padding:15px; width:100%; border:none; border-radius:10px; font-weight:bold; cursor:pointer; background:#555; color:white;">SULJE</button>
+    </div>
+</div>
+
+<div id="archive-modal" class="overlay">
+    <div class="modal-wide">
+        <h3 style="color:var(--primary); margin-top:0;">KOKONAISHISTORIA</h3>
+        <button id="btn-lataa-arkisto" class="btn-tool">💾 LATAA ARKISTO (.JSON)</button>
+        <div class="hist-header" style="margin-top:10px;"><span>PVM</span><span>KORTTI</span><span style="text-align:right">AIKA</span></div>
+        <div id="archive-list" class="hist-cont" style="flex-grow:1;"></div>
+        <button id="btn-sulje-arkisto" style="margin-top:15px; padding:15px; width:100%; border:none; border-radius:10px; font-weight:bold; cursor:pointer; background:#555; color:white;">SULJE</button>
+    </div>
+</div>
+
+<div id="n-ruutu" class="overlay">
+    <div class="modal">
+        <h3 id="n-otsikko" style="margin-top:0; color:var(--primary)">SYÖTÄ</h3>
+        <div id="n-naytto" class="display"></div>
+        <div id="extra-btns" style="display:none;"><button id="btn-2man" class="btn-2man">👥 2-MIEHEN TYÖ (½ AIKA)</button></div>
+        <div id="t-alue" style="display:none;">
+            <input type="text" id="t-syotto" class="input-f" placeholder="Kirjoita...">
+            <button id="btn-jatka-muut" class="btn-jatka" style="display:none">JATKA AIKAAN >></button>
+        </div>
+        <div id="k-alue" class="key-grid"></div>
+        <button id="btn-peruuta" style="margin-top:15px; background:none; border:none; color:#888; cursor:pointer;">PERUUTA</button>
+    </div>
+</div>
+
+<div id="time-modal" class="overlay">
+    <div class="modal">
+        <h3 id="tm-otsikko" style="color:var(--primary)">SYÖTÄ AIKA</h3>
+        <div id="tm-display" class="time-display">--:--</div>
+        <div class="time-keypad">
+            <div class="time-key" data-key="1">1</div><div class="time-key" data-key="2">2</div><div class="time-key" data-key="3">3</div>
+            <div class="time-key" data-key="4">4</div><div class="time-key" data-key="5">5</div><div class="time-key" data-key="6">6</div>
+            <div class="time-key" data-key="7">7</div><div class="time-key" data-key="8">8</div><div class="time-key" data-key="9">9</div>
+            <div class="time-key" data-key="C" style="background:#555">C</div><div class="time-key" data-key="0">0</div><div class="time-key" data-key="OK" style="background:var(--success); color:#003300">OK</div>
+        </div>
+        <button id="btn-peruuta-aika" style="margin-top:15px; background:none; border:none; color:#888; cursor:pointer;">PERUUTA</button>
+    </div>
+</div>
+
+<div id="edit-modal" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--primary)">MUOKKAA KORTTIA</h3>
+        <div class="edit-grid"><div><div class="edit-label">KORTTI</div><input id="ed-kortti" class="edit-input"></div><div><div class="edit-label">LAJIMERKKI</div><input id="ed-laji" class="edit-input"></div></div>
+        <div class="edit-grid"><div><div class="edit-label">ASETUS (min)</div><input type="number" id="ed-as" class="edit-input"></div><div><div class="edit-label">TAIVUTUS (min)</div><input type="number" id="ed-ta" class="edit-input"></div></div>
+        <div style="margin-bottom:15px;"><div class="edit-label">MUUT (min)</div><input type="number" id="ed-mu" class="edit-input"></div>
+        <button id="btn-tallenna-muutos" class="btn-jatka">💾 TALLENNA MUUTOKSET</button>
+        <button id="btn-poista" class="btn-hard-reset" style="margin-top:10px; width:100%;">🗑️ POISTA RIVI</button>
+        <button id="btn-peruuta-edit" style="margin-top:15px; background:none; border:none; color:#888; cursor:pointer;">PERUUTA</button>
+    </div>
+</div>
+
+<div id="s-ruutu" class="overlay">
+    <div id="scan-modal-content">
+        <div id="reader"></div>
+        <div class="scan-mask"></div>
+        <div class="scan-line"></div>
+        <button id="btn-sulje-scan" class="scan-btn-close">SULJE</button>
+    </div>
+</div>
+
+<script>
+    // --- PÄÄMUUTTUJAT ---
+    var appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, jaksoAlku: null, jaksoLoppu: null, erikoistilaAloitus: 0 };
+    var kKunta = "", syoteBuffer = "", html5QrcodeScanner = null, skannausKohde = "", muuSeliteTemp = "";
+    var timeBuffer = "", timeCallback = null, muokkausIndex = -1;
+    var avoinModal = null;
+    
+    const materials = {
+        's235':  { name: 'S235',  rm: 420, k: 0.33 }, 'dx51d': { name: 'DX51D', rm: 360, k: 0.33 },
+        's355':  { name: 'S355',  rm: 520, k: 0.33 }, 'dc01':  { name: 'DC01',  rm: 350, k: 0.33 },
+        'rst':   { name: 'RST',   rm: 700, k: 0.40 }, 'hst':   { name: 'HST',   rm: 700, k: 0.40 },
+        'al':    { name: 'Alu',   rm: 250, k: 0.45 }
+    };
+    let segments = [];
+
+    // --- EVENT LISTENERIT ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Päänapit
+        document.getElementById('v-nappi').addEventListener('click', VAIHDA_VUORO);
+        document.getElementById('btn-tallenna').addEventListener('click', tallennaKortti);
+        document.getElementById('btn-erityis').addEventListener('click', toggleMenu);
+        
+        // Erikoistilat
+        document.getElementById('s-PROTO').addEventListener('click', function() { tilaVaihda('PROTO'); });
+        document.getElementById('s-HÄIRIÖ').addEventListener('click', function() { tilaVaihda('HÄIRIÖ'); });
+        document.getElementById('s-HUOLTO').addEventListener('click', function() { tilaVaihda('HUOLTO'); });
+        
+        // Info-boxit
+        document.getElementById('box-kortti').addEventListener('click', function() { avaaIkkuna('kortti'); });
+        document.getElementById('box-lajike').addEventListener('click', function() { avaaIkkuna('lajike'); });
+        document.getElementById('box-asetus').addEventListener('click', function() { avaaIkkuna('asetus'); });
+        document.getElementById('box-taivutus').addEventListener('click', function() { avaaIkkuna('taivutus'); });
+        document.getElementById('box-muut').addEventListener('click', function() { avaaIkkuna('muut'); });
+        
+        // Skanneri
+        document.getElementById('btn-scan-kortti').addEventListener('click', function() { avaaSkanneri('kortti'); });
+        document.getElementById('btn-scan-lajike').addEventListener('click', function() { avaaSkanneri('lajike'); });
+        document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
+        
+        // Haku
+        document.getElementById('search-hist').addEventListener('input', renderHistory);
+        
+        // Työkalut
+        document.getElementById('btn-tyokalut').addEventListener('click', avaaTyokalut);
+        document.getElementById('btn-sulje-tyokalut').addEventListener('click', suljeTyokalut);
+        document.getElementById('btn-sulje-tyokalut-2').addEventListener('click', suljeTyokalut);
+        
+        // Tabit
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() { switchTab(this.dataset.tab); });
+        });
+        
+        // Profiili
+        document.getElementById('p_material').addEventListener('change', function() { applyMaterial('profile'); });
+        document.getElementById('p_thick').addEventListener('change', function() { checkVDie(); updateProfile(); });
+        document.getElementById('p_k').addEventListener('change', updateProfile);
+        document.getElementById('p_tool_select').addEventListener('change', applyTool);
+        document.getElementById('p_punch_r').addEventListener('input', calculateRadius);
+        document.getElementById('p_v').addEventListener('input', function() { calculateRadius(); checkVDie(); });
+        document.getElementById('btn-lisaa-sivu').addEventListener('click', function() { addSegment(); });
+        document.getElementById('btn-tyhjenna').addEventListener('click', confirmReset);
+        
+        // Voima
+        document.getElementById('m_material_select').addEventListener('change', function() { applyMaterial('force'); });
+        document.getElementById('btn-laske-voima').addEventListener('click', calcTonnage);
+        
+        // Trigo
+        document.getElementById('btn-laske-trigo').addEventListener('click', calcTrigo);
+        
+        // Ekstrat
+        document.getElementById('btn-laske-sarvi').addEventListener('click', calcHornWidth);
+        document.getElementById('btn-laske-bump').addEventListener('click', calcBump);
+        document.getElementById('btn-laske-paino').addEventListener('click', calcWeight);
+        document.getElementById('btn-laske-risti').addEventListener('click', calcDiagonal);
+        
+        // Arkisto
+        document.getElementById('btn-arkisto').addEventListener('click', avaaArkisto);
+        document.getElementById('btn-sulje-arkisto').addEventListener('click', suljeArkisto);
+        document.getElementById('btn-lataa-arkisto').addEventListener('click', lataaArkisto);
+        document.getElementById('btn-nollaa').addEventListener('click', siirraArkistoon);
+        
+        // Varmuuskopio
+        document.getElementById('btn-lataa').addEventListener('click', function() { document.getElementById('file-input').click(); });
+        document.getElementById('file-input').addEventListener('change', lataaVarmuuskopio);
+        document.getElementById('btn-tallenna-file').addEventListener('click', tallennaTiedosto);
+        
+        // Testi
+        document.getElementById('btn-testi').addEventListener('click', lisaaMassiivinenTestidata);
+        
+        // Turva
+        document.getElementById('safety-lock').addEventListener('change', toggleResetBtn);
+        document.getElementById('btn-hard-reset').addEventListener('click', hardReset);
+        
+        // Modaalit
+        document.getElementById('btn-peruuta').addEventListener('click', suljeIkkuna);
+        document.getElementById('btn-2man').addEventListener('click', kahdenMiehenTyo);
+        document.getElementById('btn-jatka-muut').addEventListener('click', siirryAikaan);
+        
+        // Aika
+        document.querySelectorAll('.time-key').forEach(key => {
+            key.addEventListener('click', function() {
+                var k = this.dataset.key;
+                if(k === 'OK') timeConfirm();
+                else if(k === 'C') timeKey('C');
+                else timeKey(k);
+            });
+        });
+        document.getElementById('btn-peruuta-aika').addEventListener('click', closeTimeModal);
+        
+        // Edit
+        document.getElementById('btn-tallenna-muutos').addEventListener('click', tallennaMuutos);
+        document.getElementById('btn-poista').addEventListener('click', poistaRivi);
+        document.getElementById('btn-peruuta-edit').addEventListener('click', suljeEdit);
+        
+        // Alustus
+        alusta();
+    });
+
+    function alusta() {
+        try {
+            if(!localStorage.getItem('v340_clean')) { 
+                localStorage.clear(); 
+                localStorage.setItem('v340_clean', 'true'); 
+            }
+            
+            var saved = localStorage.getItem('pb_state_final');
+            if(saved) {
+                try { 
+                    var parsed = JSON.parse(saved);
+                    appState = {...appState, ...parsed};
+                } catch(e) { console.log("State error"); }
+            }
+            
+            ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id) {
+                var v = localStorage.getItem('pb_field_'+id);
+                if(v) setText('v-'+id, v);
+            });
+            
+            if (!localStorage.getItem('pb_historia')) localStorage.setItem('pb_historia', '[]');
+            if (!localStorage.getItem('pb_archive')) localStorage.setItem('pb_archive', '[]');
+            if (!localStorage.getItem('pb_vuorot')) localStorage.setItem('pb_vuorot', '[]');
+            
+            paivitaPalkkajakso();
+            updateUI();
+            renderHistory();
+            renderTimeline();
+            setInterval(updateClock, 1000);
+            updateClock();
+            
+        } catch(e) {
+            alert("Käynnistysvirhe: " + e);
+        }
+    }
+
+    // --- PÄÄFUNKTIOIT ---
+    
+    function updateClock() {
+        var nyt = new Date();
+        document.getElementById('kelloDisplay').innerText = nyt.toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        
+        if(appState.kaynnissa) {
+            var kulunut = Math.floor((Date.now() - appState.aloitusAika) / 60000);
+            var tehdyt = appState.kuitatutPankki;
+            var teho = kulunut > 0 ? (tehdyt / kulunut).toFixed(2) : "0.00";
+            document.getElementById('shiftEfficiency').innerText = teho;
+            document.getElementById('shiftDone').innerText = tehdyt.toFixed(1);
+        }
+    }
+
+    function updateUI() {
+        var btn = document.getElementById('v-nappi');
+        if(appState.kaynnissa) {
+            btn.innerText = "LOPETA VUORO";
+            btn.className = "main-action btn-stop";
+            document.querySelectorAll('.info-box').forEach(b => b.classList.remove('box-disabled'));
+        } else {
+            btn.innerText = "ALOITA VUORO";
+            btn.className = "main-action btn-start";
+            document.querySelectorAll('.info-box').forEach(b => b.classList.add('box-disabled'));
+        }
+        
+        ['PROTO', 'HÄIRIÖ', 'HUOLTO'].forEach(t => {
+            var btn = document.getElementById('s-' + t);
+            if(appState.nykyinenTila === t) {
+                btn.classList.add('active');
+                btn.innerText = "LOPETA " + t;
+            } else if(appState.nykyinenTila) {
+                btn.classList.remove('active');
+                btn.disabled = true;
+                btn.style.opacity = "0.3";
+            } else {
+                btn.classList.remove('active');
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.innerText = t;
+            }
+        });
+    }
+
+    function renderTimeline() {
+        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        var as = 0, ta = 0, mu = 0;
+        h.forEach(row => {
+            if(row.detail) {
+                var parts = row.detail.split('|');
+                parts.forEach(p => {
+                    if(p.startsWith('As')) as += parseFloat(p.split(':')[1])||0;
+                    if(p.startsWith('Ta')) ta += parseFloat(p.split(':')[1])||0;
+                    if(p.startsWith('Mu')) mu += parseFloat(p.split(':')[1].match(/[\d.]+/))||0;
+                });
+            }
+        });
+        var tot = as + ta + mu;
+        if(tot > 0) {
+            document.getElementById('bar-asetus').style.width = (as/tot*100) + "%";
+            document.getElementById('bar-taivutus').style.width = (ta/tot*100) + "%";
+            document.getElementById('bar-muut').style.width = (mu/tot*100) + "%";
+        } else {
+            document.getElementById('bar-asetus').style.width = "0%";
+            document.getElementById('bar-taivutus').style.width = "0%";
+            document.getElementById('bar-muut').style.width = "0%";
+        }
+    }
+
+    function renderHistory() {
+        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        var search = document.getElementById('search-hist').value.toLowerCase();
+        var cont = document.getElementById('h-lista');
+        var html = "";
+        var lastDate = "";
+        
+        h.sort((a,b) => b.id - a.id).forEach((row, idx) => {
+            if(search && !row.k.toLowerCase().includes(search) && !row.l.toLowerCase().includes(search) && !row.pvm.includes(search)) return;
+            
+            if(row.pvm !== lastDate) {
+                html += `<div class="date-divider">${row.pvm}</div>`;
+                lastDate = row.pvm;
+            }
+            html += `<div class="hist-item" data-idx="${idx}"><div>${row.k}</div><div>${row.l}</div><div style="text-align:right">${row.a}</div></div>`;
+        });
+        cont.innerHTML = html || "<div style='padding:20px;color:#aaa'>Ei dataa</div>";
+        
+        // Lisää click handlerit
+        cont.querySelectorAll('.hist-item').forEach(item => {
+            item.addEventListener('click', function() {
+                avaaMuokkaus(parseInt(this.dataset.idx));
+            });
+        });
+    }
+
+    function avaaIkkuna(t) {
+        if(!appState.kaynnissa) return;
+        avoinModal = t;
+        document.getElementById('n-ruutu').style.display = 'flex';
+        document.getElementById('n-otsikko').innerText = t.toUpperCase();
+        syoteBuffer = "";
+        document.getElementById('n-naytto').innerText = "";
+        
+        var extraBtns = document.getElementById('extra-btns');
+        var tAlue = document.getElementById('t-alue');
+        var kAlue = document.getElementById('k-alue');
+        
+        if(t === 'muut') {
+            extraBtns.style.display = 'block';
+            tAlue.style.display = 'block';
+            kAlue.style.display = 'none';
+            document.getElementById('t-syotto').value = "";
+            setTimeout(() => document.getElementById('t-syotto').focus(), 100);
+        } else {
+            extraBtns.style.display = 'none';
+            tAlue.style.display = 'none';
+            kAlue.style.display = 'grid';
+            luoNappaimisto();
+        }
+    }
+
+    function luoNappaimisto() {
+        var grid = document.getElementById('k-alue');
+        grid.innerHTML = '';
+        
+        // 4x4 näppäimistö: 1-9, C, 0, pilkku, piste, OK
+        var keys = [
+            '1', '2', '3', '4',
+            '5', '6', '7', '8',
+            '9', 'C', '0', ',',
+            '.', '', '', 'OK'
+        ];
+        
+        keys.forEach(function(k) {
+            if(k === '') {
+                // Tyhjä solu
+                var empty = document.createElement('div');
+                grid.appendChild(empty);
+                return;
+            }
+            
+            var btn = document.createElement('div');
+            btn.className = 'key';
+            btn.innerText = k;
+            
+            if(k === 'OK') {
+                btn.classList.add('key-ok');
+                btn.style.gridColumn = '1 / -1';
+            }
+            
+            btn.addEventListener('click', function() { nappain(k); });
+            grid.appendChild(btn);
+        });
+    }
+
+    function nappain(k) {
+        if(k === 'C') {
+            syoteBuffer = "";
+        } else if(k === 'OK') {
+            if(syoteBuffer) {
+                // Korvaa pilkku pisteeksi desimaalierottimena
+                var arvo = syoteBuffer.replace(',', '.');
+                setText('v-' + avoinModal, arvo + " MIN");
+                localStorage.setItem('pb_field_' + avoinModal, arvo + " MIN");
+                suljeIkkuna();
+            }
+        } else {
+            // Salli vain yksi desimaalierotin
+            if((k === ',' || k === '.') && (syoteBuffer.includes(',') || syoteBuffer.includes('.'))) {
+                return;
+            }
+            // Rajoita pituus
+            if(syoteBuffer.length < 6) {
+                syoteBuffer += k;
+            }
+        }
+        document.getElementById('n-naytto').innerText = syoteBuffer;
+    }
+
+    function suljeIkkuna() {
+        document.getElementById('n-ruutu').style.display = 'none';
+        avoinModal = null;
+    }
+
+    function kahdenMiehenTyo() {
+        document.getElementById('btn-jatka-muut').style.display = 'block';
+    }
+
+    function siirryAikaan() {
+        muuSeliteTemp = document.getElementById('t-syotto').value;
+        document.getElementById('t-alue').style.display = 'none';
+        document.getElementById('extra-btns').style.display = 'none';
+        document.getElementById('k-alue').style.display = 'grid';
+        luoNappaimisto();
+    }
+
+    function tallennaKortti() {
+        if(!appState.kaynnissa) return alert("Aloita vuoro ensin!");
+        
+        var kortti = document.getElementById('v-kortti').innerText;
+        var laji = document.getElementById('v-lajike').innerText;
+        var asetus = poimiNum(document.getElementById('v-asetus').innerText);
+        var taivutus = poimiNum(document.getElementById('v-taivutus').innerText);
+        var muut = poimiNum(document.getElementById('v-muut').innerText);
+        
+        if(kortti === "-" || laji === "-") return alert("Täytä kortti ja lajike!");
+        
+        var yht = asetus + taivutus + muut;
+        var nyt = new Date();
+        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        
+        var entry = {
+            id: Date.now(),
+            k: kortti,
+            l: laji,
+            a: yht + " MIN",
+            detail: `As:${asetus}|Ta:${taivutus}|Mu:${muuSeliteTemp || muut} MIN`,
+            pvm: nyt.toLocaleDateString('fi-FI'),
+            klo: nyt.toLocaleTimeString().substr(0,5)
+        };
+        
+        h.unshift(entry);
+        localStorage.setItem('pb_historia', JSON.stringify(h));
+        
+        appState.kuitatutPankki += yht;
+        saveState();
+        renderHistory();
+        renderTimeline();
+        updateUI();
+        
+        resetFields();
+        muuSeliteTemp = "";
+        
+        startSound();
+        alert("Kortti tallennettu!");
+    }
+
+    // --- VIEVAKOODISKANNERI ---
+    function avaaSkanneri(t) {
+        if(!appState.kaynnissa) return alert("Aloita vuoro!");
+        skannausKohde = t; 
+        document.getElementById('s-ruutu').style.display = 'flex';
+        
+        try {
+            if(!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+            }
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { 
+                    fps: 10, 
+                    qrbox: { width: 300, height: 150 },
+                    aspectRatio: 1.0
+                },
+                function(txt) {
+                    var v = txt.trim().toUpperCase();
+                    if(skannausKohde === 'kortti') v = v.replace(/\s+/g,'');
+                    startSound(); 
+                    setText('v-'+skannausKohde, v);
+                    localStorage.setItem('pb_field_'+skannausKohde, v);
+                    suljeSkanneri();
+                },
+                function(err) { }
+            ).catch(function(err) { 
+                alert("Kameravirhe: " + err); 
+                suljeSkanneri(); 
+            });
+        } catch(e) { 
+            alert("Skanneri ei toimi: " + e.message); 
+            suljeSkanneri(); 
+        }
+    }
+    
+    function suljeSkanneri() {
+        if(html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(function() {
+                document.getElementById('s-ruutu').style.display='none';
+            }).catch(function(err) {
+                document.getElementById('s-ruutu').style.display='none';
+            });
+        } else {
+            document.getElementById('s-ruutu').style.display='none';
+        }
+    }
+
+    // --- TYÖKALUPAKKI ---
+    function avaaTyokalut() {
+        document.getElementById('toolbox-modal').style.display = 'flex';
+        setTimeout(function() { 
+            var c = document.getElementById('profileCanvas'); 
+            if(c) {
+                c.width = c.parentElement.offsetWidth; 
+                c.height = 250; 
+                if(segments.length === 0) { addSegment(100,0); addSegment(50,90); }
+                updateProfile();
+            }
+        }, 200);
+    }
+    
+    function suljeTyokalut() { 
+        document.getElementById('toolbox-modal').style.display = 'none'; 
+    }
+    
+    function switchTab(id) {
+        document.querySelectorAll('.calculator').forEach(function(el) { el.classList.remove('active'); });
+        document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
+        var activeEl = document.getElementById(id);
+        if(activeEl) activeEl.classList.add('active');
+        
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            if(btn.dataset.tab === id) btn.classList.add('active');
+        });
+    }
+
+    function applyMaterial(source) {
+        var k;
+        if (source === 'profile') {
+            k = document.getElementById('p_material').value;
+            document.getElementById('p_k').value = materials[k].k;
+            updateProfile();
+        } else {
+            k = document.getElementById('m_material_select').value;
+            document.getElementById('m_force').value = materials[k].rm;
+        }
+    }
+
+    function applyTool() {
+        var val = document.getElementById('p_tool_select').value;
+        if(val !== 'custom') {
+            document.getElementById('p_punch_r').value = val;
+            calculateRadius();
+        }
+    }
+
+    function calculateRadius() {
+        var v = parseFloat(document.getElementById('p_v').value) || 0;
+        var r = parseFloat(document.getElementById('p_punch_r').value) || 0;
+        if (v <= 0) return;
+        document.getElementById('p_rad').value = Math.max(r, v/6).toFixed(2);
+        updateProfile();
+    }
+
+    function checkVDie() {
+        var v = parseFloat(document.getElementById('p_v').value) || 0;
+        var t = parseFloat(document.getElementById('p_thick').value) || 0;
+        var w = document.getElementById('v-warning');
+        if(w) w.style.display = (t > 0 && v < (t * 6)) ? 'block' : 'none';
+        document.getElementById('min-flange').innerText = 'Min: ' + (v*0.7).toFixed(1) + 'mm';
+    }
+
+    function addSegment(len, ang) {
+        if(len === undefined) len = 50;
+        if(ang === undefined) ang = 90;
+        segments.push({id:Date.now()+Math.random(), length:len, angle:ang}); 
+        renderInputs(); 
+        updateProfile(); 
+    }
+    
+    function removeSegment(id) { 
+        segments=segments.filter(function(s) { return s.id!==id; }); 
+        renderInputs(); 
+        updateProfile(); 
+    }
+    
+    function updateSegment(id,f,v) { 
+        var s=segments.find(function(s) { return s.id===id; }); 
+        if(s){ s[f]=parseFloat(v)||0; updateProfile(); } 
+    }
+
+    function renderInputs() {
+        var c=document.getElementById('segments-container'); 
+        c.innerHTML='';
+        segments.forEach(function(s,i) {
+            var div = document.createElement('div'); 
+            div.className = 'bend-row';
+            var h = i > 0 ? '<div style="grid-column:span 3;color:var(--tb-blue)">&#8627; Kulma: <input type="number" value="' + s.angle + '" style="width:70px;background:#444;border:1px solid #666;color:white"> °</div>' : '';
+            div.innerHTML = h + '<div style="grid-column:span 3"><label>Mitta ' + (i+1) + '</label><input type="number" value="' + s.length + '" style="width:100%;background:#444;border:1px solid #666;color:white;padding:8px"></div>' + (i>0?'<button class="btn-hard-reset poista-sivu" data-id="' + s.id + '" style="padding:5px;height:40px;margin:0">X</button>':'<div></div>');
+            c.appendChild(div);
+        });
+        
+        // Lisää event listenerit
+        var inputs = c.querySelectorAll('input');
+        inputs.forEach(function(input, idx) {
+            var sIndex = Math.floor(idx/2);
+            var s = segments[sIndex];
+            if(!s) return;
+            if(idx % 2 === 0 && segments.length > 1) {
+                input.addEventListener('input', function() { updateSegment(s.id,'angle',this.value); });
+            } else {
+                input.addEventListener('input', function() { updateSegment(s.id,'length',this.value); });
+            }
+        });
+        
+        c.querySelectorAll('.poista-sivu').forEach(function(btn) {
+            btn.addEventListener('click', function() { removeSegment(parseFloat(this.dataset.id)); });
+        });
+    }
+
+    function confirmReset() { 
+        if(confirm("Tyhjennetäänkö?")) { 
+            segments=[]; 
+            addSegment(100,0); 
+            renderInputs(); 
+            updateProfile(); 
+            document.getElementById('total-result').style.display='none'; 
+        } 
+    }
+    
+    function updateProfile() { 
+        drawCanvas(); 
+        calculateTotalLength(); 
+    }
+
+    function calculateTotalLength() {
+        var T=parseFloat(document.getElementById('p_thick').value)||0;
+        var R=parseFloat(document.getElementById('p_rad').value)||0;
+        var K=parseFloat(document.getElementById('p_k').value)||0;
+        var tot=0, out=0;
+        segments.forEach(function(s,i) {
+            out+=s.length;
+            if(i>0 && s.angle!==0) {
+                var rad=s.angle*(Math.PI/180);
+                var BA=rad*(R+(K*T));
+                var SB=(R+T)*Math.tan(rad/2);
+                tot-=((2*SB)-BA);
+            }
+        });
+        tot+=out;
+        var res = document.getElementById('total-result');
+       
