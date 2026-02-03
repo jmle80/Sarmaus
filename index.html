@@ -955,4 +955,587 @@
                 var rad=s.angle*(Math.PI/180);
                 var BA=rad*(R+(K*T));
                 var SB=(R+T)*Math.tan(rad/2);
-                tot-=((2*SB
+                tot-=((2*SB)-BA);
+            }
+        });
+        tot+=out;
+        var res = document.getElementById('total-result');
+        res.style.display='block';
+        res.innerHTML='Levityspituus: ' + tot.toFixed(1) + ' mm';
+    }
+
+    function drawCanvas() {
+        var c=document.getElementById('profileCanvas');
+        if(!c) return;
+        var ctx=c.getContext('2d'); 
+        var w=c.width; 
+        var h=c.height;
+        ctx.fillStyle="#000"; 
+        ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle="#1a1a1a"; 
+        ctx.lineWidth=1; 
+        ctx.beginPath();
+        for(var i=0;i<w;i+=20){ctx.moveTo(i,0);ctx.lineTo(i,h);} 
+        for(var i=0;i<h;i+=20){ctx.moveTo(0,i);ctx.lineTo(w,i);} 
+        ctx.stroke();
+        if(segments.length===0)return;
+        var pts=[{x:0,y:0}], ang=0, cx=0, cy=0;
+        segments.forEach(function(s,i){ 
+            if(i>0)ang-=s.angle*(Math.PI/180); 
+            cx+=s.length*Math.cos(ang); 
+            cy+=s.length*Math.sin(ang); 
+            pts.push({x:cx,y:cy}); 
+        });
+        var minX=0,maxX=0,minY=0,maxY=0; 
+        pts.forEach(function(p){minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
+        var scale=Math.min((w-60)/(maxX-minX||1),(h-60)/(maxY-minY||1));
+        var ox=(w-(maxX-minX)*scale)/2-minX*scale; 
+        var oy=(h-(maxY-minY)*scale)/2-minY*scale;
+        ctx.beginPath(); 
+        ctx.strokeStyle="#00e676"; 
+        ctx.lineWidth=4; 
+        ctx.lineCap="round"; 
+        ctx.lineJoin="round";
+        pts.forEach(function(p,i){
+            var sx=p.x*scale+ox, sy=p.y*scale+oy; 
+            i===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+        }); 
+        ctx.stroke();
+        ctx.fillStyle="#2979ff"; 
+        pts.forEach(function(p){
+            ctx.beginPath();
+            ctx.arc(p.x*scale+ox,p.y*scale+oy,5,0,2*Math.PI);
+            ctx.fill();
+        });
+    }
+
+    // --- LASKURIT ---
+    function calcHornWidth() {
+        var boxW = parseFloat(document.getElementById('horn_box_w').value) || 0;
+        var flange = parseFloat(document.getElementById('horn_flange').value) || 0;
+        var clearance = parseFloat(document.getElementById('horn_clearance').value) || 0;
+        var res = document.getElementById('res-horn');
+        res.style.display = 'block';
+        if(boxW > 0) {
+            var maxTool = boxW - (2 * flange) - clearance;
+            if(maxTool > 0) {
+                res.innerHTML = 'Max työkalun leveys:<br><span style="font-size:1.5em; color:white;">' + maxTool.toFixed(1) + ' mm</span>';
+                res.style.borderColor = "var(--tb-accent)"; 
+                res.style.color = "var(--tb-accent)";
+            } else {
+                res.innerHTML = "MAHDOTON: Laipat törmäävät!";
+                res.style.borderColor = "var(--danger)"; 
+                res.style.color = "var(--danger)";
+            }
+        }
+    }
+
+    function calcBump() {
+        var r=parseFloat(document.getElementById('bump_r').value); 
+        var a=parseFloat(document.getElementById('bump_angle').value); 
+        var s=parseFloat(document.getElementById('bump_step').value);
+        if(!r)return;
+        var h=Math.max(1,Math.floor(((a*Math.PI/180)*r)/s));
+        document.getElementById('res-bump').style.display='block'; 
+        document.getElementById('res-bump').innerHTML='Iskut: ' + h + ' kpl <span style="color:white">(' + (a/h).toFixed(2) + '°/isku)</span>';
+    }
+
+    function calcWeight() {
+        var l=document.getElementById('w_len').value, 
+            w=document.getElementById('w_wid').value, 
+            t=document.getElementById('w_thk').value;
+        var kg=(l*w*t*7.85)/1000000;
+        document.getElementById('res-weight').style.display='block'; 
+        document.getElementById('res-weight').innerText=kg.toFixed(2) + ' kg (Teräs)';
+    }
+    
+    function calcDiagonal() {
+        var a=document.getElementById('risti_a').value, 
+            b=document.getElementById('risti_b').value;
+        document.getElementById('res-diag').style.display='block'; 
+        document.getElementById('res-diag').innerText=Math.sqrt(a*a+b*b).toFixed(1) + ' mm';
+    }
+
+    function calcTonnage() {
+        var S=document.getElementById('t_force').value, 
+            L=document.getElementById('l_force').value, 
+            V=document.getElementById('v_force').value, 
+            RM=document.getElementById('m_force').value;
+        if(!S||!L||!V)return;
+        var t=(1.42*RM*(S*S)*L)/(V*9.81);
+        var r=document.getElementById('res-force'); 
+        r.style.display='block'; 
+        r.innerText=t.toFixed(1) + ' Tonnia';
+    }
+
+    function calcTrigo() {
+        var d=document.getElementById('tri_deg').value, 
+            c=document.getElementById('tri_c').value;
+        var a=document.getElementById('tri_a').value, 
+            b=document.getElementById('tri_b').value;
+        var r=document.getElementById('res-trigo'); 
+        r.style.display='block';
+        if(d&&c){ 
+            var rad=d*Math.PI/180; 
+            r.innerText='A: ' + (c*Math.sin(rad)).toFixed(2) + '\nB: ' + (c*Math.cos(rad)).toFixed(2); 
+        }
+        else if(a&&b) { 
+            r.innerText='C: ' + (Math.sqrt(a*a+b*b)).toFixed(2) + '\nKulma: ' + (Math.atan(a/b)*180/Math.PI).toFixed(1) + '°'; 
+        }
+    }
+
+    // --- AUTOMAATTINEN JAKSO ---
+    function paivitaPalkkajakso() {
+        var nyt = new Date(); 
+        var y = nyt.getFullYear(); 
+        var m = nyt.getMonth(); 
+        var d = nyt.getDate();
+        var start, end;
+        if(d <= 15) { 
+            start = new Date(y, m, 1); 
+            end = new Date(y, m, 15); 
+        } else { 
+            start = new Date(y, m, 16); 
+            end = new Date(y, m + 1, 0); 
+        }
+        appState.jaksoAlku = start.getTime(); 
+        end.setHours(23, 59, 59, 999); 
+        appState.jaksoLoppu = end.getTime();
+        var otsikko = start.getDate() + "." + (start.getMonth()+1) + ". - " + end.getDate() + "." + (end.getMonth()+1) + ".";
+        document.getElementById('periodTitle').innerText = otsikko;
+        var tallennettuJakso = localStorage.getItem('pb_last_period');
+        if(tallennettuJakso && tallennettuJakso !== otsikko) { 
+            alert("🔔 HUOMIO: Palkkajakso on vaihtunut!\nUusi jakso: " + otsikko); 
+        }
+        localStorage.setItem('pb_last_period', otsikko);
+    }
+
+    // --- ARKISTO ---
+    function siirraArkistoon() {
+        if(!confirm("Siirretäänkö arkistoon?"))return;
+        var current = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        var archive = JSON.parse(localStorage.getItem('pb_archive') || "[]");
+        var newArchive = archive.concat(current);
+        localStorage.setItem('pb_archive', JSON.stringify(newArchive));
+        localStorage.setItem('pb_historia', '[]');
+        appState.kuitatutPankki = 0;
+        saveState();
+        renderHistory(); 
+        renderTimeline(); 
+        updateClock();
+        alert("Siirretty arkistoon.");
+    }
+
+    function avaaArkisto() {
+        var archive = JSON.parse(localStorage.getItem('pb_archive') || "[]");
+        archive.sort(function(a,b) { return b.id - a.id; });
+        var html = "";
+        archive.forEach(function(item) {
+            html += '<div class="hist-item"><div class="h-id">' + item.pvm + '</div><div class="h-type" style="font-size:0.8em">' + item.k + ' (' + item.l + ')</div><div class="h-time">' + item.a + '</div></div>';
+        });
+        document.getElementById('archive-list').innerHTML = html || "<div style='padding:20px;color:#aaa'>Arkisto on tyhjä</div>";
+        document.getElementById('archive-modal').style.display = 'flex';
+    }
+    
+    function suljeArkisto() { 
+        document.getElementById('archive-modal').style.display = 'none'; 
+    }
+    
+    function lataaArkisto() {
+        var data = JSON.stringify(JSON.parse(localStorage.getItem('pb_archive') || "[]"), null, 2);
+        var blob = new Blob([data], {type: "application/json"});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); 
+        a.href = url; 
+        a.download = "ARKISTO.json"; 
+        a.click();
+    }
+    
+    function lataaVarmuuskopio(input) {
+        var file = input.files[0]; 
+        if(!file) return;
+        if(!confirm("Korvataanko nykyinen data?")) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                var data = JSON.parse(e.target.result);
+                if (Array.isArray(data)) {
+                    localStorage.setItem('pb_historia', JSON.stringify(data));
+                    var uusiPankki = 0;
+                    data.forEach(function(row) { 
+                        if (row.l !== "ERIKOISTILA") uusiPankki += parseFloat(row.a) || 0; 
+                    });
+                    appState.kuitatutPankki = uusiPankki;
+                    saveState();
+                    alert("Ladattu!");
+                    location.reload();
+                } else { 
+                    alert("Virheellinen tiedosto."); 
+                }
+            } catch(err) { 
+                alert("Virhe: " + err); 
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function avaaMuokkaus(idx) {
+        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        var item = h[idx]; 
+        if(!item) return;
+        muokkausIndex = idx;
+        var as=0, ta=0, mu=0;
+        if(item.detail) {
+            var parts = item.detail.split('|');
+            parts.forEach(function(x) {
+                if(x.startsWith('As')) as = parseFloat(x.split(':')[1])||0;
+                if(x.startsWith('Ta')) ta = parseFloat(x.split(':')[1])||0;
+                if(x.startsWith('Mu')) mu = parseFloat(x.split(':')[1].match(/[\d.]+/))||0;
+            });
+        }
+        document.getElementById('ed-kortti').value = item.k;
+        document.getElementById('ed-laji').value = item.l;
+        document.getElementById('ed-as').value = as;
+        document.getElementById('ed-ta').value = ta;
+        document.getElementById('ed-mu').value = mu;
+        document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function tallennaMuutos() {
+        if(muokkausIndex === -1) return;
+        var h = JSON.parse(localStorage.getItem('pb_historia'));
+        var i = h[muokkausIndex];
+        var old = parseFloat(i.a)||0;
+        var k = document.getElementById('ed-kortti').value;
+        var l = document.getElementById('ed-laji').value;
+        var as = parseFloat(document.getElementById('ed-as').value)||0;
+        var ta = parseFloat(document.getElementById('ed-ta').value)||0;
+        var mu = parseFloat(document.getElementById('ed-mu').value)||0;
+        var newT = as + ta + mu;
+        
+        if(i.l !== "ERIKOISTILA") appState.kuitatutPankki = appState.kuitatutPankki - old + newT;
+        i.k = k; 
+        i.l = l; 
+        i.a = newT + " MIN";
+        
+        var oldM = "";
+        if(i.detail && i.detail.includes("Mu:")) {
+            var parts = i.detail.split('|');
+            var muPart = parts.find(function(x) { return x.startsWith('Mu'); });
+            if(muPart) oldM = muPart.split(':')[1];
+        }
+        var newM = mu.toString();
+        if(oldM && isNaN(parseFloat(oldM)) && oldM.includes(" ")) {
+            var s = oldM.replace(/[\d.]+|MIN/g, "").trim();
+            if(s) newM = s + " " + mu + " MIN";
+        }
+        i.detail = 'As:' + as + '|Ta:' + ta + '|Mu:' + newM;
+        localStorage.setItem('pb_historia', JSON.stringify(h));
+        saveState(); 
+        renderHistory(); 
+        renderTimeline(); 
+        updateClock(); 
+        suljeEdit();
+    }
+
+    function poistaRivi() {
+        if(!confirm("Poista rivi?")) return;
+        var h = JSON.parse(localStorage.getItem('pb_historia'));
+        var i = h[muokkausIndex];
+        var m = parseFloat(i.a)||0;
+        if(i.l !== "ERIKOISTILA") appState.kuitatutPankki -= m;
+        h.splice(muokkausIndex, 1);
+        localStorage.setItem('pb_historia', JSON.stringify(h));
+        saveState(); 
+        renderHistory(); 
+        renderTimeline(); 
+        updateClock(); 
+        suljeEdit();
+    }
+    
+    function suljeEdit() { 
+        document.getElementById('edit-modal').style.display = 'none'; 
+        muokkausIndex = -1; 
+    }
+    
+    function toggleResetBtn() {
+        var c = document.getElementById('safety-lock');
+        var b = document.getElementById('btn-hard-reset');
+        if(c.checked) { 
+            b.disabled = false; 
+            b.style.opacity = "1"; 
+        } else { 
+            b.disabled = true; 
+            b.style.opacity = "0.3"; 
+        }
+    }
+
+    // --- AIKA ---
+    function pyydaAika(t, cb) {
+        document.getElementById('time-modal').style.display = 'flex';
+        document.getElementById('tm-otsikko').innerText = t;
+        var n = new Date();
+        timeBuffer = n.getHours().toString().padStart(2,'0') + n.getMinutes().toString().padStart(2,'0');
+        updateTimeDisplay();
+        timeCallback = cb;
+    }
+    
+    function timeKey(k) { 
+        if(k === 'C') timeBuffer = ""; 
+        else if(timeBuffer.length < 4) timeBuffer += k; 
+        updateTimeDisplay(); 
+    }
+    
+    function updateTimeDisplay() {
+        var s = "--:--";
+        if(timeBuffer.length > 0) {
+            var padded = timeBuffer.padEnd(4, '0');
+            s = padded.substring(0,2) + ":" + padded.substring(2,4);
+        }
+        document.getElementById('tm-display').innerText = s;
+    }
+    
+    function timeConfirm() {
+        if(timeBuffer.length !== 4) return alert("Anna 4 numeroa (HHMM)!");
+        var h = parseInt(timeBuffer.substring(0,2));
+        var m = parseInt(timeBuffer.substring(2,4));
+        if(h > 23 || m > 59) return alert("Virheellinen aika!");
+        var d = new Date(); 
+        d.setHours(h, m, 0);
+        document.getElementById('time-modal').style.display = 'none';
+        if(timeCallback) timeCallback(d.getTime());
+    }
+    
+    function closeTimeModal() { 
+        document.getElementById('time-modal').style.display = 'none'; 
+    }
+
+    // --- PÄÄLOGIIKKA ---
+    function VAIHDA_VUORO() {
+        if(!appState.kaynnissa) {
+            pyydaAika("ALOITUS", function(ts) {
+                startSound(); 
+                appState.kaynnissa = true; 
+                appState.aloitusAika = ts; 
+                appState.kuitatutPankki = 0; 
+                appState.nykyinenTila = null; 
+                resetFields(); 
+                saveState(); 
+                updateUI(); 
+                renderTimeline();
+            });
+        } else {
+            pyydaAika("LOPETUS", function(ts) {
+                var s = JSON.parse(localStorage.getItem('pb_vuorot') || "[]");
+                s.push({ start: appState.aloitusAika, end: ts });
+                localStorage.setItem('pb_vuorot', JSON.stringify(s));
+                luoPDF(ts).then(function() {
+                    setTimeout(function() {
+                        if(confirm("Raportti luotu. Nollataanko?")) {
+                            appState.kaynnissa = false; 
+                            saveState(); 
+                            updateUI(); 
+                            location.reload();
+                        }
+                    }, 1000);
+                });
+            });
+        }
+    }
+
+    function tilaVaihda(t) {
+        if(!appState.kaynnissa) return alert("Aloita vuoro ensin!");
+        if(appState.nykyinenTila === t) {
+            pyydaAika("LOPETA " + t, function(ts) {
+                var dur = Math.round((ts - appState.erikoistilaAloitus) / 60000);
+                if(dur < 0) dur = 0;
+                var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+                h.unshift({
+                    id: Date.now(), 
+                    k: t, 
+                    l: "ERIKOISTILA", 
+                    a: dur + " MIN",
+                    pvm: new Date().toLocaleDateString('fi-FI'), 
+                    klo: new Date(ts).toLocaleTimeString().substr(0,5)
+                });
+                localStorage.setItem('pb_historia', JSON.stringify(h));
+                appState.nykyinenTila = null; 
+                saveState(); 
+                updateUI(); 
+                renderHistory();
+            });
+        } else if(!appState.nykyinenTila) {
+            pyydaAika("ALOITA " + t, function(ts) {
+                appState.nykyinenTila = t; 
+                appState.erikoistilaAloitus = ts; 
+                saveState(); 
+                updateUI(); 
+                renderHistory();
+            });
+        }
+    }
+
+    async function luoPDF(endTimeTs) {
+        if (!window.jspdf) { 
+            alert("Ladataan kirjastoja..."); 
+            return; 
+        }
+        var jsPDF = window.jspdf.jsPDF; 
+        var doc = new jsPDF();
+        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        var sumA=0, sumT=0, sumM=0, sumE=0;
+        h.forEach(function(row) {
+            var val = parseFloat(row.a) || 0;
+            if (row.l === "ERIKOISTILA") { 
+                sumE += val; 
+            } else if (row.detail) {
+                var parts = row.detail.split('|');
+                parts.forEach(function(p) {
+                    if(p.startsWith('As')) sumA += parseFloat(p.split(':')[1])||0;
+                    if(p.startsWith('Ta')) sumT += parseFloat(p.split(':')[1])||0;
+                    if(p.startsWith('Mu')) {
+                        var num = parseFloat(p.split(':')[1].match(/[\d.]+/)) || 0;
+                        sumM += num;
+                    }
+                });
+            }
+        });
+
+        var ctx = document.getElementById('tempChart').getContext('2d');
+        if (window.myPieChart) window.myPieChart.destroy();
+        window.myPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Asetus', 'Taivutus', 'Muut', 'Erikoistilat'],
+                datasets: [{ 
+                    data: [sumA, sumT, sumM, sumE], 
+                    backgroundColor: ['#FF8C33', '#00e676', '#ffea00', '#78909c'], 
+                    borderWidth: 1 
+                }]
+            },
+            options: { animation: false, responsive: false }
+        });
+
+        await new Promise(function(r) { setTimeout(r, 500); });
+        var chartImg = document.getElementById('tempChart').toDataURL("image/png");
+
+        doc.setFontSize(18); 
+        doc.text("VAMM STEEL OY - VUORORAPORTTI", 14, 20); 
+        doc.setFontSize(11);
+        var pvm = new Date().toLocaleDateString('fi-FI');
+        var start = new Date(appState.aloitusAika).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+        var end = endTimeTs ? new Date(endTimeTs).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+        var diffMs = (endTimeTs || Date.now()) - appState.aloitusAika;
+        var totalTimeMin = Math.round(diffMs / 60000);
+        var totalDone = appState.kuitatutPankki.toFixed(1);
+        var eff = (totalTimeMin > 0) ? (totalDone / totalTimeMin).toFixed(2) : "0.00";
+        
+        doc.text('Päivä: ' + pvm, 14, 30); 
+        doc.text('Aika: ' + start + ' - ' + end, 14, 36); 
+        doc.text('Valmiit: ' + totalDone + ' min', 14, 42); 
+        doc.text('Läsnäolo: ' + totalTimeMin + ' min', 14, 48); 
+        doc.text('Teho: ' + eff, 14, 54);
+        doc.addImage(chartImg, 'PNG', 120, 25, 70, 70);
+        
+        var tableBody = h.map(function(row) {
+            var as="-", ta="-", mu="-";
+            if(row.detail) {
+                var parts = row.detail.split('|');
+                parts.forEach(function(p) {
+                    if(p.startsWith('As')) as = p.split(':')[1];
+                    if(p.startsWith('Ta')) ta = p.split(':')[1];
+                    if(p.startsWith('Mu')) mu = p.split(':')[1];
+                });
+            }
+            return [row.klo, row.k, row.l, as, ta, mu, row.a];
+        });
+        doc.autoTable({ 
+            startY: 100, 
+            head: [['Klo', 'Kortti', 'Laji', 'As', 'Tai', 'Mu', 'Yht']], 
+            body: tableBody 
+        });
+        doc.save('raportti_' + pvm + '.pdf');
+    }
+
+    function startSound() { 
+        try {
+            new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleR0NZKrk7rNsGgxJkNTsvXwkDk+L0O+0dSQPUIjN7LVyJQ1MiMzrsnMiDUyGzOuwdyQMTIfL6q12JgxMhsnprnUlDUuGyOeueSUNTIbH5at1JQ1MhsbkqXMlDUyGxOOpdSQNTIa+4qh1JA1MhrzfqHUkDUyGvN2ndSQNTIa83Kd1JA1MhrzapnUkDUyGvNemdSQNTIa81aV1JA1MhrzTpXUkDUyGvM+kdSQNTIa8z6N1JA1MhrzOoXUkDUyGvM2fdSQNTIa8y5p1JA1MhrzKmHUkDUyGvMaVdSQNTIa8wpN1JA1MhrzBkHUkDUyGvL2EdSQNTIa8uYJ1JA1Mhry1fHUkDUyGvLF4dSQNTIa8r3R1JA1Mhryqc3UkDUyGvKZudSQNTIa8oWZ1JA1MhryeZnUkDUyGvJVk').play().catch(function(){});
+        } catch(e) {} 
+    }
+    
+    function hardReset() { 
+        if(confirm("Hätä-nollaus poistaa KAIKKEN datan! Jatketaanko?")) { 
+            localStorage.clear(); 
+            location.reload(); 
+        } 
+    }
+    
+    function saveState() { 
+        localStorage.setItem('pb_state_final', JSON.stringify(appState)); 
+    }
+    
+    function resetFields() { 
+        ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id) { 
+            setText('v-'+id, "-"); 
+            localStorage.setItem('pb_field_'+id, "-"); 
+        }); 
+    }
+    
+    function setText(id, txt) { 
+        var e = document.getElementById(id); 
+        if(e) e.innerText = txt; 
+    }
+    
+    function toggleMenu() { 
+        var m = document.getElementById('menu-spec'); 
+        m.style.display = (m.style.display === 'grid') ? 'none' : 'grid'; 
+    }
+    
+    function poimiNum(t) { 
+        var n = t.match(/[\d.]+/); 
+        return n ? parseFloat(n[0]) : 0; 
+    }
+    
+    function tallennaTiedosto() { 
+        var data = JSON.stringify(JSON.parse(localStorage.getItem('pb_historia') || "[]"), null, 2); 
+        var blob = new Blob([data], {type: "application/json"}); 
+        var url = URL.createObjectURL(blob); 
+        var a = document.createElement('a'); 
+        a.href = url; 
+        a.download = "varmuuskopio_" + new Date().toISOString().split('T')[0] + ".json"; 
+        a.click(); 
+    }
+    
+    function lisaaMassiivinenTestidata() {
+        if(!confirm("Luodaanko testidata 10 päivältä?")) return;
+        var h = JSON.parse(localStorage.getItem('pb_historia') || "[]");
+        var s = JSON.parse(localStorage.getItem('pb_vuorot') || "[]");
+        for(var d=0; d<10; d++) {
+            var day = new Date(); 
+            day.setDate(day.getDate() - d); 
+            day.setHours(6,0,0,0);
+            var st = day.getTime(); 
+            var en = st + (8 * 3600 * 1000);
+            s.push({ start: st, end: en });
+            for(var i=0; i<20; i++) {
+                h.push({
+                    id: st + (i * 60000), 
+                    k: "TESTI" + i, 
+                    l: "S235", 
+                    a: "30 MIN",
+                    detail: "As:10|Ta:20|Mu:0", 
+                    pvm: day.toLocaleDateString('fi-FI'), 
+                    klo: "12:00"
+                });
+            }
+        }
+        localStorage.setItem('pb_historia', JSON.stringify(h));
+        localStorage.setItem('pb_vuorot', JSON.stringify(s));
+        saveState(); 
+        renderHistory(); 
+        alert("Testidata luotu!"); 
+        location.reload();
+    }
+</script>
+</body>
+</html>
