@@ -77,6 +77,27 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
         }
 
+        .time-info-box {
+            background: linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-radius: 16px; padding: 20px; margin-bottom: 20px;
+            border: 1px solid #333; text-align: center;
+        }
+        .time-info-row {
+            display: flex; justify-content: space-around; align-items: center;
+            gap: 20px;
+        }
+        .time-info-item {
+            flex: 1;
+        }
+        .time-info-label {
+            font-size: 0.7em; color: #666; text-transform: uppercase;
+            letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px;
+        }
+        .time-info-value {
+            font-size: 2.2em; font-weight: 300; font-family: 'SF Mono', monospace;
+            color: var(--primary); letter-spacing: 2px;
+        }
+
         .timeline-wrapper { 
             margin-bottom: 20px; background: linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); 
             padding: 15px; border-radius: 16px; border: 1px solid #333;
@@ -278,6 +299,10 @@
             background: linear-gradient(145deg, var(--card) 0%, #0f0f0f 100%); 
             padding: 25px; border-radius: 24px; width: 100%; max-width: 360px; 
             text-align: center; border: 1px solid #333; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .modal-wide { 
             background: linear-gradient(145deg, var(--card) 0%, #0f0f0f 100%); 
@@ -440,26 +465,35 @@
         .edit-input:focus { outline: none; border-color: var(--primary); }
 
         /* Näppäimistötyylit */
-        .keyboard-container { margin-bottom: 15px; }
+        .keyboard-container { margin-top: 15px; }
         .keyboard-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 6px; }
         .key-letter { 
-            min-width: 32px; height: 45px; padding: 0 12px;
+            min-width: 28px; height: 42px; padding: 0 10px;
             background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%); 
             border: 1px solid #333; border-radius: 8px;
-            color: var(--text-light); font-size: 1.1em; font-weight: 600;
+            color: var(--text-light); font-size: 1em; font-weight: 600;
             cursor: pointer; transition: all 0.1s;
             display: flex; align-items: center; justify-content: center;
         }
         .key-letter:active { transform: scale(0.95); background: #333; }
-        .key-space { flex: 1; max-width: 200px; }
+        .key-space { flex: 1; max-width: 150px; }
         .key-backspace { 
-            min-width: 50px; background: linear-gradient(145deg, #444 0%, #333 100%); 
+            min-width: 45px; background: linear-gradient(145deg, #444 0%, #333 100%); 
             color: var(--danger);
         }
         .key-enter { 
-            min-width: 60px; background: linear-gradient(145deg, var(--success) 0%, #00b248 100%); 
+            min-width: 55px; background: linear-gradient(145deg, var(--success) 0%, #00b248 100%); 
             color: #000;
         }
+        .key-number {
+            min-width: 28px; height: 42px; padding: 0 10px;
+            background: linear-gradient(145deg, #1a3a4a 0%, #0a2a3a 100%); 
+            border: 1px solid #334; border-radius: 8px;
+            color: var(--tb-blue); font-size: 1em; font-weight: 700;
+            cursor: pointer; transition: all 0.1s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .key-number:active { transform: scale(0.95); background: #223; }
         
         .muut-extra-fields { 
             background: linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); 
@@ -487,7 +521,22 @@
 <canvas id="tempChart" width="400" height="400"></canvas>
 
 <div class="container">
-    <div id="kelloDisplay" class="main-clock">00:00:00</div>
+    <!-- Uusi aikanäyttö -->
+    <div class="time-info-box">
+        <div class="time-info-row">
+            <div class="time-info-item">
+                <div class="time-info-label">Työvuoro</div>
+                <div id="vuoroKesto" class="time-info-value">00:00</div>
+            </div>
+            <div class="time-info-item">
+                <div class="time-info-label">Jakso</div>
+                <div id="jaksoKesto" class="time-info-value">00:00</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Piilotettu vanha kello -->
+    <div id="kelloDisplay" class="main-clock" style="display:none;">00:00:00</div>
     
     <div class="dash-grid">
         <div class="dashboard-box" id="dash-shift">
@@ -545,7 +594,7 @@
     </div>
 
     <div class="info-row"><div id="box-kortti" class="info-box"><span>KORTTI</span><b id="v-kortti">-</b></div><button id="btn-scan-kortti" class="btn-scan">📷</button></div>
-    <div class="info-row"><div id="box-lajike" class="info-box"><span>LAJIMERKKI</span><b id="v-lajike">-</b></div><button id="btn-scan-lajike" class="btn-scan">📷</button></div>
+    <div class="info-row"><div id="box-lajike" class="info-box"><span>TYÖVAIHE</span><b id="v-lajike">-</b></div><button id="btn-scan-lajike" class="btn-scan">📷</button></div>
     <div class="info-row"><div id="box-asetus" class="info-box"><span>ASETUS</span><b id="v-asetus">-</b></div></div>
     <div class="info-row"><div id="box-taivutus" class="info-box"><span>TAIVUTUS</span><b id="v-taivutus">-</b></div></div>
     <div class="info-row"><div id="box-muut" class="info-box"><span>MUUT</span><b id="v-muut">-</b></div></div>
@@ -715,8 +764,8 @@
         <!-- Muut-kentän lisäkentät -->
         <div id="muut-fields" class="muut-extra-fields" style="display:none;">
             <div class="muut-field">
-                <label>Lajimerkki</label>
-                <input type="text" id="muut-lajimerkki" placeholder="Kirjoita lajimerkki..." readonly>
+                <label>Työvaihe</label>
+                <input type="text" id="muut-lajimerkki" placeholder="Kirjoita työvaihe..." readonly>
             </div>
             <div class="muut-field">
                 <label>Aika (min)</label>
@@ -724,8 +773,22 @@
             </div>
         </div>
         
-        <!-- Kirjainnäppäimistö lajimerkille -->
-        <div id="letter-keyboard" class="keyboard-container" style="display:none;">
+        <!-- Yhdistetty kirjain- ja numeronäppäimistö -->
+        <div id="combined-keyboard" class="keyboard-container" style="display:none;">
+            <!-- Numerot -->
+            <div class="keyboard-row">
+                <div class="key-number" data-key="1">1</div>
+                <div class="key-number" data-key="2">2</div>
+                <div class="key-number" data-key="3">3</div>
+                <div class="key-number" data-key="4">4</div>
+                <div class="key-number" data-key="5">5</div>
+                <div class="key-number" data-key="6">6</div>
+                <div class="key-number" data-key="7">7</div>
+                <div class="key-number" data-key="8">8</div>
+                <div class="key-number" data-key="9">9</div>
+                <div class="key-number" data-key="0">0</div>
+            </div>
+            <!-- Kirjaimet 1 -->
             <div class="keyboard-row">
                 <div class="key-letter" data-key="Q">Q</div>
                 <div class="key-letter" data-key="W">W</div>
@@ -739,6 +802,7 @@
                 <div class="key-letter" data-key="P">P</div>
                 <div class="key-letter" data-key="Å">Å</div>
             </div>
+            <!-- Kirjaimet 2 -->
             <div class="keyboard-row">
                 <div class="key-letter" data-key="A">A</div>
                 <div class="key-letter" data-key="S">S</div>
@@ -752,6 +816,7 @@
                 <div class="key-letter" data-key="Ö">Ö</div>
                 <div class="key-letter" data-key="Ä">Ä</div>
             </div>
+            <!-- Kirjaimet 3 -->
             <div class="keyboard-row">
                 <div class="key-letter" data-key="Z">Z</div>
                 <div class="key-letter" data-key="X">X</div>
@@ -762,6 +827,7 @@
                 <div class="key-letter" data-key="M">M</div>
                 <div class="key-letter key-backspace" data-key="BACKSPACE">⌫</div>
             </div>
+            <!-- Alarivi -->
             <div class="keyboard-row">
                 <div class="key-letter key-space" data-key="SPACE">VÄLI</div>
                 <div class="key-letter key-enter" data-key="ENTER" style="flex:1;">OK</div>
@@ -817,7 +883,7 @@
 
 <script>
     // --- PÄÄMUUTTUJAT ---
-    var appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, jaksoAlku: null, jaksoLoppu: null, erikoistilaAloitus: 0 };
+    var appState = { kaynnissa: false, aloitusAika: 0, kuitatutPankki: 0, nykyinenTila: null, jaksoAlku: null, jaksoLoppu: null, erikoistilaAloitus: 0, jaksoKestoAlku: 0 };
     var kKunta = "", syoteBuffer = "", html5QrcodeScanner = null, skannausKohde = "", muuSeliteTemp = "";
     var timeBuffer = "", timeCallback = null, muokkausIndex = -1;
     var avoinModal = null;
@@ -910,9 +976,9 @@
         
         document.getElementById('btn-peruuta').addEventListener('click', suljeIkkuna);
         
-        // Kirjainnäppäimistön eventit
-        document.querySelectorAll('.key-letter').forEach(key => {
-            key.addEventListener('click', function() { handleLetterKey(this.dataset.key); });
+        // Yhdistetyn näppäimistön eventit
+        document.querySelectorAll('#combined-keyboard .key-letter, #combined-keyboard .key-number').forEach(key => {
+            key.addEventListener('click', function() { handleCombinedKey(this.dataset.key); });
         });
         
         // Muut-kenttien fokusointi
@@ -925,10 +991,6 @@
             aktiivinenMuutKentta = 'aika';
             this.style.borderColor = 'var(--primary)';
             document.getElementById('muut-lajimerkki').style.borderColor = '#333';
-            // Näytä numeronäppäimistö
-            document.getElementById('letter-keyboard').style.display = 'none';
-            document.getElementById('k-alue').style.display = 'grid';
-            luoNappaimistoMuutAika();
         });
         
         document.querySelectorAll('.time-key').forEach(key => {
@@ -1008,9 +1070,10 @@
 
     function alusta() {
         try {
-            if(!localStorage.getItem('v340_clean')) { 
-                localStorage.clear(); 
-                localStorage.setItem('v340_clean', 'true'); 
+            // Tarkista onko localStorage käytettävissä
+            if(!localStorage) {
+                alert("Selain ei tue tallennusta!");
+                return;
             }
             
             var saved = localStorage.getItem('pb_state_final');
@@ -1019,6 +1082,16 @@
                     var parsed = JSON.parse(saved);
                     appState = {...appState, ...parsed};
                 } catch(e) { console.log("State error"); }
+            }
+            
+            // Lataa jakson keston aloitusaika erikseen
+            var jaksoKestoSaved = localStorage.getItem('pb_jakso_kesto_alku');
+            if(jaksoKestoSaved) {
+                appState.jaksoKestoAlku = parseInt(jaksoKestoSaved);
+            } else {
+                // Jos ei ole tallennettu, aloita uusi jakso
+                appState.jaksoKestoAlku = Date.now();
+                localStorage.setItem('pb_jakso_kesto_alku', appState.jaksoKestoAlku);
             }
             
             ['kortti','lajike','asetus','taivutus','muut'].forEach(function(id) {
@@ -1087,6 +1160,10 @@
             loppu: appState.jaksoLoppu
         }));
         
+        // Nollaa jakson kesto uuden jakson alkaessa
+        appState.jaksoKestoAlku = Date.now();
+        localStorage.setItem('pb_jakso_kesto_alku', appState.jaksoKestoAlku);
+        
         paivitaJaksoNaytto();
         laskeJaksonTeho();
         alert("Jakso tallennettu!");
@@ -1146,6 +1223,27 @@
     }
 
     function updateClock() {
+        // Päivitä työvuoron kesto
+        if(appState.kaynnissa && appState.aloitusAika) {
+            var vuoroMs = Date.now() - appState.aloitusAika;
+            var vuoroH = Math.floor(vuoroMs / 3600000);
+            var vuoroM = Math.floor((vuoroMs % 3600000) / 60000);
+            document.getElementById('vuoroKesto').innerText = 
+                vuoroH.toString().padStart(2, '0') + ':' + vuoroM.toString().padStart(2, '0');
+        } else {
+            document.getElementById('vuoroKesto').innerText = "00:00";
+        }
+        
+        // Päivitä jakson kesto (ei nollaudu vuoron vaihtuessa)
+        if(appState.jaksoKestoAlku) {
+            var jaksoMs = Date.now() - appState.jaksoKestoAlku;
+            var jaksoH = Math.floor(jaksoMs / 3600000);
+            var jaksoM = Math.floor((jaksoMs % 3600000) / 60000);
+            document.getElementById('jaksoKesto').innerText = 
+                jaksoH.toString().padStart(2, '0') + ':' + jaksoM.toString().padStart(2, '0');
+        }
+        
+        // Vanha kello piilotettu
         var nyt = new Date();
         document.getElementById('kelloDisplay').innerText = nyt.toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
         
@@ -1251,11 +1349,11 @@
         
         var extraBtns = document.getElementById('extra-btns');
         var kAlue = document.getElementById('k-alue');
-        var letterKeyboard = document.getElementById('letter-keyboard');
+        var combinedKeyboard = document.getElementById('combined-keyboard');
         var muutFields = document.getElementById('muut-fields');
         
         // Piilota kaikki erikoisnäkymät ensin
-        letterKeyboard.style.display = 'none';
+        combinedKeyboard.style.display = 'none';
         muutFields.style.display = 'none';
         kAlue.style.display = 'grid';
         
@@ -1265,11 +1363,11 @@
             kAlue.style.display = 'grid';
             luoNappaimistoKortti();
         }
-        // Lajike: kirjainnäppäimistö
+        // Lajike: yhdistetty kirjain- ja numeronäppäimistö
         else if(t === 'lajike') {
             extraBtns.style.display = 'none';
             kAlue.style.display = 'none';
-            letterKeyboard.style.display = 'block';
+            combinedKeyboard.style.display = 'block';
             document.getElementById('n-naytto').innerText = "";
         }
         // Taivutus: 2-miehen työ + piste
@@ -1280,11 +1378,11 @@
             kAlue.style.display = 'grid';
             luoNappaimistoPisteella();
         }
-        // Muut: kirjainnäppäimistö + aikakenttä
+        // Muut: yhdistetty näppäimistö + kentät (ilman tyhjää laatikkoa)
         else if(t === 'muut') {
             extraBtns.style.display = 'none';
             kAlue.style.display = 'none';
-            letterKeyboard.style.display = 'block';
+            combinedKeyboard.style.display = 'block';
             muutFields.style.display = 'block';
             
             // Alusta muut-kentät
@@ -1305,11 +1403,11 @@
     }
 
     function luoNappaimistoKortti() {
-        // Kortti: 3x4 numeronäppäimistö, max 6 numeroa
+        // Kortti: 3x4 numeronäppäimistö, max 6 numeroa, C 0:n oikealla
         var grid = document.getElementById('k-alue');
         grid.innerHTML = '';
         
-        var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'OK'];
+        var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'C', 'OK'];
         
         keys.forEach(function(k) {
             var btn = document.createElement('div');
@@ -1318,7 +1416,7 @@
             
             if(k === 'OK') {
                 btn.classList.add('key-ok');
-            } else if(k === '.') {
+            } else if(k === 'C') {
                 btn.classList.add('key-c');
             }
             
@@ -1328,11 +1426,11 @@
     }
 
     function luoNappaimistoPisteella() {
-        // 3x4 numeronäppäimistö pisteellä
+        // 3x4 numeronäppäimistö pisteellä, C 0:n oikealla
         var grid = document.getElementById('k-alue');
         grid.innerHTML = '';
         
-        var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'OK'];
+        var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'C', 'OK'];
         
         keys.forEach(function(k) {
             var btn = document.createElement('div');
@@ -1341,7 +1439,7 @@
             
             if(k === 'OK') {
                 btn.classList.add('key-ok');
-            } else if(k === '.') {
+            } else if(k === 'C') {
                 btn.classList.add('key-c');
             }
             
@@ -1350,35 +1448,12 @@
         });
     }
 
-    function luoNappaimistoMuutAika() {
-        // Muut-kentän aika: 3x4 numeronäppäimistö pisteellä
-        var grid = document.getElementById('k-alue');
-        grid.innerHTML = '';
-        
-        var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'OK'];
-        
-        keys.forEach(function(k) {
-            var btn = document.createElement('div');
-            btn.className = 'key';
-            btn.innerText = k;
-            
-            if(k === 'OK') {
-                btn.classList.add('key-ok');
-            } else if(k === '.') {
-                btn.classList.add('key-c');
-            }
-            
-            btn.addEventListener('click', function() { nappainMuutAika(k); });
-            grid.appendChild(btn);
-        });
-    }
-
     function luoNappaimistoNormaali() {
-        // Asetus: 3x4 numeronäppäimistö
+        // Asetus: 3x4 numeronäppäimistö, C 0:n oikealla
         var grid = document.getElementById('k-alue');
         grid.innerHTML = '';
         
-        var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'OK'];
+        var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'C', 'OK'];
         
         keys.forEach(function(k) {
             var btn = document.createElement('div');
@@ -1387,7 +1462,7 @@
             
             if(k === 'OK') {
                 btn.classList.add('key-ok');
-            } else if(k === '.') {
+            } else if(k === 'C') {
                 btn.classList.add('key-c');
             }
             
@@ -1397,9 +1472,9 @@
     }
 
     function nappainKortti(k) {
-        if(k === '.') {
-            // Ei pistettä korttinumeroon
-            return;
+        if(k === 'C') {
+            // Pyyhi yksi merkki
+            syoteBuffer = syoteBuffer.slice(0, -1);
         } else if(k === 'OK') {
             if(syoteBuffer) {
                 // Poista etunollat ja rajoita 6 merkkiin
@@ -1429,7 +1504,11 @@
     }
 
     function nappainPisteella(k) {
-        if(k === 'OK') {
+        if(k === 'C') {
+            // Pyyhi yksi merkki
+            syoteBuffer = syoteBuffer.slice(0, -1);
+            document.getElementById('n-naytto').innerText = syoteBuffer;
+        } else if(k === 'OK') {
             if(syoteBuffer) {
                 var arvo = parseFloat(syoteBuffer);
                 if(onKahdenMiehenTyo && avoinModal === 'taivutus') {
@@ -1453,7 +1532,11 @@
     }
 
     function nappainNormaali(k) {
-        if(k === 'OK') {
+        if(k === 'C') {
+            // Pyyhi yksi merkki
+            syoteBuffer = syoteBuffer.slice(0, -1);
+            document.getElementById('n-naytto').innerText = syoteBuffer;
+        } else if(k === 'OK') {
             if(syoteBuffer) {
                 setText('v-' + avoinModal, syoteBuffer + " MIN");
                 localStorage.setItem('pb_field_' + avoinModal, syoteBuffer + " MIN");
@@ -1472,30 +1555,7 @@
         }
     }
 
-    function nappainMuutAika(k) {
-        if(k === 'OK') {
-            if(muutAika) {
-                document.getElementById('muut-aika').value = muutAika;
-                // Tallenna muut-kenttä
-                var lajimerkki = document.getElementById('muut-lajimerkki').value || "-";
-                var aika = parseFloat(muutAika) || 0;
-                setText('v-muut', lajimerkki + " " + aika + " MIN");
-                localStorage.setItem('pb_field_muut', lajimerkki + " " + aika + " MIN");
-                suljeIkkuna();
-            }
-        } else {
-            if(k === '.') {
-                if(!muutAika.includes('.')) {
-                    muutAika += k;
-                }
-            } else {
-                muutAika += k;
-            }
-            document.getElementById('muut-aika').value = muutAika;
-        }
-    }
-
-    function handleLetterKey(k) {
+    function handleCombinedKey(k) {
         if(avoinModal === 'lajike') {
             if(k === 'BACKSPACE') {
                 syoteBuffer = syoteBuffer.slice(0, -1);
@@ -1523,11 +1583,33 @@
                     document.getElementById('muut-aika').click();
                     return;
                 } else {
+                    // Salli sekä kirjaimet että numerot
                     muutLajimerkki += k;
                 }
                 document.getElementById('muut-lajimerkki').value = muutLajimerkki;
             } else if(aktiivinenMuutKentta === 'aika') {
-                // Aika-kenttä käyttää numeronäppäimistöä
+                if(k === 'BACKSPACE') {
+                    muutAika = muutAika.slice(0, -1);
+                } else if(k === 'ENTER') {
+                    // Tallenna
+                    if(muutAika) {
+                        var lajimerkki = document.getElementById('muut-lajimerkki').value || "-";
+                        var aika = parseFloat(muutAika) || 0;
+                        setText('v-muut', lajimerkki + " " + aika + " MIN");
+                        localStorage.setItem('pb_field_muut', lajimerkki + " " + aika + " MIN");
+                        suljeIkkuna();
+                    }
+                    return;
+                } else if(k === 'SPACE') {
+                    // Ei väliä aika-kentässä
+                } else {
+                    // Vain numerot ja piste
+                    if(/[0-9.]/.test(k)) {
+                        if(k === '.' && muutAika.includes('.')) return;
+                        muutAika += k;
+                    }
+                }
+                document.getElementById('muut-aika').value = muutAika;
             }
         }
     }
@@ -1557,7 +1639,7 @@
         var muut = poimiNum(document.getElementById('v-muut').innerText);
         var muutText = document.getElementById('v-muut').innerText;
         
-        if(kortti === "-" || laji === "-") return alert("Täytä kortti ja lajike!");
+        if(kortti === "-" || laji === "-") return alert("Täytä kortti ja työvaihe!");
         
         var yht = asetus + taivutus + muut;
         var nyt = new Date();
