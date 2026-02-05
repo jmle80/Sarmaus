@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.1</title>
+    <title>Press Brake Pro v5.0</title>
     
     <!-- Inline manifest for PWA -->
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
@@ -32,7 +32,6 @@
         
         * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         
-        /* KORJATTU: Poistettu position: fixed ja overflow: hidden */
         html, body {
             height: 100%;
             margin: 0;
@@ -42,22 +41,17 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             -webkit-user-select: none;
             user-select: none;
-            /* KORJATTU: overflow: hidden -> overflow-x: hidden, overflow-y: auto */
             overflow-x: hidden;
             overflow-y: auto;
-            /* KORJATTU: position: fixed -> position: static (oletus) */
             width: 100%;
             top: 0;
             left: 0;
-            /* KORJATTU: Lisätty momentum-skrollaus iOS:lle */
             -webkit-overflow-scrolling: touch;
         }
         
-        /* KORJATTU: Lisätty app-container korvaamaan body:n fixed-toiminnallisuus */
         .app-container {
             min-height: 100vh;
             min-height: 100dvh;
-            /* KORJATTU: overflow-y: auto -> ei tarvita, body hoitaa skrollauksen */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
             position: relative;
@@ -155,7 +149,6 @@
         .jakso-row input { 
             flex: 1; padding: 10px; background: #0a0a0a; border: 2px solid #333; 
             color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan että input on interaktiivinen */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -191,6 +184,7 @@
             margin-bottom: 12px; background: #0a0a0a; padding: 12px; border-radius: 14px; border: 1px solid #222;
             animation: slideDown 0.3s ease;
         }
+        .special-menu.active { display: grid; }
         .btn-spec { 
             padding: 12px; border: none; border-radius: 10px; 
             background: linear-gradient(145deg, var(--special) 0%, #546e7a 100%); 
@@ -227,7 +221,6 @@
             width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; 
             background: #0a0a0a; color: white; margin: 12px 0; font-size: 0.95em; 
             text-align: center; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -242,7 +235,6 @@
         .hist-cont { 
             background: #0a0a0a; max-height: 250px; overflow-y: auto; 
             border: 1px solid #333; border-top: none; border-radius: 0 0 10px 10px;
-            /* KORJATTU: Lisätty momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         .hist-item { 
@@ -316,7 +308,6 @@
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; 
             backdrop-filter: blur(10px); padding: 15px;
-            /* KORJATTU: Varmistetaan että modal on skrollattavissa */
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -325,7 +316,6 @@
             padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; 
             text-align: center; border: 1px solid #333; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
             max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column;
-            /* KORJATTU: momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         .modal-wide { 
@@ -334,7 +324,6 @@
             text-align: center; border: 1px solid #333; max-height: 85vh; 
             display: flex; flex-direction: column; overflow-y: auto;
             box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-            /* KORJATTU: momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         
@@ -344,16 +333,47 @@
             border-radius: 14px; min-height: 60px; border: 2px solid #333;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
         }
-        .key-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        
+        /* KORJATTU: Näppäimistöt täyttävät näytön leveyden */
+        .key-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            width: 100%;
+        }
+        
+        /* UUSI: 4-sarakkeinen grid taivutusnäppäimistölle */
+        .key-grid-4 { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 8px; 
+            width: 100%;
+        }
+        
         .key { 
             background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%); 
             padding: 16px 8px; font-size: 1.2em; font-weight: 700; border-radius: 12px; 
             cursor: pointer; border: 1px solid #333; color: var(--text-light);
             transition: all 0.1s; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .key:active { transform: scale(0.95); background: #333; }
         .key-ok { background: linear-gradient(145deg, var(--success) 0%, #00b248 100%); color: #000; border: none; }
         .key-c { background: linear-gradient(145deg, #444 0%, #333 100%); color: white; border: none; }
+        .key-half { 
+            background: linear-gradient(145deg, var(--primary) 0%, #e55a00 100%); 
+            color: white; border: none; font-size: 1em;
+        }
+        .key-dot {
+            background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 100%);
+            color: var(--text-light);
+            border: 1px solid #444;
+            font-size: 1.4em;
+            font-weight: 400;
+        }
         
         .btn-jatka { 
             width: 100%; background: linear-gradient(145deg, var(--primary) 0%, #e55a00 100%); 
@@ -441,7 +461,6 @@
         .form-group input, .form-group select { 
             width: 100%; padding: 12px; background: #0a0a0a; border: 2px solid #333; 
             color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -472,39 +491,50 @@
         .edit-input { 
             width: 100%; background: #0a0a0a; border: 2px solid #333; 
             padding: 12px; color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
         .edit-input:focus { outline: none; border-color: var(--primary); }
 
-        .keyboard-container { margin-top: 12px; }
-        .keyboard-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
-        .key-letter { 
-            min-width: 28px; height: 42px; padding: 0 8px;
+        /* KORJATTU: Näppäimistö täyttää koko näytön leveyden */
+        .keyboard-container { 
+            margin-top: 12px; 
+            width: 100%;
+        }
+        .keyboard-row { 
+            display: flex; 
+            justify-content: space-between; 
+            gap: 4px; 
+            margin-bottom: 4px; 
+            width: 100%;
+        }
+        
+        /* KORJATTU: Näppäimet venyvät täyttämään tilan */
+        .key-letter, .key-number { 
+            height: 48px; 
             background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%); 
             border: 1px solid #333; border-radius: 8px;
             color: var(--text-light); font-size: 0.9em; font-weight: 600;
             cursor: pointer; transition: all 0.1s;
             display: flex; align-items: center; justify-content: center;
-            flex: 1; max-width: 40px;
+            flex: 1;
+            min-width: 0;
         }
-        .key-letter:active { transform: scale(0.95); background: #333; }
-        .key-space { flex: 3; max-width: 120px; }
-        .key-backspace { flex: 1.5; background: linear-gradient(145deg, #444 0%, #333 100%); color: var(--danger); max-width: 60px; }
-        .key-enter { flex: 2; background: linear-gradient(145deg, var(--success) 0%, #00b248 100%); color: #000; max-width: 80px; font-weight: 700; }
-        .key-shift { flex: 1.2; background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 100%); color: var(--primary); max-width: 50px; font-size: 0.75em; }
-        .key-shift.active { background: linear-gradient(145deg, var(--primary) 0%, #e55a00 100%); color: #000; }
+        
         .key-number {
-            min-width: 28px; height: 42px; padding: 0 8px;
             background: linear-gradient(145deg, #1a3a4a 0%, #0a2a3a 100%); 
-            border: 1px solid #334; border-radius: 8px;
-            color: var(--tb-blue); font-size: 0.9em; font-weight: 700;
-            cursor: pointer; transition: all 0.1s;
-            display: flex; align-items: center; justify-content: center;
-            flex: 1; max-width: 40px;
+            border: 1px solid #334; 
+            color: var(--tb-blue); 
+            font-weight: 700;
         }
-        .key-number:active { transform: scale(0.95); background: #223; }
+        
+        .key-letter:active, .key-number:active { transform: scale(0.95); background: #333; }
+        
+        .key-space { flex: 3; }
+        .key-backspace { flex: 1.5; background: linear-gradient(145deg, #444 0%, #333 100%); color: var(--danger); }
+        .key-enter { flex: 2; background: linear-gradient(145deg, var(--success) 0%, #00b248 100%); color: #000; font-weight: 700; }
+        .key-shift { flex: 1.2; background: linear-gradient(145deg, #3a3a3a 0%, #2a2a2a 100%); color: var(--primary); font-size: 0.75em; }
+        .key-shift.active { background: linear-gradient(145deg, var(--primary) 0%, #e55a00 100%); color: #000; }
         
         .muut-extra-fields { 
             background: linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); 
@@ -518,7 +548,6 @@
         .muut-field input { 
             width: 100%; padding: 12px; background: #0a0a0a; border: 2px solid #333; 
             color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -527,7 +556,6 @@
         .autocomplete-items {
             position: absolute; border: 1px solid #333; border-bottom: none; border-top: none;
             z-index: 99; top: 100%; left: 0; right: 0; max-height: 150px; overflow-y: auto;
-            /* KORJATTU: momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         .autocomplete-items div {
@@ -557,6 +585,21 @@
         .empty-state { text-align: center; padding: 20px; color: #666; font-size: 0.9em; }
         .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Skannerin parannukset */
+        .ean-hint {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            z-index: 15;
+            border: 1px solid var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -633,9 +676,9 @@
 
         <!-- Erikoistilat -->
         <div class="special-menu" id="menu-spec">
-            <button id="s-PROTO" class="btn-spec">PROTO</button>
-            <button id="s-HÄIRIÖ" class="btn-spec">HÄIRIÖ</button>
-            <button id="s-HUOLTO" class="btn-spec">HUOLTO</button>
+            <button class="btn-spec" data-tila="PROTO">PROTO</button>
+            <button class="btn-spec" data-tila="HÄIRIÖ">HÄIRIÖ</button>
+            <button class="btn-spec" data-tila="HUOLTO">HUOLTO</button>
         </div>
 
         <!-- Tietojen syöttö -->
@@ -971,6 +1014,7 @@
 <!-- Scan Modal -->
 <div id="s-ruutu" class="overlay">
     <div id="scan-modal-content">
+        <div class="ean-hint">Kohdista EAN-viivakoodi</div>
         <div id="reader"></div>
         <div class="scan-mask"></div>
         <div class="scan-line"></div>
@@ -1063,17 +1107,17 @@ function setupEventListeners() {
     
     // Tietojen syöttö
     document.getElementById('box-asetus').addEventListener('click', () => avaaNumeroNaytto('Asetus (min)', 'asetus'));
-    document.getElementById('box-taivutus').addEventListener('click', () => avaaNumeroNaytto('Taivutus (min)', 'taivutus'));
+    document.getElementById('box-taivutus').addEventListener('click', () => avaaTaivutusNaytto());
     document.getElementById('box-muut').addEventListener('click', () => avaaNumeroNaytto('Muut työt', 'muut'));
-    document.getElementById('box-kortti').addEventListener('click', () => avaaNumeroNaytto('Kortin numero', 'kortti'));
-    document.getElementById('box-lajike').addEventListener('click', () => avaaTekstiNaytto('Lajimerkki', 'lajike'));
+    document.getElementById('box-kortti').addEventListener('click', () => avaaKorttiNaytto());
+    document.getElementById('box-lajike').addEventListener('click', () => avaaLajikeNaytto());
     
     // Skannaus
     document.getElementById('btn-scan-kortti').addEventListener('click', () => avaaSkanneri('kortti'));
     document.getElementById('btn-scan-lajike').addEventListener('click', () => avaaSkanneri('lajike'));
     document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
     
-    // Jaksoasetukset
+    // Jaksoasetukset - KORJATTU
     document.getElementById('dash-period').addEventListener('click', toggleJaksoAsetus);
     document.getElementById('btn-tallenna-jakso').addEventListener('click', tallennaJakso);
     
@@ -1082,7 +1126,6 @@ function setupEventListeners() {
     document.getElementById('btn-nollaa').addEventListener('click', nollaaHistoria);
     document.getElementById('btn-arkisto').addEventListener('click', avaaArkisto);
     document.getElementById('btn-sulje-arkisto').addEventListener('click', () => suljeModal('archive-modal'));
-    document.getElementById('btn-lataa-arkisto').addEventListener('click', lataaArkisto);
     document.getElementById('btn-tyokalut').addEventListener('click', avaaTyokalut);
     document.getElementById('btn-sulje-tyokalut').addEventListener('click', suljeTyokalut);
     document.getElementById('btn-sulje-tyokalut-2').addEventListener('click', suljeTyokalut);
@@ -1113,12 +1156,15 @@ function setupEventListeners() {
     document.getElementById('btn-tallenna-muutos').addEventListener('click', tallennaMuokkaus);
     document.getElementById('btn-poista').addEventListener('click', poistaRivi);
     
-    // Numeronäppäimistö
-    document.getElementById('k-alue').addEventListener('click', handleNumericKey);
-    
-    // Erityistilat
-    ['PROTO', 'HÄIRIÖ', 'HUOLTO'].forEach(tila => {
-        document.getElementById(`s-${tila}`).addEventListener('click', () => toggleErikoistila(tila));
+    // Erityistilat - KORJATTU: Käytetään event delegation
+    document.getElementById('menu-spec').addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-spec');
+        if (!btn) return;
+        
+        const tila = btn.getAttribute('data-tila');
+        if (tila) {
+            toggleErikoistila(tila, btn);
+        }
     });
     
     // PWA asennus
@@ -1136,6 +1182,249 @@ function setupEventListeners() {
             else suljeModal(avoinModal);
         }
     });
+}
+
+// ==================== KORTTI NÄPPÄIMISTÖ ====================
+function avaaKorttiNaytto() {
+    document.getElementById('n-otsikko').textContent = 'Kortin numero';
+    document.getElementById('n-naytto').textContent = '';
+    syoteBuffer = '';
+    
+    document.getElementById('muut-fields').style.display = 'none';
+    document.getElementById('combined-keyboard').style.display = 'none';
+    document.getElementById('k-alue').style.display = 'grid';
+    
+    // KORJATTU: Käytetään 4-sarakkeista gridiä
+    const alue = document.getElementById('k-alue');
+    alue.className = 'key-grid-4';
+    alue.innerHTML = '';
+    
+    // Numerot 1-9
+    for (let i = 1; i <= 9; i++) {
+        alue.innerHTML += `<div class="key" data-num="${i}">${i}</div>`;
+    }
+    
+    // C, 0, OK (keskellä), ½
+    alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
+    alue.innerHTML += `<div class="key" data-num="0">0</div>`;
+    alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
+    alue.innerHTML += `<div class="key key-half" data-num="HALF">½</div>`;
+    
+    // Lisää event listener
+    alue.onclick = function(e) {
+        const key = e.target.closest('.key');
+        if (!key) return;
+        
+        const num = key.dataset.num;
+        const naytto = document.getElementById('n-naytto');
+        
+        if (num === 'C') {
+            syoteBuffer = '';
+            naytto.textContent = '';
+        } else if (num === 'OK' && syoteBuffer) {
+            document.getElementById('v-kortti').textContent = syoteBuffer;
+            suljeNumeroNaytto();
+        } else if (num === 'HALF' && syoteBuffer) {
+            const arvo = parseFloat(syoteBuffer) / 2;
+            syoteBuffer = arvo.toString();
+            naytto.textContent = syoteBuffer;
+        } else if (num !== 'OK' && num !== 'HALF') {
+            syoteBuffer += num;
+            naytto.textContent = syoteBuffer;
+        }
+    };
+    
+    avoinModal = 'n-ruutu';
+    document.getElementById('n-ruutu').style.display = 'flex';
+}
+
+// ==================== LAJIMERKKI NÄPPÄIMISTÖ ====================
+function avaaLajikeNaytto() {
+    document.getElementById('n-otsikko').textContent = 'Lajimerkki';
+    document.getElementById('n-naytto').textContent = '';
+    syoteBuffer = '';
+    
+    document.getElementById('muut-fields').style.display = 'none';
+    document.getElementById('combined-keyboard').style.display = 'block';
+    document.getElementById('k-alue').style.display = 'none';
+    
+    // Näytä vain kirjaimet ja numerot
+    document.querySelectorAll('.key-number').forEach(k => k.style.display = 'none');
+    
+    // Muuta OK-napin toiminta
+    const keyboard = document.getElementById('combined-keyboard');
+    keyboard.onclick = function(e) {
+        const key = e.target.closest('[data-key]');
+        if (!key) return;
+        
+        const keyValue = key.getAttribute('data-key');
+        const naytto = document.getElementById('n-naytto');
+        
+        switch(keyValue) {
+            case 'SHIFT':
+                isShiftActive = !isShiftActive;
+                key.classList.toggle('active', isShiftActive);
+                paivitaNappaimistoKirjaimet();
+                return;
+                
+            case 'ENTER':
+                if (syoteBuffer) {
+                    document.getElementById('v-lajike').textContent = syoteBuffer;
+                    suljeNumeroNaytto();
+                }
+                return;
+                
+            case 'BACKSPACE':
+                syoteBuffer = syoteBuffer.slice(0, -1);
+                naytto.textContent = syoteBuffer;
+                return;
+                
+            case 'SPACE':
+                syoteBuffer += ' ';
+                naytto.textContent = syoteBuffer;
+                return;
+        }
+        
+        // Kirjain
+        let char = keyValue;
+        if (isShiftActive && /^[a-zäöå]$/i.test(char)) {
+            char = char.toUpperCase();
+        } else if (!isShiftActive && /^[A-ZÄÖÅ]$/.test(char)) {
+            char = char.toLowerCase();
+        }
+        
+        syoteBuffer += char;
+        naytto.textContent = syoteBuffer;
+    };
+    
+    avoinModal = 'n-ruutu';
+    document.getElementById('n-ruutu').style.display = 'flex';
+}
+
+// ==================== TAIVUTUS NÄPPÄIMISTÖ ====================
+function avaaTaivutusNaytto() {
+    document.getElementById('n-otsikko').textContent = 'Taivutus (min)';
+    document.getElementById('n-naytto').textContent = '';
+    syoteBuffer = '';
+    
+    document.getElementById('muut-fields').style.display = 'none';
+    document.getElementById('combined-keyboard').style.display = 'none';
+    document.getElementById('k-alue').style.display = 'grid';
+    
+    // KORJATTU: 4-sarakkeinen layout
+    const alue = document.getElementById('k-alue');
+    alue.className = 'key-grid-4';
+    alue.innerHTML = '';
+    
+    // Numerot 1-9
+    for (let i = 1; i <= 9; i++) {
+        alue.innerHTML += `<div class="key" data-num="${i}">${i}</div>`;
+    }
+    
+    // C, 0, OK (keskellä), ½
+    alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
+    alue.innerHTML += `<div class="key" data-num="0">0</div>`;
+    alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
+    alue.innerHTML += `<div class="key key-half" data-num="HALF">½</div>`;
+    
+    // Piste erikseen (korvaa 0:n paikan tai lisää viides sarake)
+    // Päivitetään: 1-9, C, ., OK, ½, 0 (viimeiseksi)
+    alue.innerHTML = '';
+    for (let i = 1; i <= 9; i++) {
+        alue.innerHTML += `<div class="key" data-num="${i}">${i}</div>`;
+    }
+    alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
+    alue.innerHTML += `<div class="key key-dot" data-num=".">.</div>`;
+    alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
+    alue.innerHTML += `<div class="key key-half" data-num="HALF">½</div>`;
+    alue.innerHTML += `<div class="key" data-num="0">0</div>`;
+    alue.innerHTML += `<div class="key" style="visibility:hidden;"></div>`;
+    alue.innerHTML += `<div class="key" style="visibility:hidden;"></div>`;
+    
+    alue.onclick = function(e) {
+        const key = e.target.closest('.key');
+        if (!key || key.style.visibility === 'hidden') return;
+        
+        const num = key.dataset.num;
+        const naytto = document.getElementById('n-naytto');
+        
+        if (num === 'C') {
+            syoteBuffer = '';
+            naytto.textContent = '';
+        } else if (num === 'OK' && syoteBuffer) {
+            document.getElementById('v-taivutus').textContent = syoteBuffer + ' min';
+            suljeNumeroNaytto();
+        } else if (num === 'HALF' && syoteBuffer) {
+            const arvo = parseFloat(syoteBuffer) / 2;
+            syoteBuffer = arvo.toString();
+            naytto.textContent = syoteBuffer;
+        } else if (num !== 'OK' && num !== 'HALF') {
+            syoteBuffer += num;
+            naytto.textContent = syoteBuffer;
+        }
+    };
+    
+    avoinModal = 'n-ruutu';
+    document.getElementById('n-ruutu').style.display = 'flex';
+}
+
+// ==================== MUUT NÄPPÄIMISTÖ ====================
+function avaaNumeroNaytto(otsikko, tyyppi) {
+    document.getElementById('n-otsikko').textContent = otsikko;
+    document.getElementById('n-naytto').textContent = '';
+    syoteBuffer = '';
+    
+    const isMuut = tyyppi === 'muut';
+    document.getElementById('muut-fields').style.display = isMuut ? 'block' : 'none';
+    document.getElementById('combined-keyboard').style.display = isMuut ? 'block' : 'none';
+    document.getElementById('k-alue').style.display = isMuut ? 'none' : 'grid';
+    
+    if (isMuut) {
+        document.getElementById('muut-lajimerkki').value = '';
+        document.getElementById('muut-aika').value = '';
+        aktiivinenMuutKentta = 'lajimerkki';
+        document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
+        document.getElementById('muut-aika').style.borderColor = '#333';
+        
+        // Näytä kaikki näppäimet
+        document.querySelectorAll('.key-number').forEach(k => k.style.display = 'flex');
+    } else {
+        // Asetus - pelkkä numeronäppäimistö
+        const alue = document.getElementById('k-alue');
+        alue.className = 'key-grid';
+        alue.innerHTML = '';
+        
+        for (let i = 1; i <= 9; i++) {
+            alue.innerHTML += `<div class="key" data-num="${i}">${i}</div>`;
+        }
+        alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
+        alue.innerHTML += `<div class="key" data-num="0">0</div>`;
+        alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
+        
+        alue.onclick = function(e) {
+            const key = e.target.closest('.key');
+            if (!key) return;
+            
+            const num = key.dataset.num;
+            const naytto = document.getElementById('n-naytto');
+            
+            if (num === 'C') {
+                syoteBuffer = '';
+                naytto.textContent = '';
+            } else if (num === 'OK' && syoteBuffer) {
+                if (tyyppi === 'asetus') {
+                    document.getElementById('v-asetus').textContent = syoteBuffer + ' min';
+                }
+                suljeNumeroNaytto();
+            } else {
+                syoteBuffer += num;
+                naytto.textContent = syoteBuffer;
+            }
+        };
+    }
+    
+    avoinModal = 'n-ruutu';
+    document.getElementById('n-ruutu').style.display = 'flex';
 }
 
 // ==================== YHDISTETTY NÄPPÄIMISTÖ ====================
@@ -1261,86 +1550,6 @@ function kasitteleMuutArvot() {
     }
 }
 
-// ==================== NUMERONÄYTTÖ ====================
-function avaaNumeroNaytto(otsikko, tyyppi) {
-    document.getElementById('n-otsikko').textContent = otsikko;
-    document.getElementById('n-naytto').textContent = '';
-    syoteBuffer = '';
-    
-    const isMuut = tyyppi === 'muut';
-    document.getElementById('muut-fields').style.display = isMuut ? 'block' : 'none';
-    document.getElementById('combined-keyboard').style.display = isMuut ? 'block' : 'none';
-    document.getElementById('k-alue').style.display = isMuut ? 'none' : 'grid';
-    
-    if (isMuut) {
-        document.getElementById('muut-lajimerkki').value = '';
-        document.getElementById('muut-aika').value = '';
-        aktiivinenMuutKentta = 'lajimerkki';
-        document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
-        document.getElementById('muut-aika').style.borderColor = '#333';
-    } else {
-        luoNumeronappaimisto();
-    }
-    
-    avoinModal = 'n-ruutu';
-    document.getElementById('n-ruutu').style.display = 'flex';
-}
-
-function avaaTekstiNaytto(otsikko) {
-    document.getElementById('n-otsikko').textContent = otsikko;
-    document.getElementById('n-naytto').textContent = '';
-    syoteBuffer = '';
-    
-    document.getElementById('muut-fields').style.display = 'none';
-    document.getElementById('combined-keyboard').style.display = 'block';
-    document.getElementById('k-alue').style.display = 'none';
-    
-    // Käytä lajimerkki-kenttää tekstin syöttöön
-    aktiivinenMuutKentta = 'lajimerkki';
-    
-    avoinModal = 'n-ruutu';
-    document.getElementById('n-ruutu').style.display = 'flex';
-}
-
-function luoNumeronappaimisto() {
-    const alue = document.getElementById('k-alue');
-    alue.innerHTML = '';
-    
-    for (let i = 1; i <= 9; i++) {
-        alue.innerHTML += `<div class="key" data-num="${i}">${i}</div>`;
-    }
-    alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
-    alue.innerHTML += `<div class="key" data-num="0">0</div>`;
-    alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
-}
-
-function handleNumericKey(e) {
-    const key = e.target.closest('.key');
-    if (!key) return;
-    
-    const num = key.dataset.num;
-    const naytto = document.getElementById('n-naytto');
-    const otsikko = document.getElementById('n-otsikko').textContent;
-    
-    if (num === 'C') {
-        syoteBuffer = '';
-    } else if (num === 'OK' && syoteBuffer) {
-        const arvo = syoteBuffer;
-        
-        if (otsikko.includes('Kortti')) document.getElementById('v-kortti').textContent = arvo;
-        else if (otsikko.includes('Lajimerkki')) document.getElementById('v-lajike').textContent = arvo;
-        else if (otsikko.includes('Asetus')) document.getElementById('v-asetus').textContent = arvo + ' min';
-        else if (otsikko.includes('Taivutus')) document.getElementById('v-taivutus').textContent = arvo + ' min';
-        
-        suljeNumeroNaytto();
-        return;
-    } else {
-        syoteBuffer += num;
-    }
-    
-    naytto.textContent = syoteBuffer;
-}
-
 function suljeNumeroNaytto() {
     document.getElementById('n-ruutu').style.display = 'none';
     avoinModal = null;
@@ -1394,7 +1603,7 @@ document.querySelector('.time-keypad').addEventListener('click', function(e) {
     }
 });
 
-// ==================== SKANNAUS ====================
+// ==================== SKANNAUS - KORJATTU EAN-13 ====================
 function avaaSkanneri(kohde) {
     skannausKohde = kohde;
     document.getElementById('s-ruutu').style.display = 'flex';
@@ -1403,16 +1612,60 @@ function avaaSkanneri(kohde) {
         html5QrcodeScanner = new Html5Qrcode("reader");
     }
     
-    html5QrcodeScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScanSuccess,
-        () => {} // Älä näytä virheitä
-    ).catch(err => {
-        console.error('Skannaus epäonnistui:', err);
-        alert('Kameran käyttö epäonnistui. Tarkista oikeudet.');
-        suljeSkanneri();
-    });
+    // KORJATTU: EAN-13 konfiguraatio Honor Magic 5 Lite -optimoinnilla
+    const config = {
+        fps: 15, // Korkea FPS parempaan tarkkuuteen
+        qrbox: { width: 280, height: 180 }, // Leveämpi laatikko viivakoodeille
+        aspectRatio: 1.777, // 16:9 kuvasuhde
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E
+        ]
+    };
+    
+    // Kameran asetukset - pyritään korkeaan resoluutioon
+    const cameraConfig = {
+        facingMode: "environment",
+        advanced: [
+            { focusMode: "continuous" }, // Jatkuva tarkennus
+            { focusDistance: { ideal: 0 } }, // Automaattitarkennus
+            { whiteBalanceMode: "continuous" },
+            { exposureMode: "continuous" }
+        ]
+    };
+    
+    // Yritä ensin korkeaa resoluutiota
+    const tryHighRes = async () => {
+        try {
+            await html5QrcodeScanner.start(
+                cameraConfig,
+                config,
+                onScanSuccess,
+                () => {}
+            );
+        } catch (err) {
+            console.log('Korkea resoluutio epäonnistui, kokeillaan perusasetuksia:', err);
+            // Fallback perusasetuksiin
+            try {
+                await html5QrcodeScanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    () => {}
+                );
+            } catch (err2) {
+                console.error('Skannaus epäonnistui:', err2);
+                alert('Kameran käyttö epäonnistui. Tarkista oikeudet.');
+                suljeSkanneri();
+            }
+        }
+    };
+    
+    tryHighRes();
 }
 
 function suljeSkanneri() {
@@ -1427,12 +1680,29 @@ function suljeSkanneri() {
     }
 }
 
-function onScanSuccess(decodedText) {
-    if (skannausKohde === 'kortti') {
-        document.getElementById('v-kortti').textContent = decodedText;
-    } else if (skannausKohde === 'lajike') {
-        document.getElementById('v-lajike').textContent = decodedText;
+function onScanSuccess(decodedText, decodedResult) {
+    // EAN-13 validointi (13 numeroa)
+    const cleanCode = decodedText.trim().replace(/\s/g, '');
+    
+    // Tarkista onko validi EAN (13 tai 8 numeroa)
+    const isValidEAN = /^\d{8}$|^\d{13}$/.test(cleanCode);
+    
+    if (!isValidEAN) {
+        console.log('Skannattu koodi ei ole validi EAN:', cleanCode);
+        // Silti hyväksytään, mutta logataan
     }
+    
+    if (skannausKohde === 'kortti') {
+        document.getElementById('v-kortti').textContent = cleanCode;
+    } else if (skannausKohde === 'lajike') {
+        document.getElementById('v-lajike').textContent = cleanCode;
+    }
+    
+    // Värinäpalaute onnistuneesta skannauksesta
+    if (navigator.vibrate) {
+        navigator.vibrate(100);
+    }
+    
     suljeSkanneri();
 }
 
@@ -1508,7 +1778,6 @@ function lopetaVuoro() {
 }
 
 function tallennaVuoroYhteenveto(kestoMs) {
-    // Tämä voisi tallentaa päivän yhteenvedon
     console.log('Vuoro päättyi, kesto:', formatDuration(kestoMs));
 }
 
@@ -1553,7 +1822,6 @@ function tallennaKortti() {
 }
 
 function naytaIlmoitus(viesti) {
-    // Yksinkertainen toast-ilmoitus
     const toast = document.createElement('div');
     toast.style.cssText = `
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -1771,21 +2039,44 @@ function poistaRivi() {
     naytaIlmoitus('Merkintä poistettu!');
 }
 
-// ==================== JAKSOASETUKSET ====================
+// ==================== JAKSOASETUKSET - KORJATTU ====================
 function toggleJaksoAsetus() {
     const panel = document.getElementById('jakso-asetus');
     const onAuki = panel.style.display === 'block';
     panel.style.display = onAuki ? 'none' : 'block';
     
     if (!onAuki) {
-        document.getElementById('jakso-alku').value = AppState.jaksoAlku || '';
-        document.getElementById('jakso-loppu').value = AppState.jaksoLoppu || '';
+        // Aseta nykyiset arvot
+        const alkuInput = document.getElementById('jakso-alku');
+        const loppuInput = document.getElementById('jakso-loppu');
+        
+        if (AppState.jaksoAlku) {
+            alkuInput.value = AppState.jaksoAlku;
+        }
+        if (AppState.jaksoLoppu) {
+            loppuInput.value = AppState.jaksoLoppu;
+        }
+        
+        // Jos ei arvoja, aseta oletukset
+        if (!alkuInput.value) {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            alkuInput.value = formatDateISO(firstDay);
+        }
+        if (!loppuInput.value) {
+            const today = new Date();
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            loppuInput.value = formatDateISO(lastDay);
+        }
     }
 }
 
 function tallennaJakso() {
-    const alku = document.getElementById('jakso-alku').value;
-    const loppu = document.getElementById('jakso-loppu').value;
+    const alkuInput = document.getElementById('jakso-alku');
+    const loppuInput = document.getElementById('jakso-loppu');
+    
+    const alku = alkuInput.value;
+    const loppu = loppuInput.value;
     
     if (!alku || !loppu) {
         alert('Valitse sekä alku- että loppupäivä!');
@@ -1808,25 +2099,28 @@ function tallennaJakso() {
     asetukset.jaksoLoppu = loppu;
     localStorage.setItem(CONFIG.STORAGE_KEYS.ASETUKSET, JSON.stringify(asetukset));
     
-    toggleJaksoAsetus();
+    // Piilota paneeli
+    document.getElementById('jakso-asetus').style.display = 'none';
+    
     paivitaTilastot();
     naytaIlmoitus('Jakso tallennettu!');
 }
 
-// ==================== ERIKOISTILAT ====================
-function toggleErikoistila(tila) {
-    const nappi = document.getElementById(`s-${tila}`);
+// ==================== ERIKOISTILAT - KORJATTU ====================
+function toggleErikoistila(tila, nappiElement) {
+    // Poista active-luokka kaikista napeista
+    document.querySelectorAll('.btn-spec').forEach(btn => {
+        btn.classList.remove('active');
+    });
     
     if (AppState.erikoistilaAktiivinen === tila) {
+        // Sammuta tila
         AppState.erikoistilaAktiivinen = null;
-        nappi.classList.remove('active');
         document.getElementById('v-muut').textContent = '-';
     } else {
-        if (AppState.erikoistilaAktiivinen) {
-            document.getElementById(`s-${AppState.erikoistilaAktiivinen}`).classList.remove('active');
-        }
+        // Aktivoi uusi tila
         AppState.erikoistilaAktiivinen = tila;
-        nappi.classList.add('active');
+        nappiElement.classList.add('active');
         document.getElementById('v-muut').textContent = tila;
     }
 }
@@ -1924,7 +2218,7 @@ function tallennaVarmuuskopio() {
         asetukset: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ASETUKSET) || '{}'),
         tyovaiheet: window.tallennetutTyovaiheet,
         timestamp: new Date().toISOString(),
-        versio: '4.1'
+        versio: '5.0'
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -2111,7 +2405,6 @@ function laskeVoima() {
         return;
     }
     
-    // Kaava: F = (1.42 * Rm * s² * L) / (1000 * V)
     const f = (1.42 * rm * t * t * l * 1000) / (1000 * v);
     
     const result = document.getElementById('res-force');
@@ -2236,6 +2529,11 @@ function formatDate(iso) {
 function formatDateShort(iso) {
     const d = new Date(iso);
     return `${d.getDate()}.${d.getMonth()+1}`;
+}
+
+function formatDateISO(date) {
+    const d = new Date(date);
+    return d.toISOString().split('T')[0];
 }
 
 function formatDateFile() {
