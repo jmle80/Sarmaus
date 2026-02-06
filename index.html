@@ -3,505 +3,582 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Työvuoroseuranta Pro v5.1</title>
+    <title>Keto-Opas: Vuorotyö</title>
     <style>
         :root {
-            --bg-body: #121212;
-            --bg-card: #1e1e1e;
-            --text-main: #e0e0e0;
-            --accent: #00e676; /* Neonvihreä */
-            --danger: #ff5252;
-            --input-bg: #2c2c2c;
-            --border: #333;
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --night-mode: #2c2c54;
+            --bg: #f4f4f9;
+            --text: #333;
+            --card-bg: #fff;
+            --danger: #c0392b;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-body);
-            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
-            padding: 10px;
+            padding: 0;
+            padding-bottom: 90px;
+            transition: background-color 0.3s;
+        }
+
+        /* YÖVUORO-TEEMA */
+        body.night-shift-mode {
+            background-color: #1e1e2e;
+            color: #ecf0f1;
+        }
+        body.night-shift-mode .meal-card {
+            background: #2d2d44;
+            color: #fff;
+            border-left-color: #f1c40f;
+        }
+        body.night-shift-mode .meal-title {
+            color: #f1c40f;
+        }
+        body.night-shift-mode .day-controls {
+            background: #2d2d44;
+            color: white;
+        }
+        body.night-shift-mode .shop-item {
+            background: #2d2d44;
+            border-color: #444;
+            color: white;
+        }
+        body.night-shift-mode h2, body.night-shift-mode h3 {
+            color: #f1c40f;
+        }
+
+        /* VERSIO (Muistisääntö: Ensimmäinen rivi, eri väri) */
+        .version-tag {
+            background-color: #e74c3c; /* Punainen huomioväri */
+            color: #fff;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: left;
+            width: 100%;
+            display: block;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        h1 { margin: 0; font-size: 1.4rem; }
+        h2 { font-size: 1.2rem; margin-top: 0; color: var(--primary); }
+
+        /* VUOROKYTKIN */
+        .shift-toggle-container {
             display: flex;
             justify-content: center;
+            margin: 15px 0;
+            padding: 0 15px;
         }
 
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
-        /* VERSIONUMERO */
-        .version-tag {
-            font-size: 0.9em;
+        .shift-btn {
+            padding: 8px 20px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
             font-weight: bold;
-            color: #ffab40;
-            text-align: center;
+            cursor: pointer;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .shift-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .shift-btn:first-child { border-radius: 20px 0 0 20px; }
+        .shift-btn:last-child { border-radius: 0 20px 20px 0; }
+
+        body.night-shift-mode .shift-btn { border-color: #f1c40f; color: #f1c40f; background: #2d2d44; }
+        body.night-shift-mode .shift-btn.active { background: #f1c40f; color: #1e1e2e; }
+
+
+        /* Navigaatio */
+        .nav-tabs {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            border-top: 1px solid #ccc;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            padding: 10px;
+            color: #7f8c8d;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--accent);
+        }
+
+        /* Sisältöalueet */
+        .view {
+            display: none;
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .view.active {
             display: block;
-            margin-bottom: 5px;
+        }
+
+        /* Päivänäkymä */
+        .day-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .ctrl-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .ctrl-btn:active { transform: scale(0.95); }
+
+        .meal-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--accent);
+            transition: all 0.3s;
+        }
+
+        .meal-time {
+            font-size: 0.85rem;
+            color: #7f8c8d; /* Default text color, overridden in night mode */
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-bottom: 5px;
+            display: block;
+            font-weight: bold;
         }
-
-        h1 { text-align: center; color: var(--accent); margin: 5px 0 20px 0; font-size: 1.8em; }
-
-        /* INPUTS */
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9em; }
-        input, select {
-            width: 100%; padding: 12px;
-            background: var(--input-bg); border: 1px solid var(--border);
-            color: white; border-radius: 6px; font-size: 16px;
-            box-sizing: border-box; transition: 0.2s;
-        }
-        input:focus { border-color: var(--accent); outline: none; }
         
-        /* SKANNERI */
-        #ean-scan { border-color: var(--accent); background: rgba(0, 230, 118, 0.05); }
+        body.night-shift-mode .meal-time { color: #ccc; }
 
-        /* PAINIKKEET */
-        .btn-row { display: flex; gap: 10px; margin-bottom: 15px; }
-        button {
-            flex: 1; padding: 14px; border: none; border-radius: 6px;
-            font-weight: bold; cursor: pointer; text-transform: uppercase;
-            font-size: 14px; transition: transform 0.1s;
+        .meal-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--primary);
         }
-        button:active { transform: scale(0.98); }
-        .btn-start { background: var(--accent); color: #000; }
-        .btn-stop { background: var(--danger); color: #fff; }
-        .btn-secondary { background: #424242; color: #fff; }
-        .btn-menu { background: #333; color: #ccc; border: 1px solid #444; }
 
-        /* STATUS & CLOCK */
-        .status-bar {
-            background: #252525; padding: 15px; border-radius: 8px;
-            text-align: center; margin-bottom: 20px; border: 1px solid #333;
+        /* Reseptin avaaminen */
+        details {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
         }
-        #clock { font-size: 2em; font-family: monospace; font-weight: bold; color: var(--text-main); }
-        #status-text { color: var(--accent); font-weight: bold; margin-top: 5px; }
 
-        /* HISTORIA */
-        .history-list {
-            list-style: none; padding: 0; margin-top: 20px;
-            max-height: 300px; overflow-y: auto;
+        summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: bold;
+            outline: none;
         }
-        .history-item {
-            background: #252525; border-bottom: 1px solid #333;
-            padding: 10px; display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.9em;
-        }
-        .history-item span { display: block; }
-        .history-time { color: #888; font-size: 0.8em; }
-
-        /* MODAL (ERIKOISTILAT & ASETUKSET) */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 1000; padding: 20px; box-sizing: border-box;
-            overflow-y: auto;
-        }
-        .modal-content {
-            background: var(--bg-card); padding: 20px; border-radius: 8px;
-            max-width: 500px; margin: 40px auto; border: 1px solid var(--accent);
-        }
-        .modal h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        .close-btn { background: #444; margin-top: 20px; }
         
-        /* TIME INPUT IN MODAL */
-        input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+        body.night-shift-mode summary { color: #f1c40f; }
+
+        .recipe-text {
+            margin-top: 10px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        /* Kauppalista */
+        .shopping-category {
+            margin-bottom: 20px;
+        }
+
+        .category-title {
+            font-size: 1rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        
+        body.night-shift-mode .category-title { color: #f1c40f; border-color: #f1c40f; }
+
+        .shop-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            border: 1px solid #eee;
+        }
+
+        .shop-item input[type="checkbox"] {
+            transform: scale(1.5);
+            margin-right: 15px;
+        }
+
+        .shop-item.checked span {
+            text-decoration: line-through;
+            color: #95a5a6;
+        }
+
+        .reset-btn {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        /* Info box */
+        .info-box {
+            background-color: #e8f8f5;
+            border: 1px solid #d1f2eb;
+            color: #0e6251;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+        
+        body.night-shift-mode .info-box {
+            background-color: #2d3436;
+            border-color: #f1c40f;
+            color: #f1c40f;
+        }
 
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <span class="version-tag">Versio 5.1 (Time Edit)</span>
-        <h1>Työvuoroseuranta</h1>
+    <div class="version-tag">Versio 1.1 - Vuorotyö-Optimointi</div>
 
-        <div class="status-bar">
-            <div id="clock">00:00:00</div>
-            <div id="status-text">Vuoro ei käynnissä</div>
-            <div id="shift-timer" style="font-size:0.9em; color:#888; margin-top:5px;">Kesto: 00:00:00</div>
-        </div>
+    <header>
+        <h1>Keto-Viikko 46v</h1>
+    </header>
 
-        <div class="input-group">
-            <label>EAN / Viivakoodi (Skannaa tähän)</label>
-            <input type="text" id="ean-scan" placeholder="Lue viivakoodi..." autofocus onblur="keepFocus()">
-        </div>
-
-        <div class="btn-row">
-            <div style="flex:1">
-                <label>Kortin nro (6 numeroa)</label>
-                <input type="text" id="card-input" placeholder="123456" maxlength="6">
-            </div>
-            <div style="flex:1">
-                <label>Lajimerkki</label>
-                <input type="text" id="grade-input" placeholder="S355...">
-            </div>
-        </div>
-
-        <div class="btn-row">
-            <button class="btn-start" onclick="askTime('start')">Aloita Vuoro</button>
-            <button class="btn-stop" onclick="askTime('stop')">Lopeta</button>
-        </div>
+    <div id="view-day" class="view active">
         
-        <div class="btn-row">
-            <button class="btn-menu" onclick="openModal('special-modal')">⚡ Erikoistilat</button>
-            <button class="btn-menu" onclick="openModal('range-modal')">📅 Aikaväli</button>
-            <button class="btn-menu" onclick="openModal('settings-modal')">⚙️ Asetukset</button>
+        <div class="shift-toggle-container">
+            <button class="shift-btn active" id="btn-morning" onclick="setShiftMode('morning')">☀ Aamuvuoro</button>
+            <button class="shift-btn" id="btn-night" onclick="setShiftMode('night')">🌙 Yövuoro</button>
         </div>
 
-        <h3>Tapahtumahistoria</h3>
-        <ul id="history-list" class="history-list">
-            </ul>
-        <button class="btn-secondary" style="margin-top:10px;" onclick="clearHistory()">Tyhjennä historia</button>
-    </div>
+        <div class="day-controls">
+            <button class="ctrl-btn" onclick="changeDay(-1)">&#8592;</button>
+            <h2 id="current-day-title">Maanantai</h2>
+            <button class="ctrl-btn" onclick="changeDay(1)">&#8594;</button>
+        </div>
 
-    <div id="time-modal" class="modal">
-        <div class="modal-content">
-            <h2 id="time-modal-title">Vahvista aika</h2>
-            <p>Tarkista kellonaika. Voit muuttaa sitä tarvittaessa.</p>
-            
-            <div class="input-group">
-                <label>Kellonaika</label>
-                <input type="time" id="manual-time" style="font-size: 1.5em; text-align: center;">
+        <div class="info-box" id="shift-info">
+            <strong>Vinkki:</strong> Juo vettä vähintään 2 litraa päivässä.
+        </div>
+
+        <div id="meals-container">
             </div>
+    </div>
 
-            <div class="btn-row">
-                <button id="confirm-time-btn" class="btn-start" onclick="confirmTime()">Vahvista & Tallenna</button>
-                <button class="btn-secondary" onclick="closeModal('time-modal')">Peruuta</button>
+    <div id="view-shop" class="view">
+        <h2>S-Market / Prisma Ostoslista</h2>
+        <div id="shopping-list-container">
             </div>
-        </div>
+        <button class="reset-btn" onclick="resetShoppingList()">Tyhjennä lista (Aloita alusta)</button>
     </div>
 
-    <div id="special-modal" class="modal">
-        <div class="modal-content">
-            <h2>Erikoistilat</h2>
-            <p>Valitse keskeytyksen tai tilan syy:</p>
-            <button class="btn-secondary" onclick="logSpecial('Ruokatauko'); closeModal('special-modal')">🍽️ Ruokatauko</button>
-            <br><br>
-            <button class="btn-secondary" onclick="logSpecial('Huolto'); closeModal('special-modal')">🔧 Huolto / Häiriö</button>
-            <br><br>
-            <button class="btn-secondary" onclick="logSpecial('Palaveri'); closeModal('special-modal')">👥 Palaveri</button>
-            <br><br>
-            <button class="btn-secondary" onclick="logSpecial('Muu työ'); closeModal('special-modal')">📝 Muu työ</button>
-            <button class="close-btn" onclick="closeModal('special-modal')">Sulje</button>
-        </div>
-    </div>
+    <nav class="nav-tabs">
+        <button class="nav-btn active" onclick="switchView('day', this)">Päivän ohjelma</button>
+        <button class="nav-btn" onclick="switchView('shop', this)">Kauppalista</button>
+    </nav>
 
-    <div id="range-modal" class="modal">
-        <div class="modal-content">
-            <h2>Jakson Hallinta</h2>
-            <div class="input-group">
-                <label>Aloituspvm</label>
-                <input type="date" id="range-start">
-            </div>
-            <div class="input-group">
-                <label>Lopetuspvm</label>
-                <input type="date" id="range-end">
-            </div>
-            <button class="btn-start" onclick="filterHistory()">Hae aikaväli</button>
-            <button class="close-btn" onclick="closeModal('range-modal')">Sulje</button>
-        </div>
-    </div>
+<script>
+    // --- DATAMALLI (Alkuperäinen) ---
+    // meals[0] = Aamiainen (Kevyt)
+    // meals[1] = Lounas (Keski)
+    // meals[2] = Päivällinen (Tuhti/Lämmin)
+    const weekData = [
+        {
+            day: "Maanantai",
+            meals: [
+                { name: "Mustikkasmoothie tai Munat", recipe: "<strong>Smoothie:</strong> 1dl mustikoita, ½ avokado, 1dl Kotimaista kuohukermaa, loraus vettä/mantelimaitoa. Aja blenderissä.<br><strong>TAI:</strong> 2 paistettua munaa voissa." },
+                { name: "Tonnikalasalaatti Pähkinöillä", recipe: "1 prk Rainbow tonnikalaa (jätä vähän öljyä), salaattia, kurkkua, tomaattia, 1 keitetty muna. Murskaa päälle saksanpähkinöitä ja lisää majoneesia." },
+                { name: "Uunilohi & Parsakaali", recipe: "Laita Kotimaista kirjolohifilee uuniin (suola, sitruunapippuri). Paista 200°C n. 20min. Höyrytä parsakaali ja lisää voita." }
+            ]
+        },
+        {
+            day: "Tiistai",
+            meals: [
+                { name: "Valintasi mukaan (Smoothie/Munat)", recipe: "Ks. maanantain ohje." },
+                { name: "Uunilohen jämät", recipe: "Lämmitä tai syö kylmänä majoneesin ja pähkinöiden kera." },
+                { name: "Broilerin Paistileikkeet & Kukkakaalimuusi", recipe: "<strong>Kana:</strong> Mausta paistileikkeet (suola, curry) ja uuniin 200°C n. 35min.<br><strong>Muusi:</strong> Keitä kukkakaali pehmeäksi. Valuta. Lisää 50g voita ja loraus kermaa. Soseuta sauvasekoittimella." }
+            ]
+        },
+        {
+            day: "Keskiviikko",
+            meals: [
+                { name: "Valintasi mukaan", recipe: "Ks. maanantain ohje." },
+                { name: "Broileria & Muusia", recipe: "Tiistain jämät lämmitettynä." },
+                { name: "Jauhelihapihvit & Vihreät pavut", recipe: "<strong>Pihvit:</strong> 400g jauhelihaa, 1 muna, mausteet, sipuli. Sekoita ja paista pannulla voissa.<br><strong>Pavut:</strong> Paista jäisiä Rainbow papuja voissa pannulla." }
+            ]
+        },
+        {
+            day: "Torstai",
+            meals: [
+                { name: "Valintasi mukaan", recipe: "Ks. maanantain ohje." },
+                { name: "Jauhelihapihvit & Salaatti", recipe: "Pihvien jämät + vihersalaatti runsaalla oliiviöljyllä ja pähkinöillä." },
+                { name: "Kermainen Tonnikalavuoka", recipe: "Kuutioi kesäkurpitsa vuokaan. Lisää 2 prk tonnikalaa. Kaada päälle 2dl kermaa (mausta suolalla/pippurilla). Kuorruta Xtra juustoraasteella. Uuni 200°C n. 25min." }
+            ]
+        },
+        {
+            day: "Perjantai",
+            meals: [
+                { name: "Tuhti Munakas", recipe: "3 munaa, loraus kermaa, juustoraastetta. Paista pannulla." },
+                { name: "Smoothie tai kevyt salaatti", recipe: "Jos nälkä ei ole kova, ota mustikkasmoothie." },
+                { name: "Kermainen Pekoni-Kana", recipe: "Paista pekoni ja Kotimaista kanasuikaleet pannulla. Lisää 2dl kermaa. Hauduta 10min paksuksi. Tarjoile parsakaalin kanssa." }
+            ]
+        },
+        {
+            day: "Lauantai",
+            meals: [
+                { name: "Keto-brunssi", recipe: "Munakokkelia ja kahvia voilla." },
+                { name: "Kanasalaatti Pähkinöillä", recipe: "Perjantain kanan jämät salaattipedillä. Lisää avokadoa ja manteleita." },
+                { name: "Wingsit & Dippi", recipe: "Kotimaista siivet/koivet uuniin (ohje pakkauksessa). Dippi: Majoneesia + valkosipulia. Pilko kurkkua ja selleriä kylkeen." }
+            ]
+        },
+        {
+            day: "Sunnuntai",
+            meals: [
+                { name: "Mustikkasmoothie", recipe: "Raikas aloitus." },
+                { name: "Wingsien jämät", recipe: "Syö loput siivet." },
+                { name: "Keto-Pizza (Kana)", recipe: "<strong>Pohja:</strong> 2 munaa + 3dl juustoraastetta. Levitä pellille, paista 200°C 10min.<br><strong>Täyte:</strong> Tomaattipyree, kanaa, oreganoa, juustoa. Paista vielä 5-10min." }
+            ]
+        }
+    ];
 
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <h2>Asetukset & Muokkaus</h2>
-            <label>Poista yksittäinen merkintä:</label>
-            <select id="remove-select" style="margin-bottom:15px; background:#333;">
-                </select>
-            <button class="btn-stop" onclick="removeSelectedItem()">Poista valittu</button>
-            <hr style="border-color:#444; margin: 20px 0;">
-            <button class="btn-secondary" onclick="exportCSV()">Lataa Excel (CSV)</button>
-            <button class="close-btn" onclick="closeModal('settings-modal')">Sulje</button>
-        </div>
-    </div>
+    const shoppingListData = [
+        {
+            category: "HeVi & Pakaste",
+            items: [
+                "Kotimaista Jääsalaatti", "Kotimaista Kurkku (2 kpl)", "Kotimaista Tomaatti",
+                "Parsakaali (400g)", "Kukkakaali (iso)", "Avokadoja (pussi)",
+                "Kesäkurpitsa", "Sipuli & Valkosipuli", "Rainbow Vihreät pavut (pakaste)"
+            ]
+        },
+        {
+            category: "Liha & Kala",
+            items: [
+                "Kotimaista Naudan Jauheliha 17% (400g)", "Kotimaista Broilerin paistileike (600g)",
+                "Kotimaista Broilerin fileesuikale (400g)", "Kotimaista Siipiä/Koipia (1kg)",
+                "Kotimaista Kirjolohifilee (600g)", "Rainbow Pekoni (valinnainen)"
+            ]
+        },
+        {
+            category: "Maito, Munat & Rasvat",
+            items: [
+                "Kotimaista Munia (15 kpl)", "Kotimaista Kuohukerma (1 litra)",
+                "Kotimaista Voi (500g)", "Xtra/Rainbow Juustoraaste (500g)"
+            ]
+        },
+        {
+            category: "Kuivatuotteet & Muut",
+            items: [
+                "Rainbow Tonnikalapalat öljyssä (4 prk)", "Rainbow Pähkinöitä/Manteleita",
+                "Tomaattipyree", "Oliiviöljy", "Majoneesi", "Mantelimaito (sokeriton)"
+            ]
+        }
+    ];
 
-    <script>
-        // --- ALUSTUS & MUUTTUJAT ---
-        let shiftActive = false;
-        let shiftStartTime = null;
-        let shiftTimerInterval;
-        let history = JSON.parse(localStorage.getItem('shiftHistory')) || [];
-        let pendingAction = null; // 'start' or 'stop'
+    // --- LOGIIKKA ---
 
-        // Ääni
-        const alertSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); 
+    let currentDayIndex = 0;
+    let isNightShift = false; // Oletus: Aamuvuoro
+    
+    // Alustus
+    window.onload = function() {
+        const savedDay = localStorage.getItem('ketoDayIndex');
+        if (savedDay) currentDayIndex = parseInt(savedDay);
         
-        // --- DOM ELEMENTS ---
-        const eanInput = document.getElementById('ean-scan');
-        const cardInput = document.getElementById('card-input');
-        const gradeInput = document.getElementById('grade-input');
+        // Tallennetaan myös vuorotieto
+        const savedShift = localStorage.getItem('ketoShiftMode');
+        if (savedShift === 'night') {
+            setShiftMode('night');
+        } else {
+            renderDay(); // Renderöidään oletus
+        }
+        
+        renderShoppingList();
+    };
 
-        window.onload = function() {
-            updateClock();
-            setInterval(updateClock, 1000);
-            renderHistory();
-            restoreState();
-            eanInput.focus();
-        };
+    function setShiftMode(mode) {
+        const btnMorning = document.getElementById('btn-morning');
+        const btnNight = document.getElementById('btn-night');
+        const body = document.body;
+        const info = document.getElementById('shift-info');
 
-        // --- EVENT LISTENERS ---
-        cardInput.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
-            saveState();
+        if (mode === 'night') {
+            isNightShift = true;
+            btnNight.classList.add('active');
+            btnMorning.classList.remove('active');
+            body.classList.add('night-shift-mode');
+            info.innerHTML = "<strong>Yövuoro-optimointi:</strong> Tuhdein ateria ennen töitä (15:30), kevyempi töissä, ja kevyin ennen nukkumaanmenoa.";
+        } else {
+            isNightShift = false;
+            btnMorning.classList.add('active');
+            btnNight.classList.remove('active');
+            body.classList.remove('night-shift-mode');
+            info.innerHTML = "<strong>Vinkki:</strong> Juo vettä vähintään 2 litraa päivässä. Jos on nälkä, ota kourallinen Rainbow pähkinöitä.";
+        }
+
+        localStorage.setItem('ketoShiftMode', mode);
+        renderDay();
+    }
+
+    function changeDay(direction) {
+        currentDayIndex += direction;
+        if (currentDayIndex < 0) currentDayIndex = weekData.length - 1;
+        if (currentDayIndex >= weekData.length) currentDayIndex = 0;
+        
+        localStorage.setItem('ketoDayIndex', currentDayIndex);
+        renderDay();
+    }
+
+    function renderDay() {
+        const data = weekData[currentDayIndex];
+        document.getElementById('current-day-title').innerText = data.day;
+        
+        const container = document.getElementById('meals-container');
+        container.innerHTML = '';
+
+        let mealsToRender = [];
+
+        if (isNightShift) {
+            // YÖVUORO-JÄRJESTYS
+            // 1. Ennen vuoroa (Klo 15.30) -> Käytä Päivällistä (meals[2]) - Tuhti energia
+            // 2. Vuoron aikana (Klo 21.00) -> Käytä Lounasta (meals[1]) - Kevyempi
+            // 3. Vuoron jälkeen (Klo 06.00) -> Käytä Aamiaista (meals[0]) - Kevyt ennen unta
+            mealsToRender = [
+                { time: "Ennen vuoroa (n. 15:30) - Tankkaus", ...data.meals[2] },
+                { time: "Vuoron aikana (n. 21:00) - Eväs", ...data.meals[1] },
+                { time: "Vuoron jälkeen (n. 06:00) - Iltapala", ...data.meals[0] }
+            ];
+        } else {
+            // AAMUVUORO / VAPAA (Normaali)
+            mealsToRender = [
+                { time: "Aamiainen (07:00 - 09:00)", ...data.meals[0] },
+                { time: "Lounas (11:00 - 13:00)", ...data.meals[1] },
+                { time: "Päivällinen (17:00 - 19:00)", ...data.meals[2] }
+            ];
+        }
+
+        mealsToRender.forEach(meal => {
+            const card = document.createElement('div');
+            card.className = 'meal-card';
+            card.innerHTML = `
+                <span class="meal-time">${meal.time}</span>
+                <div class="meal-title">${meal.name}</div>
+                <details>
+                    <summary>Valmistusohje</summary>
+                    <div class="recipe-text">${meal.recipe}</div>
+                </details>
+            `;
+            container.appendChild(card);
         });
+    }
 
-        gradeInput.addEventListener('input', function(e) {
-            this.value = this.value.toUpperCase();
-            saveState();
-        });
+    function switchView(viewName, btnElement) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('view-' + viewName).classList.add('active');
+        btnElement.classList.add('active');
+    }
 
-        eanInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                handleScan(this.value);
-                this.value = ''; 
-            }
-        });
+    // --- KAUPPALISTA ---
 
-        function keepFocus() {
-            setTimeout(() => {
-                if (document.activeElement !== cardInput && document.activeElement !== gradeInput && document.querySelector('.modal[style*="block"]') === null) {
-                    eanInput.focus();
-                }
-            }, 200);
-        }
+    function renderShoppingList() {
+        const container = document.getElementById('shopping-list-container');
+        container.innerHTML = '';
+        const checkedItems = JSON.parse(localStorage.getItem('ketoCheckedItems')) || [];
 
-        // --- PÄÄTOIMINNOT (UUSI LOGIIKKA) ---
+        shoppingListData.forEach(cat => {
+            const catDiv = document.createElement('div');
+            catDiv.className = 'shopping-category';
+            const title = document.createElement('div');
+            title.className = 'category-title';
+            title.innerText = cat.category;
+            catDiv.appendChild(title);
 
-        function askTime(action) {
-            if (action === 'start' && shiftActive) return;
-            if (action === 'stop' && !shiftActive) return;
-
-            // Tarkista kortti heti alussa
-            if (action === 'start' && cardInput.value.length !== 6) {
-                alert("Virhe: Kortin numeron pitää olla 6 numeroa.");
-                return;
-            }
-
-            pendingAction = action;
-            
-            // Aseta nykyinen aika oletukseksi inputtiin
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-            document.getElementById('manual-time').value = timeStr;
-            
-            // Päivitä otsikko ja napin väri
-            const title = document.getElementById('time-modal-title');
-            const btn = document.getElementById('confirm-time-btn');
-            
-            if (action === 'start') {
-                title.innerText = "Aloitusaika";
-                btn.innerText = "Aloita Vuoro";
-                btn.className = "btn-start";
-            } else {
-                title.innerText = "Lopetusaika";
-                btn.innerText = "Lopeta Vuoro";
-                btn.className = "btn-stop";
-            }
-
-            openModal('time-modal');
-        }
-
-        function confirmTime() {
-            const timeVal = document.getElementById('manual-time').value;
-            if (!timeVal) return;
-
-            // Luodaan Date-objekti käyttäjän syöttämästä ajasta (tälle päivälle)
-            const now = new Date();
-            const [hours, minutes] = timeVal.split(':');
-            const selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-
-            if (pendingAction === 'start') {
-                performStart(selectedDate);
-            } else if (pendingAction === 'stop') {
-                performStop(selectedDate);
-            }
-
-            closeModal('time-modal');
-            pendingAction = null;
-        }
-
-        function performStart(startDate) {
-            playAlert();
-            shiftActive = true;
-            shiftStartTime = startDate.getTime(); // Käytetään valittua aikaa
-            
-            document.getElementById('status-text').innerText = "VUORO KÄYNNISSÄ";
-            document.getElementById('status-text').style.color = "#00e676";
-            
-            logItemWithDate("Vuoro aloitettu", "System", startDate);
-            startTimer();
-            saveState();
-        }
-
-        function performStop(endDate) {
-            shiftActive = false;
-            clearInterval(shiftTimerInterval);
-            document.getElementById('status-text').innerText = "VUORO PÄÄTTYNYT";
-            document.getElementById('status-text').style.color = "#ff5252";
-            document.getElementById('shift-timer').innerText = "Kesto: 00:00:00";
-            
-            logItemWithDate("Vuoro lopetettu", "System", endDate);
-            saveState();
-        }
-
-        function handleScan(code) {
-            if (!shiftActive) {
-                alert("Aloita vuoro ensin!");
-                return;
-            }
-            if (code.length < 3) return;
-            logItem(`Skannaus: ${code}`, "Scan");
-            eanInput.style.backgroundColor = "#00e676";
-            setTimeout(() => { eanInput.style.backgroundColor = "rgba(0, 230, 118, 0.05)"; }, 200);
-        }
-
-        function logSpecial(type) {
-            if (!shiftActive) {
-                alert("Aloita vuoro ensin!");
-                return;
-            }
-            logItem(`Erikoistila: ${type}`, "Special");
-        }
-
-        // --- LOKI & DATA ---
-
-        function logItem(action, type) {
-            logItemWithDate(action, type, new Date());
-        }
-
-        function logItemWithDate(action, type, dateObj) {
-            const entry = {
-                id: Date.now(),
-                time: dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}),
-                date: dateObj.toLocaleDateString(),
-                card: cardInput.value,
-                grade: gradeInput.value,
-                action: action,
-                type: type
-            };
-            history.unshift(entry);
-            saveHistory();
-            renderHistory();
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('history-list');
-            const select = document.getElementById('remove-select');
-            list.innerHTML = '';
-            select.innerHTML = ''; 
-
-            if (history.length === 0) {
-                list.innerHTML = '<li style="color:#666; text-align:center; padding:10px;">Ei tapahtumia</li>';
-                return;
-            }
-
-            history.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'history-item';
-                li.innerHTML = `
-                    <div>
-                        <span style="font-weight:bold; color:#fff">${item.action}</span>
-                        <span class="history-time">${item.date} ${item.time} | ${item.grade}</span>
-                    </div>
-                `;
-                list.appendChild(li);
-
-                const option = document.createElement('option');
-                option.value = item.id;
-                option.text = `${item.time} - ${item.action}`;
-                select.appendChild(option);
-            });
-        }
-
-        // --- UI APUFUNKTIOT ---
-
-        function openModal(id) {
-            document.getElementById(id).style.display = 'block';
-            if(id === 'settings-modal') renderHistory();
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-            eanInput.focus();
-        }
-
-        function removeSelectedItem() {
-            const select = document.getElementById('remove-select');
-            const idToRemove = parseInt(select.value);
-            if (!idToRemove) return;
-            if(confirm("Poistetaanko valittu merkintä?")) {
-                history = history.filter(item => item.id !== idToRemove);
-                saveHistory();
-                renderHistory();
-            }
-        }
-
-        function clearHistory() {
-            if(confirm("Haluatko varmasti nollata koko jakson historian? Tätä ei voi perua.")) {
-                history = [];
-                saveHistory();
-                renderHistory();
-            }
-        }
-
-        function filterHistory() {
-            const startStr = document.getElementById('range-start').value;
-            const endStr = document.getElementById('range-end').value;
-            if(!startStr || !endStr) { alert("Valitse molemmat päivämäärät."); return; }
-            const start = new Date(startStr).setHours(0,0,0,0);
-            const end = new Date(endStr).setHours(23,59,59,999);
-
-            const filtered = history.filter(h => {
-                const parts = h.date.split('.');
-                const d = new Date(parts[2], parts[1]-1, parts[0]).getTime();
-                return d >= start && d <= end;
-            });
-            alert(`Löytyi ${filtered.length} merkintää valitulla aikavälillä.`);
-        }
-
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString();
-        }
-
-        function startTimer() {
-            clearInterval(shiftTimerInterval);
-            shiftTimerInterval = setInterval(() => {
-                if(!shiftStartTime) return;
-                const diff = Date.now() - shiftStartTime; // Laske ero valittuun aloitusaikaan
+            cat.items.forEach(item => {
+                const itemDiv = document.createElement('label');
+                const isChecked = checkedItems.includes(item);
+                itemDiv.className = 'shop-item ' + (isChecked ? 'checked' : '');
                 
-                // Estä negatiiviset luvut (jos aika asetettu tulevaisuuteen)
-                if (diff < 0) {
-                    document.getElementById('shift-timer').innerText = "Odottaa aloitusta...";
-                    return;
-                }
+                itemDiv.innerHTML = `
+                    <input type="checkbox" onchange="toggleItem(this, '${item}')" ${isChecked ? 'checked' : ''}>
+                    <span>${item}</span>
+                `;
+                catDiv.appendChild(itemDiv);
+            });
+            container.appendChild(catDiv);
+        });
+    }
 
-                const hours = Math.floor(diff / 3600000);
-                const minutes = Math.floor((diff % 3600000) / 60000);
-                const seconds = Math.floor((diff % 60000) / 1000);
-                document.getElementById('shift-timer').innerText = 
-                    `Kesto: ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-            }, 1000);
+    function toggleItem(checkbox, itemName) {
+        let checkedItems = JSON.parse(localStorage.getItem('ketoCheckedItems')) || [];
+        if (checkbox.checked) {
+            checkedItems.push(itemName);
+            checkbox.parentElement.classList.add('checked');
+        } else {
+            checkedItems = checkedItems.filter(i => i !== itemName);
+            checkbox.parentElement.classList.remove('checked');
         }
+        localStorage.setItem('ketoCheckedItems', JSON.stringify(checkedItems));
+    }
 
-        function pad(n) { return n < 10 ? '0'+n : n; }
-        function playAlert() { try { alertSound.play(); } catch(e) {} }
-        function saveHistory() { localStorage.setItem('shiftHistory', JSON.stringify(history)); }
-        function saveState() { localStorage.setItem('cardVal', cardInput.value); localStorage.setItem('gradeVal', gradeInput.value); }
-        function restoreState() { if(localStorage.getItem('cardVal')) cardInput.value = localStorage.getItem('cardVal'); if(localStorage.getItem('gradeVal')) gradeInput.value = localStorage.getItem('gradeVal'); }
-        function exportCSV() {
-            let csv = "Pvm,Kello,Kortti,Laji,Tapahtuma,Tyyppi\n";
-            history.forEach(row => { csv += `${row.date},${row.time},${row.card},${row.grade},${row.action},${row.type}\n`; });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `tyovuorot_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    function resetShoppingList() {
+        if (confirm("Haluatko varmasti nollata koko listan? Merkinnät poistetaan.")) {
+            localStorage.removeItem('ketoCheckedItems');
+            renderShoppingList();
         }
-    </script>
+    }
+
+</script>
+
 </body>
 </html>
