@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Työvuoroseuranta Pro v5.0</title>
+    <title>Työvuoroseuranta Pro v5.1</title>
     <style>
         :root {
             --bg-body: #121212;
@@ -34,11 +34,11 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
-        /* VERSIONUMERO - KOROSTETTU */
+        /* VERSIONUMERO */
         .version-tag {
             font-size: 0.9em;
             font-weight: bold;
-            color: #ffab40; /* Oranssi erottuva väri */
+            color: #ffab40;
             text-align: center;
             display: block;
             margin-bottom: 5px;
@@ -59,7 +59,7 @@
         }
         input:focus { border-color: var(--accent); outline: none; }
         
-        /* SKANNERI OPTIMOINTI */
+        /* SKANNERI */
         #ean-scan { border-color: var(--accent); background: rgba(0, 230, 118, 0.05); }
 
         /* PAINIKKEET */
@@ -108,13 +108,16 @@
         }
         .modal h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
         .close-btn { background: #444; margin-top: 20px; }
+        
+        /* TIME INPUT IN MODAL */
+        input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
 
     </style>
 </head>
 <body>
 
     <div class="container">
-        <span class="version-tag">Versio 5.0 (Stable)</span>
+        <span class="version-tag">Versio 5.1 (Time Edit)</span>
         <h1>Työvuoroseuranta</h1>
 
         <div class="status-bar">
@@ -140,8 +143,8 @@
         </div>
 
         <div class="btn-row">
-            <button class="btn-start" onclick="startShift()">Aloita Vuoro</button>
-            <button class="btn-stop" onclick="endShift()">Lopeta</button>
+            <button class="btn-start" onclick="askTime('start')">Aloita Vuoro</button>
+            <button class="btn-stop" onclick="askTime('stop')">Lopeta</button>
         </div>
         
         <div class="btn-row">
@@ -154,7 +157,23 @@
         <ul id="history-list" class="history-list">
             </ul>
         <button class="btn-secondary" style="margin-top:10px;" onclick="clearHistory()">Tyhjennä historia</button>
+    </div>
 
+    <div id="time-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="time-modal-title">Vahvista aika</h2>
+            <p>Tarkista kellonaika. Voit muuttaa sitä tarvittaessa.</p>
+            
+            <div class="input-group">
+                <label>Kellonaika</label>
+                <input type="time" id="manual-time" style="font-size: 1.5em; text-align: center;">
+            </div>
+
+            <div class="btn-row">
+                <button id="confirm-time-btn" class="btn-start" onclick="confirmTime()">Vahvista & Tallenna</button>
+                <button class="btn-secondary" onclick="closeModal('time-modal')">Peruuta</button>
+            </div>
+        </div>
     </div>
 
     <div id="special-modal" class="modal">
@@ -207,9 +226,10 @@
         let shiftStartTime = null;
         let shiftTimerInterval;
         let history = JSON.parse(localStorage.getItem('shiftHistory')) || [];
+        let pendingAction = null; // 'start' or 'stop'
 
         // Ääni
-        const alertSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); // Lyhyt piippaus (placeholder)
+        const alertSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); 
         
         // --- DOM ELEMENTS ---
         const eanInput = document.getElementById('ean-scan');
@@ -221,77 +241,111 @@
             setInterval(updateClock, 1000);
             renderHistory();
             restoreState();
-            
-            // Scanner auto-focus logic
             eanInput.focus();
         };
 
-        // --- EVENT LISTENERS (FIXED INPUTS) ---
-
-        // 1. Kortti: Vain numerot, max 6
+        // --- EVENT LISTENERS ---
         cardInput.addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
             saveState();
         });
 
-        // 2. Lajimerkki: Automaattinen ISOLLA kirjoitus
         gradeInput.addEventListener('input', function(e) {
             this.value = this.value.toUpperCase();
             saveState();
         });
 
-        // 3. EAN Skanneri: Enter-tunnistus
         eanInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 handleScan(this.value);
-                this.value = ''; // Tyhjennä heti
+                this.value = ''; 
             }
         });
 
-        // Pidä fokus skannerissa jos ei kirjoiteta muualle
         function keepFocus() {
-            // Viive, jotta käyttäjä voi klikata muita kenttiä
             setTimeout(() => {
-                if (document.activeElement !== cardInput && document.activeElement !== gradeInput) {
+                if (document.activeElement !== cardInput && document.activeElement !== gradeInput && document.querySelector('.modal[style*="block"]') === null) {
                     eanInput.focus();
                 }
             }, 200);
         }
 
-        // --- PÄÄTOIMINNOT ---
+        // --- PÄÄTOIMINNOT (UUSI LOGIIKKA) ---
 
-        function startShift() {
-            if (shiftActive) return;
-            
-            // Tarkista kortti
-            if (cardInput.value.length !== 6) {
+        function askTime(action) {
+            if (action === 'start' && shiftActive) return;
+            if (action === 'stop' && !shiftActive) return;
+
+            // Tarkista kortti heti alussa
+            if (action === 'start' && cardInput.value.length !== 6) {
                 alert("Virhe: Kortin numeron pitää olla 6 numeroa.");
                 return;
             }
 
+            pendingAction = action;
+            
+            // Aseta nykyinen aika oletukseksi inputtiin
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+            document.getElementById('manual-time').value = timeStr;
+            
+            // Päivitä otsikko ja napin väri
+            const title = document.getElementById('time-modal-title');
+            const btn = document.getElementById('confirm-time-btn');
+            
+            if (action === 'start') {
+                title.innerText = "Aloitusaika";
+                btn.innerText = "Aloita Vuoro";
+                btn.className = "btn-start";
+            } else {
+                title.innerText = "Lopetusaika";
+                btn.innerText = "Lopeta Vuoro";
+                btn.className = "btn-stop";
+            }
+
+            openModal('time-modal');
+        }
+
+        function confirmTime() {
+            const timeVal = document.getElementById('manual-time').value;
+            if (!timeVal) return;
+
+            // Luodaan Date-objekti käyttäjän syöttämästä ajasta (tälle päivälle)
+            const now = new Date();
+            const [hours, minutes] = timeVal.split(':');
+            const selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+
+            if (pendingAction === 'start') {
+                performStart(selectedDate);
+            } else if (pendingAction === 'stop') {
+                performStop(selectedDate);
+            }
+
+            closeModal('time-modal');
+            pendingAction = null;
+        }
+
+        function performStart(startDate) {
             playAlert();
             shiftActive = true;
-            shiftStartTime = Date.now();
+            shiftStartTime = startDate.getTime(); // Käytetään valittua aikaa
+            
             document.getElementById('status-text').innerText = "VUORO KÄYNNISSÄ";
             document.getElementById('status-text').style.color = "#00e676";
             
-            logItem("Vuoro aloitettu", "System");
+            logItemWithDate("Vuoro aloitettu", "System", startDate);
             startTimer();
             saveState();
         }
 
-        function endShift() {
-            if (!shiftActive) return;
-            
-            if(!confirm("Haluatko varmasti lopettaa vuoron?")) return;
-
+        function performStop(endDate) {
             shiftActive = false;
             clearInterval(shiftTimerInterval);
             document.getElementById('status-text').innerText = "VUORO PÄÄTTYNYT";
             document.getElementById('status-text').style.color = "#ff5252";
             document.getElementById('shift-timer').innerText = "Kesto: 00:00:00";
             
-            logItem("Vuoro lopetettu", "System");
+            logItemWithDate("Vuoro lopetettu", "System", endDate);
             saveState();
         }
 
@@ -300,9 +354,8 @@
                 alert("Aloita vuoro ensin!");
                 return;
             }
-            if (code.length < 3) return; // Liian lyhyt koodi
+            if (code.length < 3) return;
             logItem(`Skannaus: ${code}`, "Scan");
-            // Visuaalinen välähdys onnistumisesta
             eanInput.style.backgroundColor = "#00e676";
             setTimeout(() => { eanInput.style.backgroundColor = "rgba(0, 230, 118, 0.05)"; }, 200);
         }
@@ -315,11 +368,17 @@
             logItem(`Erikoistila: ${type}`, "Special");
         }
 
+        // --- LOKI & DATA ---
+
         function logItem(action, type) {
+            logItemWithDate(action, type, new Date());
+        }
+
+        function logItemWithDate(action, type, dateObj) {
             const entry = {
                 id: Date.now(),
-                time: new Date().toLocaleTimeString(),
-                date: new Date().toLocaleDateString(),
+                time: dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}),
+                date: dateObj.toLocaleDateString(),
                 card: cardInput.value,
                 grade: gradeInput.value,
                 action: action,
@@ -330,14 +389,11 @@
             renderHistory();
         }
 
-        // --- NÄYTTÖ & APUFUNKTIOT ---
-
         function renderHistory() {
             const list = document.getElementById('history-list');
             const select = document.getElementById('remove-select');
-            
             list.innerHTML = '';
-            select.innerHTML = ''; // Tyhjennetään select kokonaan (ei tyhjiä rivejä)
+            select.innerHTML = ''; 
 
             if (history.length === 0) {
                 list.innerHTML = '<li style="color:#666; text-align:center; padding:10px;">Ei tapahtumia</li>';
@@ -345,7 +401,6 @@
             }
 
             history.forEach(item => {
-                // List view
                 const li = document.createElement('li');
                 li.className = 'history-item';
                 li.innerHTML = `
@@ -356,7 +411,6 @@
                 `;
                 list.appendChild(li);
 
-                // Select view (Poista muut)
                 const option = document.createElement('option');
                 option.value = item.id;
                 option.text = `${item.time} - ${item.action}`;
@@ -364,21 +418,22 @@
             });
         }
 
+        // --- UI APUFUNKTIOT ---
+
         function openModal(id) {
             document.getElementById(id).style.display = 'block';
-            if(id === 'settings-modal') renderHistory(); // Päivitä lista kun avataan
+            if(id === 'settings-modal') renderHistory();
         }
 
         function closeModal(id) {
             document.getElementById(id).style.display = 'none';
-            eanInput.focus(); // Palauta fokus skanneriin
+            eanInput.focus();
         }
 
         function removeSelectedItem() {
             const select = document.getElementById('remove-select');
             const idToRemove = parseInt(select.value);
             if (!idToRemove) return;
-
             if(confirm("Poistetaanko valittu merkintä?")) {
                 history = history.filter(item => item.id !== idToRemove);
                 saveHistory();
@@ -397,27 +452,17 @@
         function filterHistory() {
             const startStr = document.getElementById('range-start').value;
             const endStr = document.getElementById('range-end').value;
-            
-            if(!startStr || !endStr) {
-                alert("Valitse molemmat päivämäärät.");
-                return;
-            }
-
+            if(!startStr || !endStr) { alert("Valitse molemmat päivämäärät."); return; }
             const start = new Date(startStr).setHours(0,0,0,0);
             const end = new Date(endStr).setHours(23,59,59,999);
 
             const filtered = history.filter(h => {
-                // Muutetaan h.date (esim 6.2.2026) takaisin aikaleimaksi vertailua varten
                 const parts = h.date.split('.');
                 const d = new Date(parts[2], parts[1]-1, parts[0]).getTime();
                 return d >= start && d <= end;
             });
-
             alert(`Löytyi ${filtered.length} merkintää valitulla aikavälillä.`);
-            // Tässä voisi näyttää suodatetun listan, mutta nyt vain ilmoitus
         }
-
-        // --- JÄRJESTELMÄ ---
 
         function updateClock() {
             const now = new Date();
@@ -428,7 +473,14 @@
             clearInterval(shiftTimerInterval);
             shiftTimerInterval = setInterval(() => {
                 if(!shiftStartTime) return;
-                const diff = Date.now() - shiftStartTime;
+                const diff = Date.now() - shiftStartTime; // Laske ero valittuun aloitusaikaan
+                
+                // Estä negatiiviset luvut (jos aika asetettu tulevaisuuteen)
+                if (diff < 0) {
+                    document.getElementById('shift-timer').innerText = "Odottaa aloitusta...";
+                    return;
+                }
+
                 const hours = Math.floor(diff / 3600000);
                 const minutes = Math.floor((diff % 3600000) / 60000);
                 const seconds = Math.floor((diff % 60000) / 1000);
@@ -438,39 +490,18 @@
         }
 
         function pad(n) { return n < 10 ? '0'+n : n; }
-
-        function playAlert() {
-            // Soittaa lyhyen piippauksen (base64)
-            try { alertSound.play(); } catch(e) { console.log("Audio play failed"); }
-        }
-
-        function saveHistory() {
-            localStorage.setItem('shiftHistory', JSON.stringify(history));
-        }
-
-        function saveState() {
-            localStorage.setItem('cardVal', cardInput.value);
-            localStorage.setItem('gradeVal', gradeInput.value);
-        }
-
-        function restoreState() {
-            if(localStorage.getItem('cardVal')) cardInput.value = localStorage.getItem('cardVal');
-            if(localStorage.getItem('gradeVal')) gradeInput.value = localStorage.getItem('gradeVal');
-        }
-
+        function playAlert() { try { alertSound.play(); } catch(e) {} }
+        function saveHistory() { localStorage.setItem('shiftHistory', JSON.stringify(history)); }
+        function saveState() { localStorage.setItem('cardVal', cardInput.value); localStorage.setItem('gradeVal', gradeInput.value); }
+        function restoreState() { if(localStorage.getItem('cardVal')) cardInput.value = localStorage.getItem('cardVal'); if(localStorage.getItem('gradeVal')) gradeInput.value = localStorage.getItem('gradeVal'); }
         function exportCSV() {
             let csv = "Pvm,Kello,Kortti,Laji,Tapahtuma,Tyyppi\n";
-            history.forEach(row => {
-                csv += `${row.date},${row.time},${row.card},${row.grade},${row.action},${row.type}\n`;
-            });
+            history.forEach(row => { csv += `${row.date},${row.time},${row.card},${row.grade},${row.action},${row.type}\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `tyovuorot_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
+            a.href = url; a.download = `tyovuorot_${new Date().toISOString().slice(0,10)}.csv`; a.click();
         }
-
     </script>
 </body>
 </html>
