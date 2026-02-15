@@ -9,12 +9,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.1</title>
+    <title>Press Brake Pro v4.3</title>
     
-    <!-- Inline manifest for PWA -->
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
-    
-    <!-- Inline favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>⚙</text></svg>">
     
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -32,7 +29,6 @@
         
         * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         
-        /* KORJATTU: Poistettu position: fixed ja overflow: hidden */
         html, body {
             height: 100%;
             margin: 0;
@@ -42,22 +38,15 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             -webkit-user-select: none;
             user-select: none;
-            /* KORJATTU: overflow: hidden -> overflow-x: hidden, overflow-y: auto */
             overflow-x: hidden;
             overflow-y: auto;
-            /* KORJATTU: position: fixed -> position: static (oletus) */
             width: 100%;
-            top: 0;
-            left: 0;
-            /* KORJATTU: Lisätty momentum-skrollaus iOS:lle */
             -webkit-overflow-scrolling: touch;
         }
         
-        /* KORJATTU: Lisätty app-container korvaamaan body:n fixed-toiminnallisuus */
         .app-container {
             min-height: 100vh;
             min-height: 100dvh;
-            /* KORJATTU: overflow-y: auto -> ei tarvita, body hoitaa skrollauksen */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
             position: relative;
@@ -155,7 +144,6 @@
         .jakso-row input { 
             flex: 1; padding: 10px; background: #0a0a0a; border: 2px solid #333; 
             color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan että input on interaktiivinen */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -171,7 +159,7 @@
         .info-box:active { transform: scale(0.98); }
         .info-box::after { content: '›'; position: absolute; right: 10px; color: #444; font-size: 1.3em; }
         .info-box span { font-size: 0.7em; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .info-box b { font-size: 1em; text-align: right; margin-right: 18px; color: #fff; }
+        .info-box b { font-size: 1em; text-align: right; margin-right: 18px; color: #fff; text-transform: uppercase; }
         .box-active { 
             border-color: var(--primary); 
             background: linear-gradient(145deg, rgba(255,103,0,0.1) 0%, var(--dark-panel) 100%);
@@ -227,7 +215,6 @@
             width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #333; 
             background: #0a0a0a; color: white; margin: 12px 0; font-size: 0.95em; 
             text-align: center; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -242,7 +229,6 @@
         .hist-cont { 
             background: #0a0a0a; max-height: 250px; overflow-y: auto; 
             border: 1px solid #333; border-top: none; border-radius: 0 0 10px 10px;
-            /* KORJATTU: Lisätty momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         .hist-item { 
@@ -316,7 +302,6 @@
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; 
             backdrop-filter: blur(10px); padding: 15px;
-            /* KORJATTU: Varmistetaan että modal on skrollattavissa */
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -325,7 +310,6 @@
             padding: 20px; border-radius: 20px; width: 100%; max-width: 340px; 
             text-align: center; border: 1px solid #333; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
             max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column;
-            /* KORJATTU: momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         .modal-wide { 
@@ -334,7 +318,6 @@
             text-align: center; border: 1px solid #333; max-height: 85vh; 
             display: flex; flex-direction: column; overflow-y: auto;
             box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-            /* KORJATTU: momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         
@@ -441,7 +424,6 @@
         .form-group input, .form-group select { 
             width: 100%; padding: 12px; background: #0a0a0a; border: 2px solid #333; 
             color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -472,7 +454,6 @@
         .edit-input { 
             width: 100%; background: #0a0a0a; border: 2px solid #333; 
             padding: 12px; color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -518,7 +499,6 @@
         .muut-field input { 
             width: 100%; padding: 12px; background: #0a0a0a; border: 2px solid #333; 
             color: white; border-radius: 8px; font-size: 0.95em; font-family: inherit;
-            /* KORJATTU: Varmistetaan input-toimivuus */
             pointer-events: auto;
             touch-action: manipulation;
         }
@@ -527,12 +507,11 @@
         .autocomplete-items {
             position: absolute; border: 1px solid #333; border-bottom: none; border-top: none;
             z-index: 99; top: 100%; left: 0; right: 0; max-height: 150px; overflow-y: auto;
-            /* KORJATTU: momentum-skrollaus */
             -webkit-overflow-scrolling: touch;
         }
         .autocomplete-items div {
             padding: 10px; cursor: pointer; background-color: #1a1a1a; 
-            border-bottom: 1px solid #333; font-size: 0.9em;
+            border-bottom: 1px solid #333; font-size: 0.9em; text-transform: uppercase;
         }
         .autocomplete-items div:hover { background-color: #2a2a2a; }
         .autocomplete-active { background-color: var(--primary) !important; color: #ffffff; }
@@ -557,6 +536,13 @@
         .empty-state { text-align: center; padding: 20px; color: #666; font-size: 0.9em; }
         .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid #333; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Poistettu ylimääräinen laatikko muut-kentästä */
+        .muut-simple {
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -649,6 +635,7 @@
         </div>
         <div class="info-row"><div id="box-asetus" class="info-box"><span>ASETUS</span><b id="v-asetus">-</b></div></div>
         <div class="info-row"><div id="box-taivutus" class="info-box"><span>TAIVUTUS</span><b id="v-taivutus">-</b></div></div>
+        <!-- Muut-kenttä ilman ylimääräistä laatikkoa -->
         <div class="info-row"><div id="box-muut" class="info-box"><span>MUUT</span><b id="v-muut">-</b></div></div>
 
         <!-- Toiminnot -->
@@ -689,6 +676,38 @@
 <!-- Install prompt -->
 <div id="install-prompt" class="install-prompt" onclick="installApp()">
     📲 Asenna sovelluksena
+</div>
+
+<!-- Vuoron aloitusaika Modal -->
+<div id="start-time-modal" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--primary); margin-top:0; font-size:1.1em;">ALOITA VUORO</h3>
+        <p style="color:#888; font-size:0.9em; margin-bottom:15px;">Syötä vuoron aloitusaika</p>
+        <div id="start-time-display" class="time-display">--:--</div>
+        <div class="time-keypad">
+            <div class="time-key" data-key="1">1</div><div class="time-key" data-key="2">2</div><div class="time-key" data-key="3">3</div>
+            <div class="time-key" data-key="4">4</div><div class="time-key" data-key="5">5</div><div class="time-key" data-key="6">6</div>
+            <div class="time-key" data-key="7">7</div><div class="time-key" data-key="8">8</div><div class="time-key" data-key="9">9</div>
+            <div class="time-key" data-key="C" style="background:#444">C</div><div class="time-key" data-key="0">0</div><div class="time-key" data-key="NOW" style="background:var(--primary); color:#000; font-weight:800">NYT</div>
+        </div>
+        <button id="btn-peruuta-start" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600;">PERUUTA</button>
+    </div>
+</div>
+
+<!-- Vuoron lopetusaika Modal -->
+<div id="end-time-modal" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--danger); margin-top:0; font-size:1.1em;">LOPETA VUORO</h3>
+        <p style="color:#888; font-size:0.9em; margin-bottom:15px;">Syötä vuoron lopetusaika</p>
+        <div id="end-time-display" class="time-display">--:--</div>
+        <div class="time-keypad">
+            <div class="time-key" data-key="1">1</div><div class="time-key" data-key="2">2</div><div class="time-key" data-key="3">3</div>
+            <div class="time-key" data-key="4">4</div><div class="time-key" data-key="5">5</div><div class="time-key" data-key="6">6</div>
+            <div class="time-key" data-key="7">7</div><div class="time-key" data-key="8">8</div><div class="time-key" data-key="9">9</div>
+            <div class="time-key" data-key="C" style="background:#444">C</div><div class="time-key" data-key="0">0</div><div class="time-key" data-key="NOW" style="background:var(--danger); color:#fff; font-weight:800">NYT</div>
+        </div>
+        <button id="btn-peruuta-end" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600;">PERUUTA</button>
+    </div>
 </div>
 
 <!-- Toolbox Modal -->
@@ -985,7 +1004,8 @@ const CONFIG = {
         ARKISTO: 'purseArkisto_v2',
         ASETUKSET: 'purseTiedot_v2',
         TYOVAIHEET: 'tallennetutTyovaiheet_v2',
-        TEMP_MUUT: 'tempMuut'
+        TEMP_MUUT: 'tempMuut',
+        VUORO_TIEDOT: 'vuoroTiedot_v2'
     },
     MATERIALS: {
         s235: { name: 'S235', rm: 420, k: 0.33 },
@@ -1002,6 +1022,9 @@ const CONFIG = {
 const AppState = {
     kaynnissa: false,
     aloitusAika: 0,
+    lopetusAika: 0,
+    aloitusAikaValittu: null,
+    lopetusAikaValittu: null,
     jaksoKestoAlku: 0,
     todellisetTyotunnit: 0,
     jaksoAlku: null,
@@ -1023,6 +1046,7 @@ let aktiivinenMuutKentta = 'lajimerkki';
 let segments = [];
 let kellonInterval = null;
 let deferredPrompt = null;
+let currentInputTarget = null;
 
 // ==================== INITIALISOINTI ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -1030,12 +1054,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupToolbox();
     setupCombinedKeyboard();
+    setupStartTimeModal();
+    setupEndTimeModal();
     paivitaNaytto();
     startKello();
+    tarkistaJaksonVaihtuminen();
 });
 
 function alustaApp() {
-    // Lataa asetukset
     const asetukset = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ASETUKSET) || '{}');
     AppState.jaksoAlku = asetukset.jaksoAlku || null;
     AppState.jaksoLoppu = asetukset.jaksoLoppu || null;
@@ -1045,39 +1071,53 @@ function alustaApp() {
             `${formatDateShort(AppState.jaksoAlku)}-${formatDateShort(AppState.jaksoLoppu)}`;
     }
     
-    // Varmista että arkisto on olemassa
     if (!localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO)) {
         localStorage.setItem(CONFIG.STORAGE_KEYS.ARKISTO, JSON.stringify([]));
     }
     
-    // Lataa tallennetut työvaiheet
     const savedTyovaiheet = localStorage.getItem(CONFIG.STORAGE_KEYS.TYOVAIHEET);
     window.tallennetutTyovaiheet = savedTyovaiheet ? JSON.parse(savedTyovaiheet) : [];
 }
 
+// ==================== JAKSON VAIHTUMISEN TARKISTUS ====================
+function tarkistaJaksonVaihtuminen() {
+    if (!AppState.jaksoAlku || !AppState.jaksoLoppu) return;
+    
+    const tanaan = new Date();
+    tanaan.setHours(0, 0, 0, 0);
+    
+    const jaksoAlku = new Date(AppState.jaksoAlku);
+    const jaksoLoppu = new Date(AppState.jaksoLoppu);
+    
+    // Tarkista onko tänään jakson viimeinen päivä
+    if (tanaan.getTime() === jaksoLoppu.getTime()) {
+        naytaIlmoitus('⚠️ PALKKAJAKSO PÄÄTTYY TÄNÄÄN!', 5000);
+    }
+    
+    // Tarkista onko tänään uuden jakson ensimmäinen päivä
+    if (tanaan.getTime() === jaksoAlku.getTime()) {
+        naytaIlmoitus('🎉 UUSI PALKKAJAKSO ALKAA TÄNÄÄN!', 5000);
+    }
+}
+
 // ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
-    // Päänäkymä
-    document.getElementById('v-nappi').addEventListener('click', toggleVuoro);
+    document.getElementById('v-nappi').addEventListener('click', handleVuoroNappi);
     document.getElementById('btn-tallenna').addEventListener('click', tallennaKortti);
     
-    // Tietojen syöttö
+    document.getElementById('box-kortti').addEventListener('click', () => avaaNumeroNaytto('Kortin numero', 'kortti'));
+    document.getElementById('box-lajike').addEventListener('click', () => avaaTekstiNaytto('Lajimerkki', 'lajike'));
     document.getElementById('box-asetus').addEventListener('click', () => avaaNumeroNaytto('Asetus (min)', 'asetus'));
     document.getElementById('box-taivutus').addEventListener('click', () => avaaNumeroNaytto('Taivutus (min)', 'taivutus'));
     document.getElementById('box-muut').addEventListener('click', () => avaaNumeroNaytto('Muut työt', 'muut'));
-    document.getElementById('box-kortti').addEventListener('click', () => avaaNumeroNaytto('Kortin numero', 'kortti'));
-    document.getElementById('box-lajike').addEventListener('click', () => avaaTekstiNaytto('Lajimerkki', 'lajike'));
     
-    // Skannaus
     document.getElementById('btn-scan-kortti').addEventListener('click', () => avaaSkanneri('kortti'));
     document.getElementById('btn-scan-lajike').addEventListener('click', () => avaaSkanneri('lajike'));
     document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
     
-    // Jaksoasetukset
     document.getElementById('dash-period').addEventListener('click', toggleJaksoAsetus);
     document.getElementById('btn-tallenna-jakso').addEventListener('click', tallennaJakso);
     
-    // Työkalut
     document.getElementById('tools-toggle').addEventListener('click', toggleTools);
     document.getElementById('btn-nollaa').addEventListener('click', nollaaHistoria);
     document.getElementById('btn-arkisto').addEventListener('click', avaaArkisto);
@@ -1088,12 +1128,10 @@ function setupEventListeners() {
     document.getElementById('btn-sulje-tyokalut-2').addEventListener('click', suljeTyokalut);
     document.getElementById('btn-testi').addEventListener('click', lisaaTestidata);
     
-    // Tiedostotoiminnot
     document.getElementById('btn-lataa').addEventListener('click', () => document.getElementById('file-input').click());
     document.getElementById('file-input').addEventListener('change', lataaVarmuuskopio);
     document.getElementById('btn-tallenna-file').addEventListener('click', tallennaVarmuuskopio);
     
-    // Turvalukko
     document.getElementById('safety-lock').addEventListener('change', function() {
         const btn = document.getElementById('btn-hard-reset');
         btn.disabled = !this.checked;
@@ -1101,41 +1139,211 @@ function setupEventListeners() {
     });
     document.getElementById('btn-hard-reset').addEventListener('click', hardReset);
     
-    // Haku
     document.getElementById('search-hist').addEventListener('input', haeHistoria);
     
-    // Peruutus
     document.getElementById('btn-peruuta').addEventListener('click', suljeNumeroNaytto);
     document.getElementById('btn-peruuta-aika').addEventListener('click', suljeAikaNaytto);
     document.getElementById('btn-peruuta-edit').addEventListener('click', () => suljeModal('edit-modal'));
     
-    // Muokkaus
     document.getElementById('btn-tallenna-muutos').addEventListener('click', tallennaMuokkaus);
     document.getElementById('btn-poista').addEventListener('click', poistaRivi);
     
-    // Numeronäppäimistö
     document.getElementById('k-alue').addEventListener('click', handleNumericKey);
     
-    // Erityistilat
     ['PROTO', 'HÄIRIÖ', 'HUOLTO'].forEach(tila => {
         document.getElementById(`s-${tila}`).addEventListener('click', () => toggleErikoistila(tila));
     });
     
-    // PWA asennus
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
         document.getElementById('install-prompt').style.display = 'block';
     });
     
-    // Escape-näppäin
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && avoinModal) {
             if (avoinModal === 'n-ruutu') suljeNumeroNaytto();
             else if (avoinModal === 'time-modal') suljeAikaNaytto();
+            else if (avoinModal === 'start-time-modal') suljeModal('start-time-modal');
+            else if (avoinModal === 'end-time-modal') suljeModal('end-time-modal');
             else suljeModal(avoinModal);
         }
     });
+}
+
+// ==================== VUORON ALOITUSAIKA ====================
+function setupStartTimeModal() {
+    const keypad = document.querySelector('#start-time-modal .time-keypad');
+    const display = document.getElementById('start-time-display');
+    let buffer = '';
+    
+    keypad.addEventListener('click', (e) => {
+        const key = e.target.closest('.time-key');
+        if (!key) return;
+        
+        const val = key.dataset.key;
+        
+        if (val === 'C') {
+            buffer = '';
+            display.textContent = '--:--';
+        } else if (val === 'NOW') {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const mins = now.getMinutes().toString().padStart(2, '0');
+            aloitaVuoroAjanKanssa(`${hours}:${mins}`);
+        } else if (val === 'OK') {
+            if (buffer.length >= 3) {
+                const hours = buffer.slice(0, -2).padStart(2, '0');
+                const mins = buffer.slice(-2);
+                aloitaVuoroAjanKanssa(`${hours}:${mins}`);
+            }
+        } else if (buffer.length < 4) {
+            buffer += val;
+            if (buffer.length <= 2) {
+                display.textContent = buffer.padStart(2, '0') + ':--';
+            } else {
+                const hours = buffer.slice(0, -2).padStart(2, '0');
+                const mins = buffer.slice(-2);
+                display.textContent = `${hours}:${mins}`;
+            }
+        }
+    });
+    
+    document.getElementById('btn-peruuta-start').addEventListener('click', () => {
+        suljeModal('start-time-modal');
+    });
+}
+
+// ==================== VUORON LOPETUSAIKA ====================
+function setupEndTimeModal() {
+    const keypad = document.querySelector('#end-time-modal .time-keypad');
+    const display = document.getElementById('end-time-display');
+    let buffer = '';
+    
+    keypad.addEventListener('click', (e) => {
+        const key = e.target.closest('.time-key');
+        if (!key) return;
+        
+        const val = key.dataset.key;
+        
+        if (val === 'C') {
+            buffer = '';
+            display.textContent = '--:--';
+        } else if (val === 'NOW') {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const mins = now.getMinutes().toString().padStart(2, '0');
+            lopetaVuoroAjanKanssa(`${hours}:${mins}`);
+        } else if (val === 'OK') {
+            if (buffer.length >= 3) {
+                const hours = buffer.slice(0, -2).padStart(2, '0');
+                const mins = buffer.slice(-2);
+                lopetaVuoroAjanKanssa(`${hours}:${mins}`);
+            }
+        } else if (buffer.length < 4) {
+            buffer += val;
+            if (buffer.length <= 2) {
+                display.textContent = buffer.padStart(2, '0') + ':--';
+            } else {
+                const hours = buffer.slice(0, -2).padStart(2, '0');
+                const mins = buffer.slice(-2);
+                display.textContent = `${hours}:${mins}`;
+            }
+        }
+    });
+    
+    document.getElementById('btn-peruuta-end').addEventListener('click', () => {
+        suljeModal('end-time-modal');
+    });
+}
+
+function handleVuoroNappi() {
+    if (!AppState.kaynnissa) {
+        document.getElementById('start-time-display').textContent = '--:--';
+        document.getElementById('start-time-modal').style.display = 'flex';
+        avoinModal = 'start-time-modal';
+    } else {
+        document.getElementById('end-time-display').textContent = '--:--';
+        document.getElementById('end-time-modal').style.display = 'flex';
+        avoinModal = 'end-time-modal';
+    }
+}
+
+function aloitaVuoroAjanKanssa(aika) {
+    const [hours, mins] = aika.split(':').map(Number);
+    
+    const now = new Date();
+    const aloitusAika = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, mins, 0, 0);
+    
+    if (aloitusAika > now) {
+        aloitusAika.setDate(aloitusAika.getDate() - 1);
+    }
+    
+    AppState.kaynnissa = true;
+    AppState.aloitusAika = aloitusAika.getTime();
+    AppState.aloitusAikaValittu = aika;
+    AppState.lopetusAika = 0;
+    AppState.lopetusAikaValittu = null;
+    AppState.jaksoKestoAlku = AppState.todellisetTyotunnit || 0;
+    
+    const nappi = document.getElementById('v-nappi');
+    nappi.textContent = 'LOPETA VUORO';
+    nappi.className = 'main-action btn-stop';
+    
+    const vuoroTiedot = {
+        aloitusAika: AppState.aloitusAika,
+        aloitusAikaValittu: aika,
+        lopetusAika: null,
+        lopetusAikaValittu: null,
+        jaksoKestoAlku: AppState.jaksoKestoAlku
+    };
+    
+    localStorage.setItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT, JSON.stringify(vuoroTiedot));
+    
+    suljeModal('start-time-modal');
+    paivitaTilastot();
+    naytaIlmoitus(`Vuoro aloitettu klo ${aika}`);
+    tarkistaJaksonVaihtuminen();
+}
+
+function lopetaVuoroAjanKanssa(aika) {
+    const [hours, mins] = aika.split(':').map(Number);
+    
+    const now = new Date();
+    let lopetusAika = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, mins, 0, 0);
+    
+    // Jos lopetusaika on ennen aloitusaikaa, se on seuraava päivä
+    if (lopetusAika.getTime() < AppState.aloitusAika) {
+        lopetusAika.setDate(lopetusAika.getDate() + 1);
+    }
+    
+    AppState.kaynnissa = false;
+    AppState.lopetusAika = lopetusAika.getTime();
+    AppState.lopetusAikaValittu = aika;
+    
+    const kesto = AppState.lopetusAika - AppState.aloitusAika;
+    AppState.todellisetTyotunnit = AppState.jaksoKestoAlku + (kesto / (1000 * 60 * 60));
+    
+    const nappi = document.getElementById('v-nappi');
+    nappi.textContent = 'ALOITA VUORO';
+    nappi.className = 'main-action btn-start';
+    
+    // Tallenna vuoron tiedot
+    const vuoroTiedot = {
+        aloitusAika: AppState.aloitusAika,
+        aloitusAikaValittu: AppState.aloitusAikaValittu,
+        lopetusAika: AppState.lopetusAika,
+        lopetusAikaValittu: aika,
+        kesto: kesto,
+        jaksoKestoAlku: AppState.jaksoKestoAlku
+    };
+    
+    localStorage.setItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT, JSON.stringify(vuoroTiedot));
+    localStorage.removeItem('vuoroKaynnissa');
+    
+    suljeModal('end-time-modal');
+    paivitaTilastot();
+    naytaIlmoitus(`Vuoro päättyi klo ${aika}\nKesto: ${formatDuration(kesto)}`);
 }
 
 // ==================== YHDISTETTY NÄPPÄIMISTÖ ====================
@@ -1146,7 +1354,7 @@ function setupCombinedKeyboard() {
         const key = e.target.closest('[data-key]');
         if (!key) return;
         
-        const keyValue = key.getAttribute('data-key');
+        const keyValue = key.getAttribute('data-key').toUpperCase(); // AINA ISOT KIRJAIMET
         const lajimerkkiInput = document.getElementById('muut-lajimerkki');
         const aikaInput = document.getElementById('muut-aika');
         
@@ -1158,13 +1366,18 @@ function setupCombinedKeyboard() {
                 return;
                 
             case 'ENTER':
-                if (aktiivinenMuutKentta === 'lajimerkki' && lajimerkkiInput.value.trim()) {
+                if (currentInputTarget === 'lajike') {
+                    const arvo = lajimerkkiInput.value.trim().toUpperCase();
+                    if (arvo) {
+                        document.getElementById('v-lajike').textContent = arvo;
+                        suljeNumeroNaytto();
+                    }
+                } else if (aktiivinenMuutKentta === 'lajimerkki' && lajimerkkiInput.value.trim()) {
                     aktiivinenMuutKentta = 'aika';
                     lajimerkkiInput.style.borderColor = '#333';
                     aikaInput.style.borderColor = 'var(--primary)';
                     
-                    // Tallenna työvaihe
-                    const arvo = lajimerkkiInput.value.trim();
+                    const arvo = lajimerkkiInput.value.trim().toUpperCase();
                     if (!window.tallennetutTyovaiheet.includes(arvo)) {
                         window.tallennetutTyovaiheet.push(arvo);
                         localStorage.setItem(CONFIG.STORAGE_KEYS.TYOVAIHEET, JSON.stringify(window.tallennetutTyovaiheet));
@@ -1176,8 +1389,8 @@ function setupCombinedKeyboard() {
                 return;
                 
             case 'BACKSPACE':
-                if (aktiivinenMuutKentta === 'lajimerkki') {
-                    lajimerkkiInput.value = lajimerkkiInput.value.slice(0, -1);
+                if (currentInputTarget === 'lajike' || aktiivinenMuutKentta === 'lajimerkki') {
+                    lajimerkkiInput.value = lajimerkkiInput.value.slice(0, -1).toUpperCase();
                     naytaAutocomplete(lajimerkkiInput.value);
                 } else {
                     aikaInput.value = aikaInput.value.slice(0, -1);
@@ -1185,21 +1398,16 @@ function setupCombinedKeyboard() {
                 return;
                 
             case 'SPACE':
-                if (aktiivinenMuutKentta === 'lajimerkki') {
+                if (currentInputTarget === 'lajike' || aktiivinenMuutKentta === 'lajimerkki') {
                     lajimerkkiInput.value += ' ';
                 }
                 return;
         }
         
-        // Kirjain tai numero
+        // KIRJAIMET AINA ISOIKSI
         let char = keyValue;
-        if (isShiftActive && /^[a-zäöå]$/i.test(char)) {
-            char = char.toUpperCase();
-        } else if (!isShiftActive && /^[A-ZÄÖÅ]$/.test(char)) {
-            char = char.toLowerCase();
-        }
         
-        if (aktiivinenMuutKentta === 'lajimerkki') {
+        if (currentInputTarget === 'lajike' || aktiivinenMuutKentta === 'lajimerkki') {
             lajimerkkiInput.value += char;
             naytaAutocomplete(lajimerkkiInput.value);
         } else if (/^[0-9.]$/.test(char)) {
@@ -1207,11 +1415,12 @@ function setupCombinedKeyboard() {
         }
     });
     
-    // Muut-kenttien fokus
     document.getElementById('muut-lajimerkki').addEventListener('click', () => {
-        aktiivinenMuutKentta = 'lajimerkki';
-        document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
-        document.getElementById('muut-aika').style.borderColor = '#333';
+        if (currentInputTarget === 'muut') {
+            aktiivinenMuutKentta = 'lajimerkki';
+            document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
+            document.getElementById('muut-aika').style.borderColor = '#333';
+        }
     });
     
     document.getElementById('muut-aika').addEventListener('click', () => {
@@ -1222,10 +1431,11 @@ function setupCombinedKeyboard() {
 }
 
 function paivitaNappaimistoKirjaimet() {
+    // Näppäimistö näyttää aina isot kirjaimet
     document.querySelectorAll('#combined-keyboard .key-letter[data-key]').forEach(key => {
         const original = key.getAttribute('data-key');
         if (original.length === 1 && /^[a-zäöå]$/i.test(original)) {
-            key.textContent = isShiftActive ? original.toUpperCase() : original.toLowerCase();
+            key.textContent = original.toUpperCase();
         }
     });
 }
@@ -1237,8 +1447,9 @@ function naytaAutocomplete(text) {
         return;
     }
     
+    const upperText = text.toUpperCase();
     const matches = window.tallennetutTyovaiheet.filter(t => 
-        t.toLowerCase().startsWith(text.toLowerCase()) && t !== text
+        t.toUpperCase().startsWith(upperText) && t !== upperText
     );
     
     list.innerHTML = matches.length ? matches.map(m => 
@@ -1247,22 +1458,23 @@ function naytaAutocomplete(text) {
 }
 
 window.valitseAutocomplete = function(value) {
-    document.getElementById('muut-lajimerkki').value = value;
+    document.getElementById('muut-lajimerkki').value = value.toUpperCase();
     document.getElementById('autocomplete-list').innerHTML = '';
 };
 
 function kasitteleMuutArvot() {
-    const lajimerkki = document.getElementById('muut-lajimerkki').value;
+    const lajimerkki = document.getElementById('muut-lajimerkki').value.toUpperCase();
     const aika = document.getElementById('muut-aika').value;
     
     if (lajimerkki && aika) {
-        document.getElementById('v-muut').textContent = `${lajimerkki} (${aika}min)`;
+        document.getElementById('v-muut').textContent = `${lajimerkki} (${aika}MIN)`;
         localStorage.setItem(CONFIG.STORAGE_KEYS.TEMP_MUUT, JSON.stringify({lajimerkki, aika}));
     }
 }
 
 // ==================== NUMERONÄYTTÖ ====================
 function avaaNumeroNaytto(otsikko, tyyppi) {
+    currentInputTarget = tyyppi;
     document.getElementById('n-otsikko').textContent = otsikko;
     document.getElementById('n-naytto').textContent = '';
     syoteBuffer = '';
@@ -1286,7 +1498,8 @@ function avaaNumeroNaytto(otsikko, tyyppi) {
     document.getElementById('n-ruutu').style.display = 'flex';
 }
 
-function avaaTekstiNaytto(otsikko) {
+function avaaTekstiNaytto(otsikko, tyyppi) {
+    currentInputTarget = tyyppi;
     document.getElementById('n-otsikko').textContent = otsikko;
     document.getElementById('n-naytto').textContent = '';
     syoteBuffer = '';
@@ -1295,8 +1508,8 @@ function avaaTekstiNaytto(otsikko) {
     document.getElementById('combined-keyboard').style.display = 'block';
     document.getElementById('k-alue').style.display = 'none';
     
-    // Käytä lajimerkki-kenttää tekstin syöttöön
     aktiivinenMuutKentta = 'lajimerkki';
+    document.getElementById('muut-lajimerkki').value = '';
     
     avoinModal = 'n-ruutu';
     document.getElementById('n-ruutu').style.display = 'flex';
@@ -1320,31 +1533,34 @@ function handleNumericKey(e) {
     
     const num = key.dataset.num;
     const naytto = document.getElementById('n-naytto');
-    const otsikko = document.getElementById('n-otsikko').textContent;
     
     if (num === 'C') {
         syoteBuffer = '';
+        naytto.textContent = '';
     } else if (num === 'OK' && syoteBuffer) {
         const arvo = syoteBuffer;
         
-        if (otsikko.includes('Kortti')) document.getElementById('v-kortti').textContent = arvo;
-        else if (otsikko.includes('Lajimerkki')) document.getElementById('v-lajike').textContent = arvo;
-        else if (otsikko.includes('Asetus')) document.getElementById('v-asetus').textContent = arvo + ' min';
-        else if (otsikko.includes('Taivutus')) document.getElementById('v-taivutus').textContent = arvo + ' min';
+        if (currentInputTarget === 'kortti') {
+            document.getElementById('v-kortti').textContent = arvo;
+        } else if (currentInputTarget === 'asetus') {
+            document.getElementById('v-asetus').textContent = arvo + ' min';
+        } else if (currentInputTarget === 'taivutus') {
+            document.getElementById('v-taivutus').textContent = arvo + ' min';
+        }
         
         suljeNumeroNaytto();
         return;
     } else {
         syoteBuffer += num;
+        naytto.textContent = syoteBuffer;
     }
-    
-    naytto.textContent = syoteBuffer;
 }
 
 function suljeNumeroNaytto() {
     document.getElementById('n-ruutu').style.display = 'none';
     avoinModal = null;
     isShiftActive = false;
+    currentInputTarget = null;
     document.querySelector('.key-shift')?.classList.remove('active');
     paivitaNappaimistoKirjaimet();
 }
@@ -1364,7 +1580,7 @@ function suljeAikaNaytto() {
     avoinModal = null;
 }
 
-document.querySelector('.time-keypad').addEventListener('click', function(e) {
+document.querySelector('#time-modal .time-keypad').addEventListener('click', function(e) {
     const key = e.target.closest('.time-key');
     if (!key) return;
     
@@ -1407,7 +1623,7 @@ function avaaSkanneri(kohde) {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
-        () => {} // Älä näytä virheitä
+        () => {}
     ).catch(err => {
         console.error('Skannaus epäonnistui:', err);
         alert('Kameran käyttö epäonnistui. Tarkista oikeudet.');
@@ -1428,55 +1644,40 @@ function suljeSkanneri() {
 }
 
 function onScanSuccess(decodedText) {
+    const upperText = decodedText.toUpperCase();
     if (skannausKohde === 'kortti') {
-        document.getElementById('v-kortti').textContent = decodedText;
+        document.getElementById('v-kortti').textContent = upperText;
     } else if (skannausKohde === 'lajike') {
-        document.getElementById('v-lajike').textContent = decodedText;
+        document.getElementById('v-lajike').textContent = upperText;
     }
     suljeSkanneri();
 }
 
 // ==================== VUORON HALLINTA ====================
-function toggleVuoro() {
-    const nappi = document.getElementById('v-nappi');
-    
-    if (!AppState.kaynnissa) {
-        // Aloita vuoro
-        AppState.kaynnissa = true;
-        AppState.aloitusAika = Date.now();
-        AppState.jaksoKestoAlku = AppState.todellisetTyotunnit || 0;
-        
-        nappi.textContent = 'LOPETA VUORO';
-        nappi.className = 'main-action btn-stop';
-        
-        // Tallenna tila
-        localStorage.setItem('vuoroKaynnissa', JSON.stringify({
-            aloitusAika: AppState.aloitusAika,
-            jaksoKestoAlku: AppState.jaksoKestoAlku
-        }));
-    } else {
-        // Lopeta vuoro
-        lopetaVuoro();
-    }
-    
-    paivitaTilastot();
-}
-
 function startKello() {
-    // Tarkista onko kesken jäänyt vuoro
-    const kesken = localStorage.getItem('vuoroKaynnissa');
+    const kesken = localStorage.getItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT);
     if (kesken) {
         const data = JSON.parse(kesken);
-        AppState.kaynnissa = true;
-        AppState.aloitusAika = data.aloitusAika;
-        AppState.jaksoKestoAlku = data.jaksoKestoAlku;
-        
-        const nappi = document.getElementById('v-nappi');
-        nappi.textContent = 'LOPETA VUORO';
-        nappi.className = 'main-action btn-stop';
+        if (!data.lopetusAika) {
+            // Vuoro kesken
+            AppState.kaynnissa = true;
+            AppState.aloitusAika = data.aloitusAika;
+            AppState.aloitusAikaValittu = data.aloitusAikaValittu;
+            AppState.jaksoKestoAlku = data.jaksoKestoAlku || 0;
+            
+            const nappi = document.getElementById('v-nappi');
+            nappi.textContent = 'LOPETA VUORO';
+            nappi.className = 'main-action btn-stop';
+        } else {
+            // Vuoro päättynyt, ladataan tiedot
+            AppState.aloitusAika = data.aloitusAika;
+            AppState.lopetusAika = data.lopetusAika;
+            AppState.aloitusAikaValittu = data.aloitusAikaValittu;
+            AppState.lopetusAikaValittu = data.lopetusAikaValittu;
+            AppState.todellisetTyotunnit = data.jaksoKestoAlku + ((data.lopetusAika - data.aloitusAika) / (1000 * 60 * 60));
+        }
     }
     
-    // Käynnistä päivitys
     if (!kellonInterval) {
         kellonInterval = setInterval(() => {
             if (AppState.kaynnissa) {
@@ -1490,26 +1691,6 @@ function startKello() {
             }
         }, 1000);
     }
-}
-
-function lopetaVuoro() {
-    AppState.kaynnissa = false;
-    const kesto = Date.now() - AppState.aloitusAika;
-    AppState.todellisetTyotunnit = AppState.jaksoKestoAlku + (kesto / (1000 * 60 * 60));
-    
-    const nappi = document.getElementById('v-nappi');
-    nappi.textContent = 'ALOITA VUORO';
-    nappi.className = 'main-action btn-start';
-    
-    localStorage.removeItem('vuoroKaynnissa');
-    
-    // Tallenna vuoron yhteenveto
-    tallennaVuoroYhteenveto(kesto);
-}
-
-function tallennaVuoroYhteenveto(kestoMs) {
-    // Tämä voisi tallentaa päivän yhteenvedon
-    console.log('Vuoro päättyi, kesto:', formatDuration(kestoMs));
 }
 
 // ==================== KORTIN TALLENNUS ====================
@@ -1540,7 +1721,6 @@ function tallennaKortti() {
     arkisto.push(entry);
     localStorage.setItem(CONFIG.STORAGE_KEYS.ARKISTO, JSON.stringify(arkisto));
     
-    // Nollaa kentät
     ['v-kortti', 'v-lajike', 'v-asetus', 'v-taivutus', 'v-muut'].forEach(id => {
         document.getElementById(id).textContent = '-';
     });
@@ -1548,18 +1728,17 @@ function tallennaKortti() {
     paivitaHistoria();
     paivitaTilastot();
     
-    // Näytä vahvistus
     naytaIlmoitus('Kortti tallennettu!');
 }
 
-function naytaIlmoitus(viesti) {
-    // Yksinkertainen toast-ilmoitus
+function naytaIlmoitus(viesti, kesto = 1500) {
     const toast = document.createElement('div');
     toast.style.cssText = `
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
         background: var(--success); color: #000; padding: 16px 24px;
         border-radius: 12px; font-weight: 700; z-index: 9999;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.5); text-align: center;
+        max-width: 80%; word-wrap: break-word;
     `;
     toast.textContent = viesti;
     document.body.appendChild(toast);
@@ -1568,7 +1747,7 @@ function naytaIlmoitus(viesti) {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.3s';
         setTimeout(() => toast.remove(), 300);
-    }, 1500);
+    }, kesto);
 }
 
 // ==================== TILASTOT ====================
@@ -1576,7 +1755,6 @@ function paivitaTilastot() {
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
     const tanaan = new Date().toDateString();
     
-    // Tämän vuoron tilastot
     const vuoroTiedot = arkisto.filter(e => 
         new Date(e.pvm).toDateString() === tanaan
     );
@@ -1588,16 +1766,7 @@ function paivitaTilastot() {
     
     document.getElementById('shiftDone').textContent = valmiitMin;
     
-    // Tehokkuus
-    if (AppState.kaynnissa) {
-        const kestoTunteina = (Date.now() - AppState.aloitusAika) / (1000 * 60 * 60);
-        const tehokkuus = kestoTunteina > 0 ? (valmiitMin / 60 / kestoTunteina).toFixed(2) : '0.00';
-        document.getElementById('shiftEfficiency').textContent = tehokkuus;
-    } else if (valmiitMin > 0) {
-        document.getElementById('shiftEfficiency').textContent = '0.00';
-    }
-    
-    // Jakson tilastot
+    // KORJATTU: Jakson joutuisuus lasketaan oikein
     if (AppState.jaksoAlku && AppState.jaksoLoppu) {
         const jaksoAlku = new Date(AppState.jaksoAlku);
         const jaksoLoppu = new Date(AppState.jaksoLoppu);
@@ -1614,9 +1783,22 @@ function paivitaTilastot() {
         
         document.getElementById('periodActual').textContent = (jaksoValmiit / 60).toFixed(1);
         
-        // Päivitä timeline
-        paivitaTimeline(vuoroTiedot);
+        // Laske jakson tehokkuus (todelliset työtunnit vs valmiit tunnit)
+        const jaksonKestoTunteina = AppState.todellisetTyotunnit || 0;
+        const valmiitTunteina = jaksoValmiit / 60;
+        const jaksonTehokkuus = jaksonKestoTunteina > 0 ? (valmiitTunteina / jaksonKestoTunteina).toFixed(2) : '0.00';
+        document.getElementById('periodEfficiency').textContent = jaksonTehokkuus;
     }
+    
+    if (AppState.kaynnissa) {
+        const kestoTunteina = (Date.now() - AppState.aloitusAika) / (1000 * 60 * 60);
+        const tehokkuus = kestoTunteina > 0 ? (valmiitMin / 60 / kestoTunteina).toFixed(2) : '0.00';
+        document.getElementById('shiftEfficiency').textContent = tehokkuus;
+    } else if (valmiitMin > 0) {
+        document.getElementById('shiftEfficiency').textContent = '0.00';
+    }
+    
+    paivitaTimeline(vuoroTiedot);
 }
 
 function paivitaTimeline(tiedot) {
@@ -1743,8 +1925,8 @@ function tallennaMuokkaus() {
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
     arkisto[muokkausIndex] = {
         ...arkisto[muokkausIndex],
-        kortti: document.getElementById('ed-kortti').value,
-        lajike: document.getElementById('ed-laji').value,
+        kortti: document.getElementById('ed-kortti').value.toUpperCase(),
+        lajike: document.getElementById('ed-laji').value.toUpperCase(),
         asetus: parseInt(document.getElementById('ed-as').value) || 0,
         taivutus: parseInt(document.getElementById('ed-ta').value) || 0,
         muutAika: parseInt(document.getElementById('ed-mu').value) || 0
@@ -1811,6 +1993,7 @@ function tallennaJakso() {
     toggleJaksoAsetus();
     paivitaTilastot();
     naytaIlmoitus('Jakso tallennettu!');
+    tarkistaJaksonVaihtuminen();
 }
 
 // ==================== ERIKOISTILAT ====================
@@ -1923,8 +2106,9 @@ function tallennaVarmuuskopio() {
         arkisto: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]'),
         asetukset: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ASETUKSET) || '{}'),
         tyovaiheet: window.tallennetutTyovaiheet,
+        vuoroTiedot: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT) || '{}'),
         timestamp: new Date().toISOString(),
-        versio: '4.1'
+        versio: '4.3'
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1961,6 +2145,9 @@ function lataaVarmuuskopio(e) {
                 window.tallennetutTyovaiheet = data.tyovaiheet;
                 localStorage.setItem(CONFIG.STORAGE_KEYS.TYOVAIHEET, JSON.stringify(data.tyovaiheet));
             }
+            if (data.vuoroTiedot) {
+                localStorage.setItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT, JSON.stringify(data.vuoroTiedot));
+            }
             
             naytaIlmoitus('Varmuuskopio ladattu!');
             setTimeout(() => location.reload(), 1000);
@@ -1969,12 +2156,11 @@ function lataaVarmuuskopio(e) {
         }
     };
     reader.readAsText(file);
-    e.target.value = ''; // Resetoi input
+    e.target.value = '';
 }
 
 // ==================== TYÖKALUPAKKI ====================
 function setupToolbox() {
-    // Välilehdet
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1985,23 +2171,18 @@ function setupToolbox() {
         });
     });
     
-    // Profiililaskuri
     document.getElementById('btn-lisaa-sivu').addEventListener('click', lisaaSivu);
     document.getElementById('btn-tyhjenna').addEventListener('click', tyhjennaSivut);
     
-    // Voimalaskuri
     document.getElementById('btn-laske-voima').addEventListener('click', laskeVoima);
     
-    // Trigonometria
     document.getElementById('btn-laske-trigo').addEventListener('click', laskeTrigonometria);
     
-    // Ekstrat
     document.getElementById('btn-laske-sarvi').addEventListener('click', laskeSarvi);
     document.getElementById('btn-laske-bump').addEventListener('click', laskeBump);
     document.getElementById('btn-laske-paino').addEventListener('click', laskePaino);
     document.getElementById('btn-laske-risti').addEventListener('click', laskeRisti);
     
-    // Materiaalien päivitys
     document.getElementById('p_material').addEventListener('change', paivitaMateriaali);
     document.getElementById('m_material_select').addEventListener('change', paivitaMateriaaliVoima);
 }
@@ -2111,7 +2292,6 @@ function laskeVoima() {
         return;
     }
     
-    // Kaava: F = (1.42 * Rm * s² * L) / (1000 * V)
     const f = (1.42 * rm * t * t * l * 1000) / (1000 * v);
     
     const result = document.getElementById('res-force');
@@ -2271,7 +2451,7 @@ function lisaaTestidata() {
                 id: Date.now() + Math.random(),
                 pvm: pvm.toISOString(),
                 kortti: `TEST-${1000 + Math.floor(Math.random() * 9000)}`,
-                lajike: `Testi-${j+1}`,
+                lajike: `TESTI-${j+1}`,
                 asetus: Math.floor(Math.random() * 30) + 10,
                 taivutus: Math.floor(Math.random() * 60) + 20,
                 muutAika: Math.floor(Math.random() * 15)
