@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.9</title>
+    <title>Press Brake Pro v4.10</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -209,6 +209,13 @@
             border-color: var(--primary); 
             background: linear-gradient(145deg, rgba(255,103,0,0.1) 0%, var(--dark-panel) 100%);
         }
+        /* Ei-aktiivinen tila kun vuoro ei käynnissä */
+        .vuoro-ei-kaynnissa .info-box {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .vuoro-ei-kaynnissa .info-box::after { content: '🔒'; font-size: 0.9em; color: #555; }
+        .vuoro-ei-kaynnissa .btn-scan { opacity: 0.4; cursor: not-allowed; }
         
         .btn-scan { 
             width: 48px; background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%); 
@@ -736,8 +743,8 @@
         .efficiency-fill.low { background: var(--danger); }
         .day-row {
             display: grid;
-            grid-template-columns: 40px 1fr 60px 50px;
-            gap: 8px;
+            grid-template-columns: 45px 1fr 55px 48px;
+            gap: 6px;
             padding: 8px;
             border-bottom: 1px solid #222;
             align-items: center;
@@ -752,22 +759,28 @@
         }
         .day-bar-container {
             background: #333;
-            height: 6px;
-            border-radius: 3px;
+            height: 8px;
+            border-radius: 4px;
             overflow: hidden;
+            min-width: 0;
         }
         .day-bar {
             height: 100%;
-            border-radius: 3px;
+            border-radius: 4px;
             background: var(--primary);
+            min-width: 3px;
         }
         .day-hours {
             text-align: right;
             color: var(--text-light);
+            white-space: nowrap;
+            font-size: 0.9em;
         }
         .day-eff {
             text-align: right;
             font-weight: 700;
+            white-space: nowrap;
+            font-size: 0.9em;
         }
         .day-eff.high { color: var(--success); }
         .day-eff.medium { color: var(--warning); }
@@ -980,6 +993,7 @@
         </div>
 
         <!-- Tietojen syöttö -->
+        <div id="syotto-alue" class="vuoro-ei-kaynnissa">
         <div class="info-row">
             <div id="box-kortti" class="info-box"><span>KORTTI</span><b id="v-kortti">-</b></div>
             <button id="btn-scan-kortti" class="btn-scan">📷</button>
@@ -991,6 +1005,7 @@
         <div class="info-row"><div id="box-asetus" class="info-box"><span>ASETUS</span><b id="v-asetus">-</b></div></div>
         <div class="info-row"><div id="box-taivutus" class="info-box"><span>TAIVUTUS</span><b id="v-taivutus">-</b></div></div>
         <div class="info-row"><div id="box-muut" class="info-box"><span>MUUT</span><b id="v-muut">-</b></div></div>
+        </div>
 
         <!-- Toiminnot -->
         <button id="btn-tallenna" class="main-action btn-save">💾 TALLENNA KORTTI</button>
@@ -1510,8 +1525,8 @@
         
         <div id="muut-fields" class="muut-extra-fields" style="display:none;">
             <div class="muut-field">
-                <label>Työvaihe</label>
-                <input type="text" id="muut-lajimerkki" placeholder="Kirjoita työvaihe..." autocomplete="off">
+                <label>Lajimerkki</label>
+                <input type="text" id="muut-lajimerkki" placeholder="Lajimerkki..." autocomplete="off">
                 <div id="autocomplete-list" class="autocomplete-items"></div>
             </div>
             <div class="muut-field">
@@ -1719,6 +1734,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupRaportit();
     setupVuorojenHallinta();
     startKello();        // Ensin startKello → asettaa todellisetTyotunnit
+    paivitaSyottoAlueTila(); // Näytä lukittu tila jos vuoro ei käynnissä
     paivitaNaytto();     // Sitten näyttöpäivitys → käyttää oikeita tunteja
     tarkistaJaPaivitaJakso();
 });
@@ -2197,7 +2213,7 @@ function poistaVuoro() {
         
         const nappi = document.getElementById('v-nappi');
         nappi.textContent = 'ALOITA VUORO';
-        nappi.className = 'main-action btn-start';
+        nappi.className = 'main-action btn-start'; paivitaSyottoAlueTila();
     }
     
     vuorot.splice(muokattavaVuoroIndex, 1);
@@ -2216,6 +2232,17 @@ function poistaVuoro() {
     suljeModal('vuoro-edit-modal');
     paivitaKaikkiTilastot();
     naytaIlmoitus('🗑️ Vuoro poistettu!');
+}
+
+function paivitaSyottoAlueTila() {
+    const alue = document.getElementById('syotto-alue');
+    if (alue) {
+        if (AppState.kaynnissa) {
+            alue.classList.remove('vuoro-ei-kaynnissa');
+        } else {
+            alue.classList.add('vuoro-ei-kaynnissa');
+        }
+    }
 }
 
 function paivitaKaikkiTilastot() {
@@ -2647,14 +2674,26 @@ function setupEventListeners() {
     document.getElementById('v-nappi').addEventListener('click', handleVuoroNappi);
     document.getElementById('btn-tallenna').addEventListener('click', tallennaKortti);
     
-    document.getElementById('box-kortti').addEventListener('click', () => avaaNumeroNaytto('Kortin numero', 'kortti'));
-    document.getElementById('box-lajike').addEventListener('click', () => avaaTekstiNaytto('Lajimerkki', 'lajike'));
-    document.getElementById('box-asetus').addEventListener('click', () => avaaNumeroNaytto('Asetus (min)', 'asetus'));
-    document.getElementById('box-taivutus').addEventListener('click', () => avaaNumeroNaytto('Taivutus (min)', 'taivutus'));
-    document.getElementById('box-muut').addEventListener('click', () => avaaNumeroNaytto('Muut työt', 'muut'));
+    // Syöttökentät vain kun vuoro on aktiivinen
+    const vaatiVuoron = (fn) => () => {
+        if (!AppState.kaynnissa) {
+            naytaIlmoitus('⚠️ Aloita työvuoro ensin!', 1800);
+            // Ravista nappia visuaalisesti
+            const el = document.querySelector('.main-action');
+            if (el) { el.style.animation = 'none'; setTimeout(() => el.style.animation = '', 10); }
+            return;
+        }
+        fn();
+    };
     
-    document.getElementById('btn-scan-kortti').addEventListener('click', () => avaaSkanneri('kortti'));
-    document.getElementById('btn-scan-lajike').addEventListener('click', () => avaaSkanneri('lajike'));
+    document.getElementById('box-kortti').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Kortin numero', 'kortti')));
+    document.getElementById('box-lajike').addEventListener('click', vaatiVuoron(() => avaaTekstiNaytto('Lajimerkki', 'lajike')));
+    document.getElementById('box-asetus').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Asetus (min)', 'asetus')));
+    document.getElementById('box-taivutus').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Taivutus (min)', 'taivutus')));
+    document.getElementById('box-muut').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Muut työt', 'muut')));
+    
+    document.getElementById('btn-scan-kortti').addEventListener('click', vaatiVuoron(() => avaaSkanneri('kortti')));
+    document.getElementById('btn-scan-lajike').addEventListener('click', vaatiVuoron(() => avaaSkanneri('lajike')));
     document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
     
     document.getElementById('dash-period').addEventListener('click', toggleJaksoAsetus);
@@ -2903,7 +2942,7 @@ function lopetaVuoroAjanKanssa(aika) {
     
     const nappi = document.getElementById('v-nappi');
     nappi.textContent = 'ALOITA VUORO';
-    nappi.className = 'main-action btn-start';
+    nappi.className = 'main-action btn-start'; paivitaSyottoAlueTila();
     
     const vuoroTiedot = {
         aloitusAika: AppState.aloitusAika,
@@ -2946,11 +2985,15 @@ function setupCombinedKeyboard() {
                     const arvo = lajimerkkiInput.value.trim().toUpperCase();
                     if (arvo) {
                         document.getElementById('v-lajike').textContent = arvo;
+                        // Muista viimeisin lajimerkki
+                        localStorage.setItem('viimeinenLajimerkki', arvo);
                         if (!window.tallennetutTyovaiheet.includes(arvo)) {
                             window.tallennetutTyovaiheet.push(arvo);
                             localStorage.setItem(CONFIG.STORAGE_KEYS.TYOVAIHEET, JSON.stringify(window.tallennetutTyovaiheet));
                         }
                         suljeNumeroNaytto();
+                        // Siirry automaattisesti asetus-ikkunaan
+                        setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 200);
                     }
                 } else if (currentInputTarget === 'muut') {
                     if (aktiivinenMuutKentta === 'lajimerkki' && lajimerkkiInput.value.trim()) {
@@ -2959,6 +3002,8 @@ function setupCombinedKeyboard() {
                         aikaInput.style.borderColor = 'var(--primary)';
                         
                         const arvo = lajimerkkiInput.value.trim().toUpperCase();
+                        // Muista viimeisin työvaihe
+                        localStorage.setItem('tempMuutLajimerkki', arvo);
                         if (!window.tallennetutTyovaiheet.includes(arvo)) {
                             window.tallennetutTyovaiheet.push(arvo);
                             localStorage.setItem(CONFIG.STORAGE_KEYS.TYOVAIHEET, JSON.stringify(window.tallennetutTyovaiheet));
@@ -3075,19 +3120,22 @@ function avaaNumeroNaytto(otsikko, tyyppi) {
     
     const isMuut = tyyppi === 'muut';
     document.getElementById('muut-fields').style.display = isMuut ? 'block' : 'none';
-    // Always show aika field in muut mode
     if (isMuut) {
+        document.getElementById('n-naytto').style.display = 'none'; // Ei tarvita muut-moodissa
         document.getElementById('muut-aika').parentElement.style.display = 'block';
     }
     document.getElementById('combined-keyboard').style.display = isMuut ? 'block' : 'none';
     document.getElementById('k-alue').style.display = isMuut ? 'none' : 'grid';
     
     if (isMuut) {
-        document.getElementById('muut-lajimerkki').value = '';
+        // Lataa aiempi syöte muistista jos löytyy
+        const muistettu = localStorage.getItem('tempMuutLajimerkki') || '';
+        document.getElementById('muut-lajimerkki').value = muistettu;
         document.getElementById('muut-aika').value = '';
         aktiivinenMuutKentta = 'lajimerkki';
         document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
         document.getElementById('muut-aika').style.borderColor = '#333';
+        if (muistettu) naytaAutocomplete(muistettu);
     } else {
         luoNumeronappaimisto();
     }
@@ -3099,19 +3147,22 @@ function avaaNumeroNaytto(otsikko, tyyppi) {
 function avaaTekstiNaytto(otsikko, tyyppi) {
     currentInputTarget = tyyppi;
     document.getElementById('n-otsikko').textContent = otsikko;
-    document.getElementById('n-naytto').textContent = '';
-    document.getElementById('n-naytto').style.display = 'none';
+    document.getElementById('n-naytto').style.display = 'none'; // Piilota tyhjä näyttölaatikko
     syoteBuffer = '';
     
-    // Show lajimerkki field without the aika field
     document.getElementById('muut-fields').style.display = 'block';
     document.getElementById('muut-aika').parentElement.style.display = 'none';
     document.getElementById('combined-keyboard').style.display = 'block';
     document.getElementById('k-alue').style.display = 'none';
     
     aktiivinenMuutKentta = 'lajimerkki';
-    document.getElementById('muut-lajimerkki').value = '';
+    // Lataa viimeksi käytetty lajimerkki muistista
+    const muistettu = localStorage.getItem('viimeinenLajimerkki') || '';
+    document.getElementById('muut-lajimerkki').value = muistettu;
     document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
+    if (muistettu) {
+        naytaAutocomplete(muistettu);
+    }
     
     avoinModal = 'n-ruutu';
     document.getElementById('n-ruutu').style.display = 'flex';
@@ -3344,8 +3395,13 @@ function onScanSuccess(decodedText, decodedResult) {
         setTimeout(() => suljeSkanneriJaAvaaSeuraava('lajike'), 500);
     } else if (skannausKohde === 'lajike') {
         document.getElementById('v-lajike').textContent = upperText;
+        localStorage.setItem('viimeinenLajimerkki', upperText);
         naytaIlmoitus(`✅ Lajike: ${upperText}`, 700);
-        setTimeout(() => suljeSkanneri(), 400);
+        // Siirry automaattisesti asetus-ikkunaan
+        setTimeout(() => {
+            suljeSkanneri();
+            setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 400);
+        }, 400);
     } else {
         setTimeout(() => suljeSkanneri(), 400);
     }
@@ -3390,6 +3446,7 @@ function startKello() {
             const nappi = document.getElementById('v-nappi');
             nappi.textContent = 'LOPETA VUORO';
             nappi.className = 'main-action btn-stop';
+            paivitaSyottoAlueTila();
         } else {
             AppState.aloitusAika = data.aloitusAika;
             AppState.lopetusAika = data.lopetusAika;
