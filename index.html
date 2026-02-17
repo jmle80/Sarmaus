@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.12</title>
+    <title>Press Brake Pro v4.14</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -934,7 +934,7 @@
                     <div id="vuoroKesto" class="time-info-value">00:00</div>
                 </div>
                 <div class="time-info-item">
-                    <div class="time-info-label">Palkkajakso - Todelliset työtunnit</div>
+                    <div class="time-info-label">Todelliset työtunnit</div>
                     <div id="jaksoKesto" class="time-info-value">00:00</div>
                 </div>
             </div>
@@ -954,7 +954,7 @@
             </div>
             <div class="dashboard-box" id="dash-period">
                 <div>
-                    <div class="dash-title" id="periodTitle">JAKSO</div>
+                    <div class="dash-title" id="periodTitle">PALKKAJAKSO</div>
                     <div id="periodEfficiency" class="dash-value">-</div>
                 </div>
                 <div>
@@ -964,18 +964,10 @@
             </div>
         </div>
 
-        <!-- Jaksoasetukset -->
-        <div class="jakso-asetus" id="jakso-asetus">
-            <div>PALKKAJAKSON AIKATAULU</div>
-            <div class="jakso-row">
-                <label>Alku:</label>
-                <input type="date" id="jakso-alku">
-            </div>
-            <div class="jakso-row">
-                <label>Loppu:</label>
-                <input type="date" id="jakso-loppu">
-            </div>
-            <button id="btn-tallenna-jakso" class="btn-jatka" style="margin-top: 4px; padding: 12px;">💾 TALLENNA JAKSO</button>
+        <!-- Versio -->
+        <div style="text-align:center; padding:8px; margin-bottom:8px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:10px; border:1px solid #222;">
+            <div style="color:#666; font-size:0.7em; font-weight:600; letter-spacing:1px;">PRESS BRAKE PRO</div>
+            <div style="color:var(--primary); font-weight:700; font-size:0.9em; margin-top:2px;">v4.14</div>
         </div>
 
         <!-- Timeline -->
@@ -1001,7 +993,7 @@
         </div>
 
         <!-- Tietojen syöttö -->
-        <div id="syotto-alue" class="vuoro-ei-kaynnissa">
+        <div id="syotto-alue">
         <div class="info-row">
             <div id="box-kortti" class="info-box"><span>KORTTI</span><b id="v-kortti">-</b></div>
             <button id="btn-scan-kortti" class="btn-scan">📷</button>
@@ -1038,6 +1030,21 @@
             <button id="btn-tyokalut" class="btn-tool btn-toolbox">🔧 TYÖKALUPAKKI</button>
             <button id="btn-raportit" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">📊 RAPORTIT</button>
             <button id="btn-testi" class="btn-tool">🧪 Lisää testidataa (10pv)</button>
+            
+            <div style="background:#1a1a1a; padding:12px; border-radius:8px; border:1px solid #333; margin:8px 0;">
+                <div style="color:var(--primary); font-weight:700; margin-bottom:8px; font-size:0.9em;">📅 PALKKAJAKSON AIKATAULU</div>
+                <div style="display:grid; gap:8px;">
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Alku:</label>
+                        <input type="date" id="jakso-alku" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Loppu:</label>
+                        <input type="date" id="jakso-loppu" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <button id="btn-tallenna-jakso" class="btn-jatka" style="padding:10px; margin-top:4px;">💾 TALLENNA JAKSO</button>
+                </div>
+            </div>
             
             <input type="file" id="file-input" style="display:none" accept=".json">
             <button id="btn-lataa" class="btn-tool">📂 LATAA VARMUUSKOPIO</button>
@@ -1752,7 +1759,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupRaportit();
     setupVuorojenHallinta();
     startKello();        // Ensin startKello → asettaa todellisetTyotunnit
-    paivitaSyottoAlueTila(); // Näytä lukittu tila jos vuoro ei käynnissä
+     // Näytä lukittu tila jos vuoro ei käynnissä
     paivitaNaytto();     // Sitten näyttöpäivitys → käyttää oikeita tunteja
     tarkistaJaPaivitaJakso();
 });
@@ -2241,7 +2248,7 @@ function poistaVuoro() {
         
         const nappi = document.getElementById('v-nappi');
         nappi.textContent = 'ALOITA VUORO';
-        nappi.className = 'main-action btn-start'; paivitaSyottoAlueTila();
+        nappi.className = 'main-action btn-start'; 
     }
     
     vuorot.splice(muokattavaVuoroIndex, 1);
@@ -2260,17 +2267,6 @@ function poistaVuoro() {
     suljeModal('vuoro-edit-modal');
     paivitaKaikkiTilastot();
     naytaIlmoitus('🗑️ Vuoro poistettu!');
-}
-
-function paivitaSyottoAlueTila() {
-    const alue = document.getElementById('syotto-alue');
-    if (alue) {
-        if (AppState.kaynnissa) {
-            alue.classList.remove('vuoro-ei-kaynnissa');
-        } else {
-            alue.classList.add('vuoro-ei-kaynnissa');
-        }
-    }
 }
 
 function paivitaKaikkiTilastot() {
@@ -2702,29 +2698,17 @@ function setupEventListeners() {
     document.getElementById('v-nappi').addEventListener('click', handleVuoroNappi);
     document.getElementById('btn-tallenna').addEventListener('click', tallennaKortti);
     
-    // Syöttökentät vain kun vuoro on aktiivinen
-    const vaatiVuoron = (fn) => () => {
-        if (!AppState.kaynnissa) {
-            naytaIlmoitus('⚠️ Aloita työvuoro ensin!', 1800);
-            // Ravista nappia visuaalisesti
-            const el = document.querySelector('.main-action');
-            if (el) { el.style.animation = 'none'; setTimeout(() => el.style.animation = '', 10); }
-            return;
-        }
-        fn();
-    };
+    // Syöttökentät aina aktiivisia (vuoronvalinta hoidetaan tallennuksessa)
+    document.getElementById('box-kortti').addEventListener('click', () => avaaNumeroNaytto('Kortin numero', 'kortti'));
+    document.getElementById('box-lajike').addEventListener('click', () => avaaTekstiNaytto('Lajimerkki', 'lajike'));
+    document.getElementById('box-asetus').addEventListener('click', () => avaaNumeroNaytto('Asetus (min)', 'asetus'));
+    document.getElementById('box-taivutus').addEventListener('click', () => avaaNumeroNaytto('Taivutus (min)', 'taivutus'));
+    document.getElementById('box-muut').addEventListener('click', () => avaaNumeroNaytto('Muut työt', 'muut'));
     
-    document.getElementById('box-kortti').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Kortin numero', 'kortti')));
-    document.getElementById('box-lajike').addEventListener('click', vaatiVuoron(() => avaaTekstiNaytto('Lajimerkki', 'lajike')));
-    document.getElementById('box-asetus').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Asetus (min)', 'asetus')));
-    document.getElementById('box-taivutus').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Taivutus (min)', 'taivutus')));
-    document.getElementById('box-muut').addEventListener('click', vaatiVuoron(() => avaaNumeroNaytto('Muut työt', 'muut')));
-    
-    document.getElementById('btn-scan-kortti').addEventListener('click', vaatiVuoron(() => avaaSkanneri('kortti')));
-    document.getElementById('btn-scan-lajike').addEventListener('click', vaatiVuoron(() => avaaSkanneri('lajike')));
+    document.getElementById('btn-scan-kortti').addEventListener('click', () => avaaSkanneri('kortti'));
+    document.getElementById('btn-scan-lajike').addEventListener('click', () => avaaSkanneri('lajike'));
     document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
     
-    document.getElementById('dash-period').addEventListener('click', toggleJaksoAsetus);
     document.getElementById('btn-tallenna-jakso').addEventListener('click', tallennaJakso);
     
     document.getElementById('tools-toggle').addEventListener('click', toggleTools);
@@ -2906,7 +2890,7 @@ function aloitaVuoroAjanKanssa(aika) {
     const nappi = document.getElementById('v-nappi');
     nappi.textContent = 'LOPETA VUORO';
     nappi.className = 'main-action btn-stop';
-    paivitaSyottoAlueTila();
+    
     
     // Tallenna vuoro erilliseen listaan
     const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
@@ -2977,7 +2961,7 @@ function lopetaVuoroAjanKanssa(aika) {
     
     const nappi = document.getElementById('v-nappi');
     nappi.textContent = 'ALOITA VUORO';
-    nappi.className = 'main-action btn-start'; paivitaSyottoAlueTila();
+    nappi.className = 'main-action btn-start'; 
     
     // Tyhjennä "TÄMÄ VUORO" -näyttö
     document.getElementById('vuoroKesto').textContent = '00:00';
@@ -3486,7 +3470,7 @@ function startKello() {
             const nappi = document.getElementById('v-nappi');
             nappi.textContent = 'LOPETA VUORO';
             nappi.className = 'main-action btn-stop';
-            paivitaSyottoAlueTila();
+            
         } else {
             AppState.aloitusAika = data.aloitusAika;
             AppState.lopetusAika = data.lopetusAika;
@@ -3874,16 +3858,6 @@ function poistaRivi() {
     naytaIlmoitus('Merkintä poistettu!');
 }
 
-function toggleJaksoAsetus() {
-    const panel = document.getElementById('jakso-asetus');
-    const onAuki = panel.style.display === 'block';
-    panel.style.display = onAuki ? 'none' : 'block';
-    
-    if (!onAuki) {
-        document.getElementById('jakso-alku').value = AppState.jaksoAlku || '';
-        document.getElementById('jakso-loppu').value = AppState.jaksoLoppu || '';
-    }
-}
 
 function tallennaJakso() {
     const alku = document.getElementById('jakso-alku').value;
@@ -3910,7 +3884,6 @@ function tallennaJakso() {
     asetukset.jaksoLoppu = loppu;
     localStorage.setItem(CONFIG.STORAGE_KEYS.ASETUKSET, JSON.stringify(asetukset));
     
-    toggleJaksoAsetus();
     paivitaTilastot();
     paivitaJaksonNaytto();
     naytaIlmoitus('Jakso tallennettu!');
