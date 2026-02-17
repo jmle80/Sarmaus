@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.19</title>
+    <title>Press Brake Pro v4.18</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -112,9 +112,6 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
-            z-index: 10;
-            pointer-events: auto;
-            touch-action: manipulation;
         }
         .dashboard-box:active { transform: scale(0.98); }
         .dashboard-box::before {
@@ -925,7 +922,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.19</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.18</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1027,6 +1024,22 @@
             <button id="btn-vuorot" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">⏰ HALLINNOI VUOROJA</button>
             <button id="btn-tyokalut" class="btn-tool btn-toolbox">🔧 TYÖKALUPAKKI</button>
             <button id="btn-raportit" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">📊 RAPORTIT</button>
+            <button id="btn-testi" class="btn-tool">🧪 Lisää testidataa (10pv)</button>
+            
+            <div style="background:#1a1a1a; padding:12px; border-radius:8px; border:1px solid #333; margin:8px 0;">
+                <div style="color:var(--primary); font-weight:700; margin-bottom:8px; font-size:0.9em;">📅 PALKKAJAKSON AIKATAULU</div>
+                <div style="display:grid; gap:8px;">
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Alku:</label>
+                        <input type="date" id="jakso-alku" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Loppu:</label>
+                        <input type="date" id="jakso-loppu" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <button id="btn-tallenna-jakso" class="btn-jatka" style="padding:10px; margin-top:4px;">💾 TALLENNA JAKSO</button>
+                </div>
+            </div>
             
             <input type="file" id="file-input" style="display:none" accept=".json">
             <button id="btn-lataa" class="btn-tool">📂 LATAA VARMUUSKOPIO</button>
@@ -1141,23 +1154,6 @@
         </div>
         <button id="btn-tallenna-sairasloma" class="btn-jatka" style="padding:14px; background:linear-gradient(145deg, #c62828 0%, #8e0000 100%);">💾 TALLENNA SAIRASLOMA</button>
         <button id="btn-peruuta-sairasloma" style="margin-top:12px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600; width:100%; padding:8px;">PERUUTA</button>
-    </div>
-</div>
-
-<!-- Palkkajakso Modal -->
-<div id="palkkajakso-modal" class="overlay" style="display:none;">
-    <div class="modal">
-        <h3 style="color:var(--primary); margin-top:0; font-size:1.1em;">📅 PALKKAJAKSON AIKATAULU</h3>
-        <div style="text-align:left; margin-bottom:12px;">
-            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">ALKUPÄIVÄ</div>
-            <input type="date" id="palkkajakso-alku" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid var(--primary); color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
-        </div>
-        <div style="text-align:left; margin-bottom:12px;">
-            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">LOPPUPÄIVÄ</div>
-            <input type="date" id="palkkajakso-loppu" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid var(--primary); color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
-        </div>
-        <button id="btn-tallenna-palkkajakso" class="btn-jatka" style="padding:14px;">💾 TALLENNA JAKSO</button>
-        <button id="btn-peruuta-palkkajakso" style="margin-top:12px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600; width:100%; padding:8px;">PERUUTA</button>
     </div>
 </div>
 
@@ -1778,14 +1774,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupStartTimeModal();
     setupEndTimeModal();
     setupTimelineLongPress();
-    setupPalkkajaksoLongPress();
     setupRaportit();
     setupVuorojenHallinta();
-    
-    // Palkkajakso modal listeners
-    document.getElementById('btn-tallenna-palkkajakso').addEventListener('click', tallennaPalkkajakso);
-    document.getElementById('btn-peruuta-palkkajakso').addEventListener('click', () => suljeModal('palkkajakso-modal'));
-    
     startKello();        // Ensin startKello → asettaa todellisetTyotunnit
      // Näytä lukittu tila jos vuoro ei käynnissä
     paivitaNaytto();     // Sitten näyttöpäivitys → käyttää oikeita tunteja
@@ -1892,44 +1882,6 @@ function setupTimelineLongPress() {
     timeline.addEventListener('mouseleave', cancelLongPress);
     timeline.addEventListener('touchend', cancelLongPress);
     timeline.addEventListener('touchcancel', cancelLongPress);
-}
-
-function setupPalkkajaksoLongPress() {
-    const jaksoBox = document.getElementById('dash-period');
-    let jaksoLongPressTimer = null;
-    let jaksoIsLongPress = false;
-    
-    const startJaksoPress = (e) => {
-        jaksoIsLongPress = false;
-        jaksoBox.style.transform = 'scale(0.98)';
-        jaksoBox.style.opacity = '0.8';
-        
-        jaksoLongPressTimer = setTimeout(() => {
-            jaksoIsLongPress = true;
-            jaksoBox.style.transform = '';
-            jaksoBox.style.opacity = '';
-            
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
-            
-            avaaPalkkajaksoModal();
-        }, 1500);
-    };
-    
-    const cancelJaksoPress = () => {
-        clearTimeout(jaksoLongPressTimer);
-        jaksoBox.style.transform = '';
-        jaksoBox.style.opacity = '';
-    };
-    
-    jaksoBox.addEventListener('mousedown', startJaksoPress);
-    jaksoBox.addEventListener('touchstart', startJaksoPress, { passive: true });
-    
-    jaksoBox.addEventListener('mouseup', cancelJaksoPress);
-    jaksoBox.addEventListener('mouseleave', cancelJaksoPress);
-    jaksoBox.addEventListener('touchend', cancelJaksoPress);
-    jaksoBox.addEventListener('touchcancel', cancelJaksoPress);
 }
 
 // ==================== VUOROJEN HALLINTA ====================
@@ -2761,6 +2713,8 @@ function setupEventListeners() {
     document.getElementById('btn-scan-kortti').addEventListener('click', () => avaaSkanneri('kortti'));
     document.getElementById('btn-scan-lajike').addEventListener('click', () => avaaSkanneri('lajike'));
     document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
+    
+    document.getElementById('btn-tallenna-jakso').addEventListener('click', tallennaJakso);
     
     document.getElementById('tools-toggle').addEventListener('click', toggleTools);
     document.getElementById('btn-nollaa').addEventListener('click', nollaaHistoria);
@@ -3929,16 +3883,9 @@ function poistaRivi() {
 }
 
 
-function avaaPalkkajaksoModal() {
-    document.getElementById('palkkajakso-alku').value = AppState.jaksoAlku || '';
-    document.getElementById('palkkajakso-loppu').value = AppState.jaksoLoppu || '';
-    document.getElementById('palkkajakso-modal').style.display = 'flex';
-    avoinModal = 'palkkajakso-modal';
-}
-
-function tallennaPalkkajakso() {
-    const alku = document.getElementById('palkkajakso-alku').value;
-    const loppu = document.getElementById('palkkajakso-loppu').value;
+function tallennaJakso() {
+    const alku = document.getElementById('jakso-alku').value;
+    const loppu = document.getElementById('jakso-loppu').value;
     
     if (!alku || !loppu) {
         alert('Valitse sekä alku- että loppupäivä!');
@@ -3961,15 +3908,9 @@ function tallennaPalkkajakso() {
     asetukset.jaksoLoppu = loppu;
     localStorage.setItem(CONFIG.STORAGE_KEYS.ASETUKSET, JSON.stringify(asetukset));
     
-    suljeModal('palkkajakso-modal');
     paivitaTilastot();
     paivitaJaksonNaytto();
     naytaIlmoitus('Jakso tallennettu!');
-}
-
-function tallennaJakso() {
-    // Deprecated - käytä tallennaPalkkajakso
-    tallennaPalkkajakso();
 }
 
 let erikoistilaAlkuAika = null;
