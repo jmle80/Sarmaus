@@ -12,7 +12,7 @@
     <title>Press Brake Pro v4.5</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>⚙</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
     
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -202,7 +202,7 @@
             transition: all 0.2s; position: relative; overflow: hidden;
         }
         .info-box:active { transform: scale(0.98); }
-        .info-box::after { content: '›'; position: absolute; right: 10px; color: #444; font-size: 1.3em; }
+        .info-box::after { content: '\203A'; position: absolute; right: 10px; color: #444; font-size: 1.3em; }
         .info-box span { font-size: 0.7em; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
         .info-box b { font-size: 1em; text-align: right; margin-right: 18px; color: #fff; text-transform: uppercase; }
         .box-active { 
@@ -298,8 +298,8 @@
             transition: all 0.2s;
         }
         .tools-toggle:active { border-color: var(--primary); color: var(--primary); }
-        .tools-toggle::after { content: ' ▼'; }
-        .tools-toggle.active::after { content: ' ▲'; }
+        .tools-toggle::after { content: ' \25BC'; }
+        .tools-toggle.active::after { content: ' \25B2'; }
         
         .hidden-tools { 
             display: none; 
@@ -882,7 +882,7 @@
                 <label>Loppu:</label>
                 <input type="date" id="jakso-loppu">
             </div>
-            <button id="btn-tallenna-jakso" class="btn-jatka" style="margin-top: 4px; padding: 12px;">💾 TALLENNA JAKSO</button>
+            <button id="btn-tallenna-jakso" class="btn-jatka" style="margin-top: 4px; padding: 12px;">[DISK] TALLENNA JAKSO</button>
         </div>
 
         <!-- Timeline -->
@@ -910,22 +910,22 @@
         <!-- Tietojen syöttö -->
         <div class="info-row">
             <div id="box-kortti" class="info-box"><span>KORTTI</span><b id="v-kortti">-</b></div>
-            <button id="btn-scan-kortti" class="btn-scan">📷</button>
+            <button id="btn-scan-kortti" class="btn-scan">[CAM]</button>
         </div>
         <div class="info-row">
             <div id="box-lajike" class="info-box"><span>LAJIMERKKI</span><b id="v-lajike">-</b></div>
-            <button id="btn-scan-lajike" class="btn-scan">📷</button>
+            <button id="btn-scan-lajike" class="btn-scan">[CAM]</button>
         </div>
         <div class="info-row"><div id="box-asetus" class="info-box"><span>ASETUS</span><b id="v-asetus">-</b></div></div>
         <div class="info-row"><div id="box-taivutus" class="info-box"><span>TAIVUTUS</span><b id="v-taivutus">-</b></div></div>
         <div class="info-row"><div id="box-muut" class="info-box"><span>MUUT</span><b id="v-muut">-</b></div></div>
 
         <!-- Toiminnot -->
-        <button id="btn-tallenna" class="main-action btn-save">💾 TALLENNA KORTTI</button>
+        <button id="btn-tallenna" class="main-action btn-save">[DISK] TALLENNA KORTTI</button>
         <button id="v-nappi" class="main-action btn-start">ALOITA VUORO</button>
 
         <!-- Haku -->
-        <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Hae korttia, lajia tai pvm...">
+        <input type="text" id="search-hist" class="search-bar" placeholder="[MAGN] Hae korttia, lajia tai pvm...">
 
         <!-- Historia -->
         <div class="hist-header"><span>KORTTI</span><span>LAJI</span><span style="text-align:right">AIKA</span></div>
@@ -935,14 +935,14 @@
         <div class="tools-toggle" id="tools-toggle">Työkalut ja asetukset</div>
         <div class="hidden-tools" id="hidden-tools">
             <button id="btn-nollaa" class="btn-tool">NOLLAA NYKYINEN HISTORIA</button>
-            <button id="btn-arkisto" class="btn-tool">📜 SELAA ARKISTOA</button>
-            <button id="btn-tyokalut" class="btn-tool btn-toolbox">🛠️ TYÖKALUPAKKI</button>
-            <button id="btn-raportit" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">📊 RAPORTIT</button>
-            <button id="btn-testi" class="btn-tool">🧪 Lisää testidataa (10pv)</button>
+            <button id="btn-arkisto" class="btn-tool">[SCROLL] SELAA ARKISTOA</button>
+            <button id="btn-tyokalut" class="btn-tool btn-toolbox">[WRENCH] TYÖKALUPAKKI</button>
+            <button id="btn-raportit" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">[CHART] RAPORTIT</button>
+            <button id="btn-testi" class="btn-tool">[FLASK] Lisää testidataa (10pv)</button>
             
             <input type="file" id="file-input" style="display:none" accept=".json">
-            <button id="btn-lataa" class="btn-tool">📂 LATAA VARMUUSKOPIO</button>
-            <button id="btn-tallenna-file" class="btn-tool">💾 TALLENNA VARMUUSKOPIO</button>
+            <button id="btn-lataa" class="btn-tool">[FOLDER] LATAA VARMUUSKOPIO</button>
+            <button id="btn-tallenna-file" class="btn-tool">[DISK] TALLENNA VARMUUSKOPIO</button>
             
             <div class="safety-wrapper">
                 <span class="safety-label">AVAA LUKITUS >></span>
@@ -951,14 +951,14 @@
                     <span class="slider round"></span>
                 </label>
             </div>
-            <button id="btn-hard-reset" class="btn-hard-reset" disabled style="opacity: 0.3;">⚠️ HÄTÄ-NOLLAUS</button>
+            <button id="btn-hard-reset" class="btn-hard-reset" disabled style="opacity: 0.3;">[WARN] HÄTÄ-NOLLAUS</button>
         </div>
     </div>
 </div>
 
 <!-- Install prompt -->
 <div id="install-prompt" class="install-prompt" onclick="installApp()">
-    📲 Asenna sovelluksena
+    [PHONE] Asenna sovelluksena
 </div>
 
 <!-- Vuoron aloitusaika Modal -->
@@ -1043,7 +1043,7 @@
                     <div class="form-group">
                         <label>V-ura</label>
                         <input type="number" id="p_v" value="24">
-                        <div id="v-warning" class="warning-text" style="display:none; color:var(--warning); font-size:0.75em; margin-top:4px;">⚠️ Pieni V!</div>
+                        <div id="v-warning" class="warning-text" style="display:none; color:var(--warning); font-size:0.75em; margin-top:4px;">[WARN] Pieni V!</div>
                         <div id="min-flange" style="color:var(--warning);font-size:0.75em; margin-top:4px;">Min: 17mm</div>
                     </div>
                     <div class="form-group"><label>Sisäsäde Ri</label><input type="number" id="p_rad" value="4.00" readonly style="background:#1a1a1a;"></div>
@@ -1146,7 +1146,7 @@
 <div id="raportit-modal" class="overlay">
     <div class="modal-wide">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2 style="margin:0; color:white; font-size:1.2em;">📊 RAPORTIT</h2>
+            <h2 style="margin:0; color:white; font-size:1.2em;">[CHART] RAPORTIT</h2>
             <button id="btn-sulje-raportit" style="background:none; border:none; color:#888; font-size:2em; cursor:pointer; padding:0; width:35px; height:35px; display:flex; align-items:center; justify-content:center;">&times;</button>
         </div>
         
@@ -1159,7 +1159,7 @@
         <!-- Vuororaportti -->
         <div id="report-vuoro" class="report-content active">
             <div class="report-section">
-                <h4>📅 Tämä Päivä</h4>
+                <h4>[CAL] Tämä Päivä</h4>
                 <div class="report-grid">
                     <div class="report-stat">
                         <div class="label">Vuoron Kesto</div>
@@ -1181,7 +1181,7 @@
             </div>
             
             <div class="report-section">
-                <h4>⏱️ Ajan Jakautuminen</h4>
+                <h4>[CLOCK] Ajan Jakautuminen</h4>
                 <div class="day-row">
                     <span class="day-name">ASETUS</span>
                     <div class="day-bar-container">
@@ -1209,24 +1209,24 @@
             </div>
 
             <div class="report-section">
-                <h4>📋 Valmistetut Kortit</h4>
+                <h4>[LIST] Valmistetut Kortit</h4>
                 <div class="report-list" id="rep-vuoro-lista">
                     <div class="empty-state">Ei kortteja tänään</div>
                 </div>
             </div>
 
             <div class="report-section" id="rep-vuoro-erikoistilat" style="display:none;">
-                <h4>⚠️ Erikoistilat</h4>
+                <h4>[WARN] Erikoistilat</h4>
                 <div class="report-list" id="rep-vuoro-erikoistilat-lista"></div>
             </div>
 
-            <button class="btn-print" onclick="tulostaRaportti('vuoro')">🖨️ TULOSTA RAPORTTI</button>
+            <button class="btn-print" onclick="tulostaRaportti('vuoro')">[PRINT] TULOSTA RAPORTTI</button>
         </div>
 
         <!-- Viikkoraportti -->
         <div id="report-viikko" class="report-content">
             <div class="report-section">
-                <h4>📅 Viikko Yhteenveto</h4>
+                <h4>[CAL] Viikko Yhteenveto</h4>
                 <div class="report-grid">
                     <div class="report-stat">
                         <div class="label">Työpäivät</div>
@@ -1248,27 +1248,27 @@
             </div>
 
             <div class="report-section">
-                <h4>📊 Päivittäinen Erittely</h4>
+                <h4>[CHART] Päivittäinen Erittely</h4>
                 <div id="rep-viikko-paivat-lista"></div>
             </div>
 
             <div class="report-section">
-                <h4>🏆 Parhaat Päivät</h4>
+                <h4>[TROPHY] Parhaat Päivät</h4>
                 <div class="report-list" id="rep-viikko-parhaat"></div>
             </div>
 
             <div class="report-section">
-                <h4>📦 Yleisimmät Lajikkeet</h4>
+                <h4>[BOX] Yleisimmät Lajikkeet</h4>
                 <div class="report-list" id="rep-viikko-lajikkeet"></div>
             </div>
 
-            <button class="btn-print" onclick="tulostaRaportti('viikko')">🖨️ TULOSTA RAPORTTI</button>
+            <button class="btn-print" onclick="tulostaRaportti('viikko')">[PRINT] TULOSTA RAPORTTI</button>
         </div>
 
         <!-- Jaksoraportti -->
         <div id="report-jakso" class="report-content">
             <div class="report-section">
-                <h4>📅 Jakso Yhteenveto</h4>
+                <h4>[CAL] Jakso Yhteenveto</h4>
                 <div class="report-grid">
                     <div class="report-stat">
                         <div class="label">Jakson Pituus</div>
@@ -1296,12 +1296,12 @@
             </div>
 
             <div class="report-section">
-                <h4>📊 Päivittäinen Kehitys</h4>
+                <h4>[CHART] Päivittäinen Kehitys</h4>
                 <div id="rep-jakso-paivat"></div>
             </div>
 
             <div class="report-section">
-                <h4>📈 Viikonpäivä-analyysi</h4>
+                <h4>[CHART] Viikonpäivä-analyysi</h4>
                 <div id="rep-jakso-viikonpaivat"></div>
             </div>
 
@@ -1325,7 +1325,7 @@
                 </div>
             </div>
 
-            <button class="btn-print" onclick="tulostaRaportti('jakso')">🖨️ TULOSTA RAPORTTI</button>
+            <button class="btn-print" onclick="tulostaRaportti('jakso')">[PRINT] TULOSTA RAPORTTI</button>
         </div>
     </div>
 </div>
@@ -1334,7 +1334,7 @@
 <div id="archive-modal" class="overlay">
     <div class="modal-wide">
         <h3 style="color:var(--primary); margin-top:0; font-size:1.1em;">KOKONAISHISTORIA</h3>
-        <button id="btn-lataa-arkisto" class="btn-tool" style="margin-bottom:12px;">💾 LATAA ARKISTO (.JSON)</button>
+        <button id="btn-lataa-arkisto" class="btn-tool" style="margin-bottom:12px;">[DISK] LATAA ARKISTO (.JSON)</button>
         <div class="hist-header" style="margin-top:8px;"><span>PVM</span><span>KORTTI</span><span style="text-align:right">AIKA</span></div>
         <div id="archive-list" class="hist-cont" style="flex-grow:1; max-height:45vh;"></div>
         <button id="btn-sulje-arkisto" style="margin-top:15px; padding: 14px; width:100%; border:none; border-radius:12px; font-weight:700; cursor:pointer; background:#333; color:white; font-size:1em;">SULJE</button>
@@ -1410,10 +1410,10 @@
                 <div class="key-letter" data-key="_">_</div>
             </div>
             <div class="keyboard-row">
-                <div class="key-letter key-shift" data-key="SHIFT">⇧</div>
+                <div class="key-letter key-shift" data-key="SHIFT">[UP]</div>
                 <div class="key-letter key-space" data-key="SPACE">VÄLI</div>
                 <div class="key-letter" data-key=".">.</div>
-                <div class="key-letter key-backspace" data-key="BACKSPACE">⌫</div>
+                <div class="key-letter key-backspace" data-key="BACKSPACE">[DEL]</div>
                 <div class="key-letter key-enter" data-key="ENTER">OK</div>
             </div>
         </div>
@@ -1451,8 +1451,8 @@
             <div><div class="edit-label">TAIVUTUS (min)</div><input type="number" id="ed-ta" class="edit-input"></div>
         </div>
         <div style="margin:12px 0;"><div class="edit-label">MUUT (min)</div><input type="number" id="ed-mu" class="edit-input"></div>
-        <button id="btn-tallenna-muutos" class="btn-jatka" style="padding: 14px;">💾 TALLENNA MUUTOKSET</button>
-        <button id="btn-poista" class="btn-hard-reset" style="margin-top:10px; width:100%; background:linear-gradient(145deg, #666 0%, #444 100%); padding: 14px;">🗑️ POISTA RIVI</button>
+        <button id="btn-tallenna-muutos" class="btn-jatka" style="padding: 14px;">[DISK] TALLENNA MUUTOKSET</button>
+        <button id="btn-poista" class="btn-hard-reset" style="margin-top:10px; width:100%; background:linear-gradient(145deg, #666 0%, #444 100%); padding: 14px;">[TRASH] POISTA RIVI</button>
         <button id="btn-peruuta-edit" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600;">PERUUTA</button>
     </div>
 </div>
@@ -1601,7 +1601,7 @@ function asetaAutomaattinenJakso() {
             AppState.jaksoAlku = nykyinenJakso.alku;
             AppState.jaksoLoppu = nykyinenJakso.loppu;
             
-            naytaIlmoitus(`🎉 Uusi palkkajakso: ${nykyinenJakso.nimi}\n${formatDateShort(nykyinenJakso.alku)} - ${formatDateShort(nykyinenJakso.loppu)}`, 4000);
+            naytaIlmoitus(`[STAR] Uusi palkkajakso: ${nykyinenJakso.nimi}\n${formatDateShort(nykyinenJakso.alku)} - ${formatDateShort(nykyinenJakso.loppu)}`, 4000);
         } else {
             AppState.jaksoAlku = nykyinenJakso.alku;
             AppState.jaksoLoppu = nykyinenJakso.loppu;
@@ -3174,7 +3174,7 @@ function paivitaSivut() {
                 <label>Kaari</label>
                 <input type="number" value="${kaari}" readonly style="background:#1a1a1a;">
             </div>
-            <button onclick="window.poistaSivuData(${i})" style="background:#444;color:white;border:none;border-radius:6px;cursor:pointer;height:42px;">×</button>
+            <button onclick="window.poistaSivuData(${i})" style="background:#444;color:white;border:none;border-radius:6px;cursor:pointer;height:42px;">&times;</button>
         `;
         container.appendChild(div);
     });
@@ -3402,7 +3402,7 @@ function lisaaTestidata() {
     }
     
     localStorage.setItem(CONFIG.STORAGE_KEYS.ARKISTO, JSON.stringify(testidata));
-    naytaIlmoitus('Testidata lisätty (10 päivää)');
+    naytaIlmoitus('[STAR] Testidata lisätty (10 päivää)');
     paivitaHistoria();
     paivitaTilastot();
 }
@@ -3422,4 +3422,3 @@ function installApp() {
 </script>
 </body>
 </html>
-Merkit ei piirry
