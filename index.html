@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.5</title>
+    <title>Press Brake Pro v4.6</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -818,6 +818,78 @@
             padding-top: 10px;
             border-top: 2px solid #333;
         }
+
+        /* Vuorojen hallinta -tyylit */
+        .shift-item {
+            background: linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .shift-item:active {
+            transform: scale(0.98);
+            border-color: var(--primary);
+        }
+        .shift-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .shift-date {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9em;
+        }
+        .shift-time {
+            font-family: 'SF Mono', monospace;
+            color: var(--text-light);
+            font-size: 1.1em;
+        }
+        .shift-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 0.75em;
+            color: #666;
+        }
+        .shift-stat {
+            text-align: center;
+            padding: 6px;
+            background: #0a0a0a;
+            border-radius: 6px;
+        }
+        .shift-stat-value {
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 1.1em;
+            display: block;
+            margin-top: 2px;
+        }
+        .btn-delete-shift {
+            background: linear-gradient(145deg, var(--danger) 0%, #c4001d 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .shift-list {
+            max-height: 50vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .shift-empty {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -936,6 +1008,7 @@
         <div class="hidden-tools" id="hidden-tools">
             <button id="btn-nollaa" class="btn-tool">NOLLAA NYKYINEN HISTORIA</button>
             <button id="btn-arkisto" class="btn-tool">[SCROLL] SELAA ARKISTOA</button>
+            <button id="btn-vuorot" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">[CLOCK] HALLINNOI VUOROJA</button>
             <button id="btn-tyokalut" class="btn-tool btn-toolbox">[WRENCH] TYÖKALUPAKKI</button>
             <button id="btn-raportit" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">[CHART] RAPORTIT</button>
             <button id="btn-testi" class="btn-tool">[FLASK] Lisää testidataa (10pv)</button>
@@ -990,6 +1063,63 @@
             <div class="time-key" data-key="C" style="background:#444">C</div><div class="time-key" data-key="0">0</div><div class="time-key" data-key="NOW" style="background:var(--danger); color:#fff; font-weight:800">NYT</div>
         </div>
         <button id="btn-peruuta-end" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600;">PERUUTA</button>
+    </div>
+</div>
+
+<!-- Vuorojen hallinta Modal -->
+<div id="vuorot-modal" class="overlay">
+    <div class="modal-wide">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 style="margin:0; color:white; font-size:1.2em;">[CLOCK] VUOROJEN HALLINTA</h2>
+            <button id="btn-sulje-vuorot" style="background:none; border:none; color:#888; font-size:2em; cursor:pointer; padding:0; width:35px; height:35px; display:flex; align-items:center; justify-content:center;">&times;</button>
+        </div>
+        <div class="shift-list" id="vuorot-lista">
+            <div class="shift-empty">Ei tallennettuja vuoroja</div>
+        </div>
+        <button id="btn-sulje-vuorot-2" style="margin-top:15px; padding: 14px; width:100%; border:none; border-radius:12px; font-weight:700; cursor:pointer; background:#333; color:white; font-size:1em;">SULJE</button>
+    </div>
+</div>
+
+<!-- Vuoron muokkaus Modal -->
+<div id="vuoro-edit-modal" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--primary); margin-top:0; font-size:1.1em;">MUOKKAA VUOROA</h3>
+        <div style="text-align:left; margin-bottom:15px;">
+            <div style="color:#666; font-size:0.8em; margin-bottom:5px;">PÄIVÄMÄÄRÄ</div>
+            <div id="edit-vuoro-pvm" style="color:white; font-weight:700; font-size:1.1em;"></div>
+        </div>
+        <div class="edit-grid">
+            <div>
+                <div class="edit-label">ALOITUS</div>
+                <div id="edit-vuoro-alku-display" class="time-display" style="font-size:1.8em; margin:10px 0; cursor:pointer; border:2px solid var(--primary); border-radius:8px; padding:10px;">--:--</div>
+            </div>
+            <div>
+                <div class="edit-label">LOPETUS</div>
+                <div id="edit-vuoro-loppu-display" class="time-display" style="font-size:1.8em; margin:10px 0; cursor:pointer; border:2px solid var(--danger); border-radius:8px; padding:10px;">--:--</div>
+            </div>
+        </div>
+        <div style="background:#0a0a0a; padding:12px; border-radius:8px; margin:15px 0; text-align:left;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:5px;">VUORON KESTO</div>
+            <div id="edit-vuoro-kesto" style="color:var(--success); font-weight:700; font-size:1.2em;"></div>
+        </div>
+        <button id="btn-tallenna-vuoro-muutos" class="btn-jatka" style="padding: 14px;">[DISK] TALLENNA MUUTOKSET</button>
+        <button id="btn-poista-vuoro" class="btn-delete-shift">[TRASH] POISTA VUORO</button>
+        <button id="btn-peruuta-vuoro-edit" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600;">PERUUTA</button>
+    </div>
+</div>
+
+<!-- Vuoron ajan muokkaus Modal -->
+<div id="vuoro-time-modal" class="overlay">
+    <div class="modal">
+        <h3 id="vuoro-time-otsikko" style="color:var(--primary); margin-top:0; font-size:1.1em;">MUOKKAA AIKAA</h3>
+        <div id="vuoro-time-display" class="time-display">--:--</div>
+        <div class="time-keypad">
+            <div class="time-key" data-key="1">1</div><div class="time-key" data-key="2">2</div><div class="time-key" data-key="3">3</div>
+            <div class="time-key" data-key="4">4</div><div class="time-key" data-key="5">5</div><div class="time-key" data-key="6">6</div>
+            <div class="time-key" data-key="7">7</div><div class="time-key" data-key="8">8</div><div class="time-key" data-key="9">9</div>
+            <div class="time-key" data-key="C" style="background:#444">C</div><div class="time-key" data-key="0">0</div><div class="time-key" data-key="OK" style="background:var(--success); color:#000; font-weight:800">OK</div>
+        </div>
+        <button id="btn-peruuta-vuoro-time" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600;">PERUUTA</button>
     </div>
 </div>
 
@@ -1475,7 +1605,8 @@ const CONFIG = {
         ASETUKSET: 'purseTiedot_v2',
         TYOVAIHEET: 'tallennetutTyovaiheet_v2',
         TEMP_MUUT: 'tempMuut',
-        VUORO_TIEDOT: 'vuoroTiedot_v2'
+        VUORO_TIEDOT: 'vuoroTiedot_v2',
+        VUOROT: 'purseVuorot_v2'
     },
     MATERIALS: {
         s235: { name: 'S235', rm: 420, k: 0.33 },
@@ -1543,6 +1674,8 @@ let deferredPrompt = null;
 let currentInputTarget = null;
 let longPressTimer = null;
 let isLongPress = false;
+let muokattavaVuoroIndex = -1;
+let muokattavaVuoroKentta = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     alustaApp();
@@ -1553,6 +1686,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEndTimeModal();
     setupTimelineLongPress();
     setupRaportit();
+    setupVuorojenHallinta();
     paivitaNaytto();
     startKello();
     tarkistaJaPaivitaJakso();
@@ -1570,6 +1704,10 @@ function alustaApp() {
     
     if (!localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO)) {
         localStorage.setItem(CONFIG.STORAGE_KEYS.ARKISTO, JSON.stringify([]));
+    }
+    
+    if (!localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT)) {
+        localStorage.setItem(CONFIG.STORAGE_KEYS.VUOROT, JSON.stringify([]));
     }
     
     const savedTyovaiheet = localStorage.getItem(CONFIG.STORAGE_KEYS.TYOVAIHEET);
@@ -1679,6 +1817,260 @@ function setupTimelineLongPress() {
     timeline.addEventListener('touchcancel', cancelLongPress);
 }
 
+// ==================== VUOROJEN HALLINTA ====================
+function setupVuorojenHallinta() {
+    document.getElementById('btn-vuorot').addEventListener('click', avaaVuorojenHallinta);
+    document.getElementById('btn-sulje-vuorot').addEventListener('click', () => suljeModal('vuorot-modal'));
+    document.getElementById('btn-sulje-vuorot-2').addEventListener('click', () => suljeModal('vuorot-modal'));
+    
+    document.getElementById('btn-tallenna-vuoro-muutos').addEventListener('click', tallennaVuoronMuutos);
+    document.getElementById('btn-poista-vuoro').addEventListener('click', poistaVuoro);
+    document.getElementById('btn-peruuta-vuoro-edit').addEventListener('click', () => suljeModal('vuoro-edit-modal'));
+    
+    document.getElementById('edit-vuoro-alku-display').addEventListener('click', () => avaaVuoronAjanMuokkaus('alku'));
+    document.getElementById('edit-vuoro-loppu-display').addEventListener('click', () => avaaVuoronAjanMuokkaus('loppu'));
+    
+    document.getElementById('btn-peruuta-vuoro-time').addEventListener('click', () => suljeModal('vuoro-time-modal'));
+    
+    setupVuoroTimeKeypad();
+}
+
+function avaaVuorojenHallinta() {
+    paivitaVuorojenLista();
+    document.getElementById('vuorot-modal').style.display = 'flex';
+    avoinModal = 'vuorot-modal';
+}
+
+function paivitaVuorojenLista() {
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
+    const lista = document.getElementById('vuorot-lista');
+    
+    if (vuorot.length === 0) {
+        lista.innerHTML = '<div class="shift-empty">Ei tallennettuja vuoroja</div>';
+        return;
+    }
+    
+    // Järjestä uusin ensin
+    const jarjestetyt = [...vuorot].sort((a, b) => b.aloitusAika - a.aloitusAika);
+    
+    lista.innerHTML = jarjestetyt.map((vuoro, index) => {
+        const alku = new Date(vuoro.aloitusAika);
+        const loppu = vuoro.lopetusAika ? new Date(vuoro.lopetusAika) : null;
+        const kesto = loppu ? (vuoro.lopetusAika - vuoro.aloitusAika) / (1000 * 60 * 60) : 0;
+        
+        // Laske valmiit minuutit tälle päivälle
+        const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
+        const paivanKortit = arkisto.filter(e => {
+            const pvm = new Date(e.pvm);
+            return pvm.toDateString() === alku.toDateString();
+        });
+        
+        let valmiitMin = 0;
+        paivanKortit.forEach(e => {
+            valmiitMin += (e.asetus || 0) + (e.taivutus || 0) + (e.muutAika || 0);
+        });
+        
+        const tehokkuus = kesto > 0 ? Math.round((valmiitMin / 60 / kesto) * 100) : 0;
+        
+        const alkuaika = `${alku.getHours().toString().padStart(2,'0')}:${alku.getMinutes().toString().padStart(2,'0')}`;
+        const loppuaika = loppu ? 
+            `${loppu.getHours().toString().padStart(2,'0')}:${loppu.getMinutes().toString().padStart(2,'0')}` : 
+            'Käynnissä';
+        
+        return `
+            <div class="shift-item" onclick="avaaVuoronMuokkaus(${vuoro.id})">
+                <div class="shift-header">
+                    <span class="shift-date">${formatDate(alku.toISOString())}</span>
+                    <span class="shift-time">${alkuaika} - ${loppuaika}</span>
+                </div>
+                <div class="shift-stats">
+                    <div class="shift-stat">
+                        Kesto
+                        <span class="shift-stat-value">${kesto.toFixed(1)}h</span>
+                    </div>
+                    <div class="shift-stat">
+                        Kortit
+                        <span class="shift-stat-value">${paivanKortit.length}</span>
+                    </div>
+                    <div class="shift-stat">
+                        Teho
+                        <span class="shift-stat-value">${tehokkuus}%</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.avaaVuoronMuokkaus = function(id) {
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
+    const vuoro = vuorot.find(v => v.id === id);
+    if (!vuoro) return;
+    
+    muokattavaVuoroIndex = vuorot.indexOf(vuoro);
+    
+    const alku = new Date(vuoro.aloitusAika);
+    const loppu = vuoro.lopetusAika ? new Date(vuoro.lopetusAika) : null;
+    
+    document.getElementById('edit-vuoro-pvm').textContent = formatDate(alku.toISOString());
+    document.getElementById('edit-vuoro-alku-display').textContent = 
+        `${alku.getHours().toString().padStart(2,'0')}:${alku.getMinutes().toString().padStart(2,'0')}`;
+    document.getElementById('edit-vuoro-loppu-display').textContent = loppu ? 
+        `${loppu.getHours().toString().padStart(2,'0')}:${loppu.getMinutes().toString().padStart(2,'0')}` : 
+        '--:--';
+    
+    const kesto = loppu ? (vuoro.lopetusAika - vuoro.aloitusAika) / (1000 * 60 * 60) : 0;
+    document.getElementById('edit-vuoro-kesto').textContent = loppu ? 
+        `${Math.floor(kesto)}h ${Math.round((kesto % 1) * 60)}min` : 
+        'Vuoro käynnissä';
+    
+    suljeModal('vuorot-modal');
+    document.getElementById('vuoro-edit-modal').style.display = 'flex';
+    avoinModal = 'vuoro-edit-modal';
+};
+
+function avaaVuoronAjanMuokkaus(kentta) {
+    muokattavaVuoroKentta = kentta;
+    const display = document.getElementById(`edit-vuoro-${kentta}-display`);
+    const currentTime = display.textContent;
+    
+    document.getElementById('vuoro-time-otsikko').textContent = 
+        kentta === 'alku' ? 'MUOKKAA ALOITUSAIKAA' : 'MUOKKAA LOPETUSAIKAA';
+    document.getElementById('vuoro-time-display').textContent = currentTime === '--:--' ? '--:--' : currentTime;
+    
+    timeBuffer = currentTime !== '--:--' ? currentTime.replace(':', '') : '';
+    
+    suljeModal('vuoro-edit-modal');
+    document.getElementById('vuoro-time-modal').style.display = 'flex';
+    avoinModal = 'vuoro-time-modal';
+}
+
+function setupVuoroTimeKeypad() {
+    const keypad = document.querySelector('#vuoro-time-modal .time-keypad');
+    
+    keypad.addEventListener('click', (e) => {
+        const key = e.target.closest('.time-key');
+        if (!key) return;
+        
+        const val = key.dataset.key;
+        const display = document.getElementById('vuoro-time-display');
+        
+        if (val === 'C') {
+            timeBuffer = '';
+            display.textContent = '--:--';
+        } else if (val === 'OK') {
+            if (timeBuffer.length >= 3) {
+                const hours = timeBuffer.slice(0, -2).padStart(2, '0');
+                const mins = timeBuffer.slice(-2);
+                const timeStr = `${hours}:${mins}`;
+                
+                // Päivitä vuoron aika
+                const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
+                const vuoro = vuorot[muokattavaVuoroIndex];
+                
+                if (vuoro) {
+                    const vuoroPvm = new Date(vuoro.aloitusAika);
+                    const [h, m] = timeStr.split(':').map(Number);
+                    
+                    if (muokattavaVuoroKentta === 'alku') {
+                        const uusiAika = new Date(vuoroPvm.getFullYear(), vuoroPvm.getMonth(), vuoroPvm.getDate(), h, m, 0, 0);
+                        vuoro.aloitusAika = uusiAika.getTime();
+                        vuoro.aloitusAikaValittu = timeStr;
+                    } else {
+                        const uusiAika = new Date(vuoroPvm.getFullYear(), vuoroPvm.getMonth(), vuoroPvm.getDate(), h, m, 0, 0);
+                        // Jos loppuaika on ennen aloitusaikaa, lisää päivä
+                        if (uusiAika.getTime() < vuoro.aloitusAika) {
+                            uusiAika.setDate(uusiAika.getDate() + 1);
+                        }
+                        vuoro.lopetusAika = uusiAika.getTime();
+                        vuoro.lopetusAikaValittu = timeStr;
+                    }
+                    
+                    localStorage.setItem(CONFIG.STORAGE_KEYS.VUOROT, JSON.stringify(vuorot));
+                    
+                    // Päivitä AppState jos tämä on aktiivinen vuoro
+                    if (muokattavaVuoroIndex === vuorot.length - 1 && !AppState.kaynnissa) {
+                        AppState.aloitusAika = vuoro.aloitusAika;
+                        AppState.lopetusAika = vuoro.lopetusAika;
+                        AppState.aloitusAikaValittu = vuoro.aloitusAikaValittu;
+                        AppState.lopetusAikaValittu = vuoro.lopetusAikaValittu;
+                        
+                        if (vuoro.lopetusAika) {
+                            const kesto = vuoro.lopetusAika - vuoro.aloitusAika;
+                            AppState.todellisetTyotunnit = (AppState.jaksoKestoAlku || 0) + (kesto / (1000 * 60 * 60));
+                        }
+                    }
+                    
+                    paivitaKaikkiTilastot();
+                }
+                
+                suljeModal('vuoro-time-modal');
+                avaaVuoronMuokkaus(vuoro.id);
+            }
+        } else if (timeBuffer.length < 4) {
+            timeBuffer += val;
+            if (timeBuffer.length <= 2) {
+                display.textContent = timeBuffer.padStart(2, '0') + ':--';
+            } else {
+                const hours = timeBuffer.slice(0, -2).padStart(2, '0');
+                const mins = timeBuffer.slice(-2);
+                display.textContent = `${hours}:${mins}`;
+            }
+        }
+    });
+}
+
+function tallennaVuoronMuutos() {
+    // Tallennus tapahtuu jo aikaa muokatessa, tässä vain suljetaan
+    suljeModal('vuoro-edit-modal');
+    paivitaKaikkiTilastot();
+    naytaIlmoitus('Vuoron muutokset tallennettu!');
+}
+
+function poistaVuoro() {
+    if (!confirm('Poista tämä vuoro?')) return;
+    
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
+    const poistettava = vuorot[muokattavaVuoroIndex];
+    
+    if (!poistettava) return;
+    
+    // Jos poistetaan viimeisin vuoro ja se on käynnissä, nollaa AppState
+    if (muokattavaVuoroIndex === vuorot.length - 1 && AppState.kaynnissa) {
+        AppState.kaynnissa = false;
+        AppState.aloitusAika = 0;
+        AppState.lopetusAika = 0;
+        localStorage.removeItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT);
+        
+        const nappi = document.getElementById('v-nappi');
+        nappi.textContent = 'ALOITA VUORO';
+        nappi.className = 'main-action btn-start';
+    }
+    
+    vuorot.splice(muokattavaVuoroIndex, 1);
+    localStorage.setItem(CONFIG.STORAGE_KEYS.VUOROT, JSON.stringify(vuorot));
+    
+    suljeModal('vuoro-edit-modal');
+    paivitaKaikkiTilastot();
+    naytaIlmoitus('Vuoro poistettu!');
+}
+
+function paivitaKaikkiTilastot() {
+    paivitaTilastot();
+    paivitaHistoria();
+    paivitaJaksonNaytto();
+    
+    // Päivitä myös raportit jos auki
+    if (document.getElementById('raportit-modal').style.display === 'flex') {
+        const activeTab = document.querySelector('.report-tab.active');
+        if (activeTab) {
+            if (activeTab.dataset.report === 'vuoro') paivitaVuoroRaportti();
+            else if (activeTab.dataset.report === 'viikko') paivitaViikkoRaportti();
+            else if (activeTab.dataset.report === 'jakso') paivitaJaksoRaportti();
+        }
+    }
+}
+
 // ==================== RAPORTIT ====================
 function setupRaportit() {
     document.getElementById('btn-raportit').addEventListener('click', avaaRaportit);
@@ -1708,6 +2100,7 @@ function avaaRaportit() {
 
 function paivitaVuoroRaportti() {
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
     const tanaan = new Date().toDateString();
     
     const paivanTiedot = arkisto.filter(e => new Date(e.pvm).toDateString() === tanaan);
@@ -1726,9 +2119,19 @@ function paivitaVuoroRaportti() {
     });
     
     const totalMin = totalAsetus + totalTaivutus + totalMuut;
-    const vuoroKesto = AppState.kaynnissa ? 
-        (Date.now() - AppState.aloitusAika) / (1000 * 60) : 
-        (AppState.lopetusAika - AppState.aloitusAika) / (1000 * 60);
+    
+    // Etsi tämän päivän vuoro
+    const paivanVuoro = vuorot.find(v => {
+        const vuoroPvm = new Date(v.aloitusAika).toDateString();
+        return vuoroPvm === tanaan && v.lopetusAika;
+    });
+    
+    let vuoroKesto = 0;
+    if (AppState.kaynnissa) {
+        vuoroKesto = (Date.now() - AppState.aloitusAika) / (1000 * 60);
+    } else if (paivanVuoro) {
+        vuoroKesto = (paivanVuoro.lopetusAika - paivanVuoro.aloitusAika) / (1000 * 60);
+    }
     
     const tehokkuus = vuoroKesto > 0 ? Math.round((totalMin / vuoroKesto) * 100) : 0;
     
@@ -1778,6 +2181,7 @@ function paivitaVuoroRaportti() {
 
 function paivitaViikkoRaportti() {
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
     const tanaan = new Date();
     const viikonAlku = new Date(tanaan);
     viikonAlku.setDate(tanaan.getDate() - tanaan.getDay() + 1);
@@ -1790,6 +2194,11 @@ function paivitaViikkoRaportti() {
     const viikonTiedot = arkisto.filter(e => {
         const pvm = new Date(e.pvm);
         return pvm >= viikonAlku && pvm <= viikonLoppu;
+    });
+    
+    const viikonVuorot = vuorot.filter(v => {
+        const pvm = new Date(v.aloitusAika);
+        return pvm >= viikonAlku && pvm <= viikonLoppu && v.lopetusAika;
     });
     
     const paivat = {};
@@ -1812,18 +2221,22 @@ function paivitaViikkoRaportti() {
         paivat[paivaKey].min += min;
         totalKortit++;
         totalValmiit += min;
-        
-        if (e.lajike) {
-            lajikkeet[e.lajike] = (lajikkeet[e.lajike] || 0) + 1;
+    });
+    
+    // Laske tunnit vuoroista
+    viikonVuorot.forEach(v => {
+        const pvm = new Date(v.aloitusAika).toDateString();
+        if (paivat[pvm]) {
+            paivat[pvm].tunnit = (v.lopetusAika - v.aloitusAika) / (1000 * 60 * 60);
         }
     });
     
     const tyopaivia = Object.keys(paivat).length;
-    totalTunnit = tyopaivia * 8;
+    totalTunnit = Object.values(paivat).reduce((sum, p) => sum + (p.tunnit || 0), 0);
     const keskiteho = totalTunnit > 0 ? Math.round((totalValmiit / 60) / totalTunnit * 100) : 0;
     
     document.getElementById('rep-viikko-paivat').textContent = tyopaivia;
-    document.getElementById('rep-viikko-tunnit').textContent = totalTunnit + 'h';
+    document.getElementById('rep-viikko-tunnit').textContent = totalTunnit.toFixed(1) + 'h';
     document.getElementById('rep-viikko-teho').textContent = keskiteho + '%';
     document.getElementById('rep-viikko-kortit').textContent = totalKortit;
     
@@ -1833,7 +2246,7 @@ function paivitaViikkoRaportti() {
     const maxMin = Math.max(...paivatArray.map(p => p[1].min), 1);
     
     paivatLista.innerHTML = paivatArray.map(([key, data]) => {
-        const eff = Math.round((data.min / 60) / 8 * 100);
+        const eff = data.tunnit > 0 ? Math.round((data.min / 60) / data.tunnit * 100) : 0;
         const effClass = eff >= 80 ? 'high' : eff >= 50 ? 'medium' : 'low';
         return `
             <div class="day-row">
@@ -1883,12 +2296,18 @@ function paivitaJaksoRaportti() {
     }
     
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
     const jaksoAlku = new Date(AppState.jaksoAlku);
     const jaksoLoppu = new Date(AppState.jaksoLoppu);
     
     const jaksonTiedot = arkisto.filter(e => {
         const pvm = new Date(e.pvm);
         return pvm >= jaksoAlku && pvm <= jaksoLoppu;
+    });
+    
+    const jaksonVuorot = vuorot.filter(v => {
+        const pvm = new Date(v.aloitusAika);
+        return pvm >= jaksoAlku && pvm <= jaksoLoppu && v.lopetusAika;
     });
     
     const paivat = {};
@@ -1902,7 +2321,7 @@ function paivitaJaksoRaportti() {
         const viikonpaiva = ['Su', 'Ma', 'Ti', 'Ke', 'To', 'Pe', 'La'][pvm.getDay()];
         
         if (!paivat[paivaKey]) {
-            paivat[paivaKey] = { min: 0, kortit: 0 };
+            paivat[paivaKey] = { min: 0, kortit: 0, tunnit: 0 };
         }
         
         const min = (e.asetus || 0) + (e.taivutus || 0) + (e.muutAika || 0);
@@ -1913,9 +2332,17 @@ function paivitaJaksoRaportti() {
         viikonpaivat[viikonpaiva].push(min);
     });
     
+    // Lisää tunnit vuoroista
+    jaksonVuorot.forEach(v => {
+        const pvm = new Date(v.aloitusAika).toDateString();
+        if (paivat[pvm]) {
+            paivat[pvm].tunnit = (v.lopetusAika - v.aloitusAika) / (1000 * 60 * 60);
+        }
+    });
+    
     const tyopaivia = Object.keys(paivat).length;
     const jaksonPituus = Math.ceil((jaksoLoppu - jaksoAlku) / (1000 * 60 * 60 * 24)) + 1;
-    const tyotunnit = tyopaivia * 8;
+    const tyotunnit = Object.values(paivat).reduce((sum, p) => sum + (p.tunnit || 0), 0);
     const valmiitTunnit = totalValmiit / 60;
     const tehokkuus = tyotunnit > 0 ? Math.round((valmiitTunnit / tyotunnit) * 100) : 0;
     
@@ -1932,7 +2359,7 @@ function paivitaJaksoRaportti() {
     
     document.getElementById('rep-jakso-paivat').innerHTML = paivatArray.map(([key, data]) => {
         const pvm = new Date(key);
-        const eff = Math.round((data.min / 60) / 8 * 100);
+        const eff = data.tunnit > 0 ? Math.round((data.min / 60) / data.tunnit * 100) : 0;
         const effClass = eff >= 80 ? 'high' : eff >= 50 ? 'medium' : 'low';
         return `
             <div class="day-row">
@@ -2096,6 +2523,7 @@ function setupEventListeners() {
             else if (avoinModal === 'time-modal') suljeAikaNaytto();
             else if (avoinModal === 'start-time-modal') suljeModal('start-time-modal');
             else if (avoinModal === 'end-time-modal') suljeModal('end-time-modal');
+            else if (avoinModal === 'vuoro-time-modal') suljeModal('vuoro-time-modal');
             else suljeModal(avoinModal);
         }
     });
@@ -2120,12 +2548,6 @@ function setupStartTimeModal() {
             const hours = now.getHours().toString().padStart(2, '0');
             const mins = now.getMinutes().toString().padStart(2, '0');
             aloitaVuoroAjanKanssa(`${hours}:${mins}`);
-        } else if (val === 'OK') {
-            if (buffer.length >= 3) {
-                const hours = buffer.slice(0, -2).padStart(2, '0');
-                const mins = buffer.slice(-2);
-                aloitaVuoroAjanKanssa(`${hours}:${mins}`);
-            }
         } else if (buffer.length < 4) {
             buffer += val;
             if (buffer.length <= 2) {
@@ -2162,12 +2584,6 @@ function setupEndTimeModal() {
             const hours = now.getHours().toString().padStart(2, '0');
             const mins = now.getMinutes().toString().padStart(2, '0');
             lopetaVuoroAjanKanssa(`${hours}:${mins}`);
-        } else if (val === 'OK') {
-            if (buffer.length >= 3) {
-                const hours = buffer.slice(0, -2).padStart(2, '0');
-                const mins = buffer.slice(-2);
-                lopetaVuoroAjanKanssa(`${hours}:${mins}`);
-            }
         } else if (buffer.length < 4) {
             buffer += val;
             if (buffer.length <= 2) {
@@ -2218,12 +2634,25 @@ function aloitaVuoroAjanKanssa(aika) {
     nappi.textContent = 'LOPETA VUORO';
     nappi.className = 'main-action btn-stop';
     
+    // Tallenna vuoro erilliseen listaan
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
+    const uusiVuoro = {
+        id: Date.now(),
+        aloitusAika: aloitusAika.getTime(),
+        aloitusAikaValittu: aika,
+        lopetusAika: null,
+        lopetusAikaValittu: null
+    };
+    vuorot.push(uusiVuoro);
+    localStorage.setItem(CONFIG.STORAGE_KEYS.VUOROT, JSON.stringify(vuorot));
+    
     const vuoroTiedot = {
         aloitusAika: AppState.aloitusAika,
         aloitusAikaValittu: aika,
         lopetusAika: null,
         lopetusAikaValittu: null,
-        jaksoKestoAlku: AppState.jaksoKestoAlku
+        jaksoKestoAlku: AppState.jaksoKestoAlku,
+        vuoroId: uusiVuoro.id
     };
     
     localStorage.setItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT, JSON.stringify(vuoroTiedot));
@@ -2254,6 +2683,15 @@ function lopetaVuoroAjanKanssa(aika) {
     nappi.textContent = 'ALOITA VUORO';
     nappi.className = 'main-action btn-start';
     
+    // Päivitä viimeisin vuoro
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
+    if (vuorot.length > 0) {
+        const viimeisin = vuorot[vuorot.length - 1];
+        viimeisin.lopetusAika = lopetusAika.getTime();
+        viimeisin.lopetusAikaValittu = aika;
+        localStorage.setItem(CONFIG.STORAGE_KEYS.VUOROT, JSON.stringify(vuorot));
+    }
+    
     const vuoroTiedot = {
         aloitusAika: AppState.aloitusAika,
         aloitusAikaValittu: AppState.aloitusAikaValittu,
@@ -2281,6 +2719,7 @@ function setupCombinedKeyboard() {
         const keyValue = key.getAttribute('data-key').toUpperCase();
         const lajimerkkiInput = document.getElementById('muut-lajimerkki');
         const aikaInput = document.getElementById('muut-aika');
+        const naytto = document.getElementById('n-naytto');
         
         switch(keyValue) {
             case 'SHIFT':
@@ -2294,47 +2733,58 @@ function setupCombinedKeyboard() {
                     const arvo = lajimerkkiInput.value.trim().toUpperCase();
                     if (arvo) {
                         document.getElementById('v-lajike').textContent = arvo;
+                        if (!window.tallennetutTyovaiheet.includes(arvo)) {
+                            window.tallennetutTyovaiheet.push(arvo);
+                            localStorage.setItem(CONFIG.STORAGE_KEYS.TYOVAIHEET, JSON.stringify(window.tallennetutTyovaiheet));
+                        }
                         suljeNumeroNaytto();
                     }
-                } else if (aktiivinenMuutKentta === 'lajimerkki' && lajimerkkiInput.value.trim()) {
-                    aktiivinenMuutKentta = 'aika';
-                    lajimerkkiInput.style.borderColor = '#333';
-                    aikaInput.style.borderColor = 'var(--primary)';
-                    
-                    const arvo = lajimerkkiInput.value.trim().toUpperCase();
-                    if (!window.tallennetutTyovaiheet.includes(arvo)) {
-                        window.tallennetutTyovaiheet.push(arvo);
-                        localStorage.setItem(CONFIG.STORAGE_KEYS.TYOVAIHEET, JSON.stringify(window.tallennetutTyovaiheet));
+                } else if (currentInputTarget === 'muut') {
+                    if (aktiivinenMuutKentta === 'lajimerkki' && lajimerkkiInput.value.trim()) {
+                        aktiivinenMuutKentta = 'aika';
+                        lajimerkkiInput.style.borderColor = '#333';
+                        aikaInput.style.borderColor = 'var(--primary)';
+                        
+                        const arvo = lajimerkkiInput.value.trim().toUpperCase();
+                        if (!window.tallennetutTyovaiheet.includes(arvo)) {
+                            window.tallennetutTyovaiheet.push(arvo);
+                            localStorage.setItem(CONFIG.STORAGE_KEYS.TYOVAIHEET, JSON.stringify(window.tallennetutTyovaiheet));
+                        }
+                    } else if (aktiivinenMuutKentta === 'aika' && aikaInput.value) {
+                        kasitteleMuutArvot();
+                        suljeNumeroNaytto();
                     }
-                } else if (aktiivinenMuutKentta === 'aika' && aikaInput.value) {
-                    kasitteleMuutArvot();
-                    suljeNumeroNaytto();
                 }
                 return;
                 
             case 'BACKSPACE':
-                if (currentInputTarget === 'lajike' || aktiivinenMuutKentta === 'lajimerkki') {
+                if (currentInputTarget === 'lajike' || (currentInputTarget === 'muut' && aktiivinenMuutKentta === 'lajimerkki')) {
                     lajimerkkiInput.value = lajimerkkiInput.value.slice(0, -1).toUpperCase();
                     naytaAutocomplete(lajimerkkiInput.value);
-                } else {
+                } else if (currentInputTarget === 'muut' && aktiivinenMuutKentta === 'aika') {
                     aikaInput.value = aikaInput.value.slice(0, -1);
                 }
                 return;
                 
             case 'SPACE':
-                if (currentInputTarget === 'lajike' || aktiivinenMuutKentta === 'lajimerkki') {
+                if (currentInputTarget === 'lajike' || (currentInputTarget === 'muut' && aktiivinenMuutKentta === 'lajimerkki')) {
                     lajimerkkiInput.value += ' ';
                 }
                 return;
         }
         
         let char = keyValue;
+        if (isShiftActive && /^[A-ZÄÖÅ]$/.test(char)) {
+            char = char.toLowerCase();
+        }
         
-        if (currentInputTarget === 'lajike' || aktiivinenMuutKentta === 'lajimerkki') {
+        if (currentInputTarget === 'lajike' || (currentInputTarget === 'muut' && aktiivinenMuutKentta === 'lajimerkki')) {
             lajimerkkiInput.value += char;
             naytaAutocomplete(lajimerkkiInput.value);
-        } else if (/^[0-9.]$/.test(char)) {
-            aikaInput.value += char;
+        } else if (currentInputTarget === 'muut' && aktiivinenMuutKentta === 'aika') {
+            if (/^[0-9.]$/.test(char)) {
+                aikaInput.value += char;
+            }
         }
     });
     
@@ -2356,8 +2806,8 @@ function setupCombinedKeyboard() {
 function paivitaNappaimistoKirjaimet() {
     document.querySelectorAll('#combined-keyboard .key-letter[data-key]').forEach(key => {
         const original = key.getAttribute('data-key');
-        if (original.length === 1 && /^[a-zäöå]$/i.test(original)) {
-            key.textContent = original.toUpperCase();
+        if (original.length === 1 && /^[A-ZÄÖÅ]$/.test(original)) {
+            key.textContent = isShiftActive ? original.toLowerCase() : original;
         }
     });
 }
@@ -2705,6 +3155,7 @@ function naytaIlmoitus(viesti, kesto = 1500) {
 
 function paivitaTilastot() {
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
     const tanaan = new Date().toDateString();
     
     const vuoroTiedot = arkisto.filter(e => 
@@ -2727,6 +3178,11 @@ function paivitaTilastot() {
             return pvm >= jaksoAlku && pvm <= jaksoLoppu;
         });
         
+        const jaksonVuorot = vuorot.filter(v => {
+            const pvm = new Date(v.aloitusAika);
+            return pvm >= jaksoAlku && pvm <= jaksoLoppu && v.lopetusAika;
+        });
+        
         let jaksoValmiit = 0;
         jaksoTiedot.forEach(e => {
             jaksoValmiit += (e.asetus || 0) + (e.taivutus || 0) + (e.muutAika || 0);
@@ -2734,7 +3190,11 @@ function paivitaTilastot() {
         
         document.getElementById('periodActual').textContent = (jaksoValmiit / 60).toFixed(1);
         
-        const jaksonKestoTunteina = AppState.todellisetTyotunnit || 0;
+        // Laske todelliset työtunnit vuoroista
+        const jaksonKestoTunteina = jaksonVuorot.reduce((sum, v) => {
+            return sum + ((v.lopetusAika - v.aloitusAika) / (1000 * 60 * 60));
+        }, 0);
+        
         const valmiitTunteina = jaksoValmiit / 60;
         const jaksonTehokkuus = jaksonKestoTunteina > 0 ? (valmiitTunteina / jaksonKestoTunteina).toFixed(2) : '0.00';
         document.getElementById('periodEfficiency').textContent = jaksonTehokkuus;
@@ -2745,7 +3205,19 @@ function paivitaTilastot() {
         const tehokkuus = kestoTunteina > 0 ? (valmiitMin / 60 / kestoTunteina).toFixed(2) : '0.00';
         document.getElementById('shiftEfficiency').textContent = tehokkuus;
     } else if (valmiitMin > 0) {
-        document.getElementById('shiftEfficiency').textContent = '0.00';
+        // Etsi tämän päivän viimeisin vuoro
+        const paivanVuoro = vuorot.filter(v => {
+            const pvm = new Date(v.aloitusAika).toDateString();
+            return pvm === tanaan && v.lopetusAika;
+        }).pop();
+        
+        if (paivanVuoro) {
+            const kestoTunteina = (paivanVuoro.lopetusAika - paivanVuoro.aloitusAika) / (1000 * 60 * 60);
+            const tehokkuus = kestoTunteina > 0 ? (valmiitMin / 60 / kestoTunteina).toFixed(2) : '0.00';
+            document.getElementById('shiftEfficiency').textContent = tehokkuus;
+        } else {
+            document.getElementById('shiftEfficiency').textContent = '0.00';
+        }
     }
     
     paivitaTimeline(vuoroTiedot);
@@ -3050,8 +3522,9 @@ function tallennaVarmuuskopio() {
         asetukset: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ASETUKSET) || '{}'),
         tyovaiheet: window.tallennetutTyovaiheet,
         vuoroTiedot: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT) || '{}'),
+        vuorot: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]'),
         timestamp: new Date().toISOString(),
-        versio: '4.5'
+        versio: '4.6'
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -3090,6 +3563,9 @@ function lataaVarmuuskopio(e) {
             }
             if (data.vuoroTiedot) {
                 localStorage.setItem(CONFIG.STORAGE_KEYS.VUORO_TIEDOT, JSON.stringify(data.vuoroTiedot));
+            }
+            if (data.vuorot) {
+                localStorage.setItem(CONFIG.STORAGE_KEYS.VUOROT, JSON.stringify(data.vuorot));
             }
             
             naytaIlmoitus('Varmuuskopio ladattu!');
@@ -3382,11 +3858,26 @@ function paivitaNaytto() {
 
 function lisaaTestidata() {
     const testidata = [];
+    const testivuorot = [];
     const tanaan = new Date();
     
     for (let i = 0; i < 10; i++) {
         const pvm = new Date(tanaan);
         pvm.setDate(pvm.getDate() - i);
+        
+        // Luo vuoro jokaiselle päivälle
+        const alku = new Date(pvm);
+        alku.setHours(6, 0, 0, 0);
+        const loppu = new Date(pvm);
+        loppu.setHours(14, 30, 0, 0);
+        
+        testivuorot.push({
+            id: Date.now() + Math.random(),
+            aloitusAika: alku.getTime(),
+            aloitusAikaValittu: '06:00',
+            lopetusAika: loppu.getTime(),
+            lopetusAikaValittu: '14:30'
+        });
         
         for (let j = 0; j < 5; j++) {
             testidata.push({
@@ -3402,7 +3893,8 @@ function lisaaTestidata() {
     }
     
     localStorage.setItem(CONFIG.STORAGE_KEYS.ARKISTO, JSON.stringify(testidata));
-    naytaIlmoitus('[STAR] Testidata lisätty (10 päivää)');
+    localStorage.setItem(CONFIG.STORAGE_KEYS.VUOROT, JSON.stringify(testivuorot));
+    naytaIlmoitus('[STAR] Testidata lisätty (10 päivää + vuorot)');
     paivitaHistoria();
     paivitaTilastot();
 }
