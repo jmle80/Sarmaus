@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.14</title>
+    <title>Press Brake Pro v4.16</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -919,11 +919,10 @@
 
 <div class="app-container">
     <div class="container">
-        <!-- Jaksonäyttö etusivulla -->
-        <div class="jakso-display" id="jakso-display">
-            <div class="label">Palkkajakso</div>
-            <div class="value" id="current-jakso">Ei asetettu</div>
-            <div class="change-indicator" id="jakso-indicator" style="display:none;">VAIHTUU PIAN</div>
+        <!-- Versio -->
+        <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
+            <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.16</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1732,6 +1731,8 @@ const AppState = {
 
 let html5QrcodeScanner = null;
 let skannausKohde = '';
+let viimeisinSkannattuKoodi = null;
+let viimeisinSkannausAika = 0;
 let syoteBuffer = '';
 let timeBuffer = '';
 let timeCallback = null;
@@ -1822,37 +1823,14 @@ function asetaAutomaattinenJakso() {
 }
 
 function paivitaJaksonNaytto() {
-    const jaksoDisplay = document.getElementById('current-jakso');
-    const indicator = document.getElementById('jakso-indicator');
-    
-    if (AppState.jaksoAlku && AppState.jaksoLoppu) {
-        const tanaan = new Date();
-        tanaan.setHours(0, 0, 0, 0);
-        
-        const loppu = new Date(AppState.jaksoLoppu);
-        const paiviaJaljella = Math.ceil((loppu - tanaan) / (1000 * 60 * 60 * 24));
-        
-        jaksoDisplay.textContent = `${formatDateShort(AppState.jaksoAlku)} - ${formatDateShort(AppState.jaksoLoppu)}`;
-        
-        if (paiviaJaljella <= 3 && paiviaJaljella >= 0) {
-            indicator.style.display = 'block';
-            indicator.textContent = `VAIHTUU ${paiviaJaljella === 0 ? 'TÄNÄÄN' : paiviaJaljella + ' PÄIVÄSSÄ'}`;
-        } else {
-            indicator.style.display = 'none';
-        }
-    } else {
-        jaksoDisplay.textContent = 'Ei asetettu';
-        indicator.style.display = 'none';
-    }
+    // Jakso-display poistettu, näytetään vain dashboardissa
 }
 
 function tarkistaJaPaivitaJakso() {
     asetaAutomaattinenJakso();
-    paivitaJaksonNaytto();
     
     setInterval(() => {
         asetaAutomaattinenJakso();
-        paivitaJaksonNaytto();
     }, 60000);
 }
 
@@ -3354,6 +3332,10 @@ function onScanFailure(error) {
 }
 
 function suljeSkanneri() {
+    // Nollaa debounce
+    viimeisinSkannattuKoodi = null;
+    viimeisinSkannausAika = 0;
+    
     if (html5QrcodeScanner) {
         html5QrcodeScanner.stop().then(() => {
             document.getElementById('s-ruutu').style.display = 'none';
@@ -3409,6 +3391,17 @@ function onScanSuccess(decodedText, decodedResult) {
         teksti = String(parseInt(teksti, 10));
     }
     const upperText = teksti.toUpperCase();
+    
+    // Estä sama koodi 2 sekunnin sisällä (debounce)
+    const nyt = Date.now();
+    if (viimeisinSkannattuKoodi === upperText && (nyt - viimeisinSkannausAika) < 2000) {
+        console.log('Duplikaatti estetty:', upperText);
+        return; // Älä käsittele samaa koodia uudelleen
+    }
+    
+    // Tallenna viimeisin skannaus
+    viimeisinSkannattuKoodi = upperText;
+    viimeisinSkannausAika = nyt;
     
     soitaSkannausAani();
     
