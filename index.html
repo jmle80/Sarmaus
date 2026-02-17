@@ -1778,6 +1778,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPalkkajaksoLongPress();
     setupRaportit();
     setupVuorojenHallinta();
+    
+    // Palkkajakso modal listeners
+    document.getElementById('btn-tallenna-palkkajakso').addEventListener('click', tallennaPalkkajakso);
+    document.getElementById('btn-peruuta-palkkajakso').addEventListener('click', () => suljeModal('palkkajakso-modal'));
+    
     startKello();        // Ensin startKello → asettaa todellisetTyotunnit
      // Näytä lukittu tila jos vuoro ei käynnissä
     paivitaNaytto();     // Sitten näyttöpäivitys → käyttää oikeita tunteja
@@ -2753,10 +2758,6 @@ function setupEventListeners() {
     document.getElementById('btn-scan-kortti').addEventListener('click', () => avaaSkanneri('kortti'));
     document.getElementById('btn-scan-lajike').addEventListener('click', () => avaaSkanneri('lajike'));
     document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
-    
-    // Palkkajakso modal
-    document.getElementById('btn-tallenna-palkkajakso').addEventListener('click', tallennaPalkkajakso);
-    document.getElementById('btn-peruuta-palkkajakso').addEventListener('click', () => suljeModal('palkkajakso-modal'));
     
     document.getElementById('tools-toggle').addEventListener('click', toggleTools);
     document.getElementById('btn-nollaa').addEventListener('click', nollaaHistoria);
