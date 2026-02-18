@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.43.1</title>
+    <title>Press Brake Pro v4.44</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -453,6 +453,21 @@
             color: white; border: none; padding: 16px 40px; border-radius: 25px; 
             font-weight: 800; font-size: 1em; cursor: pointer; letter-spacing: 1px;
             box-shadow: 0 8px 25px rgba(255,23,68,0.4);
+        }
+        
+        .scan-btn-torch {
+            position: absolute; top: 40px; right: 40px; z-index: 20;
+            background: rgba(0, 0, 0, 0.6); color: white;
+            border: 2px solid #666; padding: 12px 16px; border-radius: 50%;
+            font-size: 1.5em; cursor: pointer; width: 60px; height: 60px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: all 0.2s;
+        }
+        .scan-btn-torch.active {
+            background: var(--warning);
+            border-color: var(--warning);
+            box-shadow: 0 4px 20px rgba(255, 214, 0, 0.6);
         }
         
         @keyframes scan { 
@@ -922,7 +937,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.43.1</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.44</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1880,6 +1895,7 @@
         <div id="reader"></div>
         <div class="scan-mask"></div>
         <div class="scan-line"></div>
+        <button id="btn-toggle-torch" class="scan-btn-torch">💡</button>
         <button id="btn-sulje-scan" class="scan-btn-close">SULJE</button>
     </div>
 </div>
@@ -1950,6 +1966,7 @@ let html5QrcodeScanner = null;
 let skannausKohde = '';
 let viimeisinSkannattuKoodi = null;
 let viimeisinSkannausAika = 0;
+let torchPaalla = false; // Taskulampun tila
 let syoteBuffer = '';
 let timeBuffer = '';
 let timeCallback = null;
@@ -3013,6 +3030,7 @@ function setupEventListeners() {
     document.getElementById('btn-scan-kortti').addEventListener('click', () => avaaSkanneri('kortti'));
     document.getElementById('btn-scan-lajike').addEventListener('click', () => avaaSkanneri('lajike'));
     document.getElementById('btn-sulje-scan').addEventListener('click', suljeSkanneri);
+    document.getElementById('btn-toggle-torch').addEventListener('click', toggleTaskulamppu);
     
     // Muistiinpano toggle
     document.getElementById('btn-toggle-notes').addEventListener('click', toggleNotes);
@@ -3809,8 +3827,8 @@ function avaaSkanneri(kohde) {
     
     // Parannettu konfiguraatio muovitaskuja varten
     const config = {
-        fps: 20, // Nostettu 15 -> 20 (enemmän yrityksiä per sekunti)
-        qrbox: { width: 300, height: 120 }, // Hieman isompi alue
+        fps: 20,
+        qrbox: { width: 300, height: 120 },
         aspectRatio: 1.7778,
         disableFlip: false,
         formatsToSupport: [
@@ -3823,15 +3841,15 @@ function avaaSkanneri(kohde) {
         ],
         videoConstraints: {
             facingMode: "environment",
-            width: { ideal: 1920 }, // Nostettu 1280 -> 1920 (parempi resoluutio)
-            height: { ideal: 1080 }, // Nostettu 720 -> 1080
-            focusMode: "continuous", // Jatkuva tarkennus
-            whiteBalanceMode: "continuous", // Automaattinen valkotasapaino
-            exposureMode: "continuous" // Automaattinen valotus
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            focusMode: "continuous",
+            whiteBalanceMode: "continuous",
+            exposureMode: "continuous",
+            torch: true // Yritä pyytää torch-tuki (ei toimi kaikilla laitteilla)
         },
-        // Lisää herkkyyttä epäselviin koodeihin
         experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true // Käytä laitteen natiivia tunnistusta jos saatavilla
+            useBarCodeDetectorIfSupported: true
         }
     };
     
@@ -3840,11 +3858,120 @@ function avaaSkanneri(kohde) {
         config,
         onScanSuccess,
         onScanFailure
-    ).catch(err => {
+    ).then(() => {
+        // Skanneri käynnistyi - yritä sytyttää taskulamppu
+        sytytatTaskulamppu();
+    }).catch(err => {
         console.error('Skannaus epäonnistui:', err);
         alert('Kameran käyttö epäonnistui. Tarkista oikeudet.');
         suljeSkanneri();
     });
+}
+
+// Sytytä taskulamppu/salama kun skanneri on aktiivinen
+function sytytatTaskulamppu() {
+    try {
+        // Hae video-elementti joka Html5Qrcode luo
+        const videoElement = document.querySelector('#reader video');
+        if (!videoElement) {
+            console.log('Video-elementtiä ei löytynyt');
+            return false;
+        }
+        
+        // Hae MediaStream
+        const stream = videoElement.srcObject;
+        if (!stream) {
+            console.log('MediaStream ei saatavilla');
+            return false;
+        }
+        
+        // Hae video track
+        const track = stream.getVideoTracks()[0];
+        if (!track) {
+            console.log('Video track ei saatavilla');
+            return false;
+        }
+        
+        // Tarkista tukeeko torch-ominaisuutta
+        const capabilities = track.getCapabilities();
+        if (!capabilities.torch) {
+            console.log('Laite ei tue taskulamppua');
+            // Piilota torch-nappi jos ei tueta
+            const torchBtn = document.getElementById('btn-toggle-torch');
+            if (torchBtn) torchBtn.style.display = 'none';
+            return false;
+        }
+        
+        // Sytytä torch
+        track.applyConstraints({
+            advanced: [{ torch: true }]
+        }).then(() => {
+            console.log('✅ Taskulamppu sytytetty');
+            torchPaalla = true;
+            paivitaTorchNappi();
+        }).catch(err => {
+            console.log('Taskulampun sytytys epäonnistui:', err);
+        });
+        
+        return true;
+        
+    } catch (e) {
+        console.log('Torch-virhe:', e);
+        return false;
+    }
+}
+
+// Sammuta taskulamppu
+function sammutaTaskulamppu() {
+    try {
+        const videoElement = document.querySelector('#reader video');
+        if (!videoElement) return;
+        
+        const stream = videoElement.srcObject;
+        if (!stream) return;
+        
+        const track = stream.getVideoTracks()[0];
+        if (!track) return;
+        
+        const capabilities = track.getCapabilities();
+        if (!capabilities.torch) return;
+        
+        track.applyConstraints({
+            advanced: [{ torch: false }]
+        }).then(() => {
+            console.log('💡 Taskulamppu sammutettu');
+            torchPaalla = false;
+            paivitaTorchNappi();
+        }).catch(err => {
+            console.log('Taskulampun sammutus epäonnistui:', err);
+        });
+        
+    } catch (e) {
+        console.log('Torch-sammutus virhe:', e);
+    }
+}
+
+// Toggle taskulamppu (käyttäjän manuaalinen hallinta)
+function toggleTaskulamppu() {
+    if (torchPaalla) {
+        sammutaTaskulamppu();
+    } else {
+        sytytatTaskulamppu();
+    }
+}
+
+// Päivitä torch-napin ulkonäkö
+function paivitaTorchNappi() {
+    const btn = document.getElementById('btn-toggle-torch');
+    if (!btn) return;
+    
+    if (torchPaalla) {
+        btn.classList.add('active');
+        btn.textContent = '🔦'; // Päällä
+    } else {
+        btn.classList.remove('active');
+        btn.textContent = '💡'; // Pois päältä
+    }
 }
 
 function onScanFailure(error) {
@@ -3852,6 +3979,10 @@ function onScanFailure(error) {
 }
 
 function suljeSkanneri() {
+    // Sammuta taskulamppu ennen skannerin sulkemista
+    sammutaTaskulamppu();
+    torchPaalla = false; // Nollaa tila
+    
     // Nollaa debounce
     viimeisinSkannattuKoodi = null;
     viimeisinSkannausAika = 0;
