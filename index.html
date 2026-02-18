@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.36</title>
+    <title>Press Brake Pro v4.38</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -922,7 +922,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.36</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.38</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -950,23 +950,15 @@
                     <div class="dash-sub-label" id="shiftSubLabel1">VALMIIT (MIN)</div>
                     <div id="shiftDone" class="dash-sub-val">0</div>
                 </div>
-                <div id="shiftTargetRow" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #333;">
-                    <div class="dash-sub-label" id="shiftSubLabel2">TAVOITE -</div>
-                    <div id="shiftTarget" class="dash-sub-val">-</div>
-                </div>
             </div>
             <div class="dashboard-box" id="dash-period">
                 <div>
                     <div class="dash-title" id="periodTitle">PALKKAJAKSO</div>
-                    <div id="periodEfficiency" class="dash-value">-</div>
+                    <div id="periodEfficiency" class="dash-value">0.00</div>
                 </div>
                 <div>
                     <div class="dash-sub-label" id="periodActualLabel">VALMIIT (H)</div>
                     <div id="periodActual" class="dash-sub-val">0.0</div>
-                </div>
-                <div id="periodTargetRow" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #333;">
-                    <div class="dash-sub-label" id="periodSubLabel2">TAVOITE -</div>
-                    <div id="periodTarget" class="dash-sub-val">-</div>
                 </div>
             </div>
         </div>
@@ -4963,52 +4955,36 @@ function updateTargetDisplay() {
         jaksoH = jaksoMin / 60;
     }
     
-    // PÄIVÄTAVOITE - näytetään MINUUTTEINA vuoro-boxissa
-    const shiftTargetRow = document.getElementById('shiftTargetRow');
+    // PÄIVÄTAVOITE - näytetään MINUUTTEINA
     if (targets.daily > 0) {
         const targetMin = targets.daily * 60;
         const dayPercent = Math.round((paivanMin / targetMin) * 100);
-        shiftTargetRow.style.display = 'block';
-        document.getElementById('shiftSubLabel2').textContent = `TAVOITE ${targetMin}min`;
-        document.getElementById('shiftTarget').textContent = `${dayPercent}%`;
-        document.getElementById('shiftTarget').style.color = dayPercent >= 100 ? 'var(--success)' : dayPercent >= 90 ? '#FF9800' : '#c62828';
         
-        // Päivitä myös shiftDone näyttämään minuutit/tavoite
         document.getElementById('shiftSubLabel1').textContent = `VALMIIT ${paivanMin}min / ${targetMin}min`;
         document.getElementById('shiftDone').textContent = `${dayPercent}%`;
         document.getElementById('shiftDone').style.color = dayPercent >= 100 ? 'var(--success)' : dayPercent >= 90 ? '#FF9800' : '#c62828';
     } else {
-        shiftTargetRow.style.display = 'none';
         document.getElementById('shiftSubLabel1').textContent = 'VALMIIT (MIN)';
         document.getElementById('shiftDone').textContent = paivanMin;
         document.getElementById('shiftDone').style.color = '';
     }
     
     // JAKSOTAVOITE - AUTOMAATTINEN LASKENTA
-    const periodTargetRow = document.getElementById('periodTargetRow');
     if (AppState.jaksoAlku && AppState.jaksoLoppu) {
-        // Laske automaattinen tavoite
         const autoTarget = laskeAutomaattinenJaksotavoite();
         
         if (autoTarget > 0) {
             const periodPercent = Math.round((jaksoH / autoTarget) * 100);
-            periodTargetRow.style.display = 'block';
-            document.getElementById('periodSubLabel2').textContent = `TAVOITE ${autoTarget.toFixed(0)}h (auto)`;
-            document.getElementById('periodTarget').textContent = `${periodPercent}%`;
-            document.getElementById('periodTarget').style.color = periodPercent >= 100 ? 'var(--success)' : periodPercent >= 90 ? '#FF9800' : '#c62828';
             
-            // Päivitä myös periodActual näyttämään tunnit/tavoite
             document.getElementById('periodActualLabel').textContent = `VALMIIT ${jaksoH.toFixed(1)}h / ${autoTarget.toFixed(0)}h`;
             document.getElementById('periodActual').textContent = `${periodPercent}%`;
             document.getElementById('periodActual').style.color = periodPercent >= 100 ? 'var(--success)' : periodPercent >= 90 ? '#FF9800' : '#c62828';
         } else {
-            periodTargetRow.style.display = 'none';
             document.getElementById('periodActualLabel').textContent = 'VALMIIT (H)';
             document.getElementById('periodActual').textContent = jaksoH.toFixed(1);
             document.getElementById('periodActual').style.color = '';
         }
     } else {
-        periodTargetRow.style.display = 'none';
         document.getElementById('periodActualLabel').textContent = 'VALMIIT (H)';
         document.getElementById('periodActual').textContent = jaksoH.toFixed(1);
         document.getElementById('periodActual').style.color = '';
