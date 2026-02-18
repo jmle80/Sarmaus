@@ -9,12 +9,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.42</title>
+    <title>Press Brake Pro v4.43.1</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
     
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" onerror="window.html5QrcodeError=true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -922,7 +922,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.42</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.43.1</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -3586,6 +3586,17 @@ function luoNumeronappaimisto() {
     const alue = document.getElementById('k-alue');
     alue.innerHTML = '';
     
+    // OPPIVAT PIKAVALINTANAPIT (vain asetus/taivutus/muut)
+    if (currentInputTarget === 'asetus' || currentInputTarget === 'taivutus' || currentInputTarget === 'muut') {
+        const yleisimmat = haeYleisimmatAjat(currentInputTarget);
+        if (yleisimmat.length > 0) {
+            alue.innerHTML += `<div style="grid-column: span 3; color:#666; font-size:0.7em; text-align:center; padding:4px 0;">⚡ PIKAVALINTA:</div>`;
+            yleisimmat.forEach(aika => {
+                alue.innerHTML += `<div class="key" data-num="${aika}" data-quickselect="true" style="background:linear-gradient(145deg,#2a4a2a,#1a3a1a);color:var(--success);border-color:#3a5a3a;font-size:0.9em;">${aika}</div>`;
+            });
+        }
+    }
+    
     for (let i = 1; i <= 9; i++) {
         alue.innerHTML += `<div class="key" data-num="${i}">${i}</div>`;
     }
@@ -3601,12 +3612,69 @@ function luoNumeronappaimisto() {
     }
 }
 
+// Tallenna käytetty aika oppimista varten
+function tallennaKaytettyAika(tyyppi, aika) {
+    if (!aika || aika === '0' || aika === '') return;
+    
+    const avain = `pbp_common_times_${tyyppi}`;
+    const tallennukset = JSON.parse(localStorage.getItem(avain) || '{}');
+    
+    // Lisää tai päivitä käyttökertaa
+    tallennukset[aika] = (tallennukset[aika] || 0) + 1;
+    
+    localStorage.setItem(avain, JSON.stringify(tallennukset));
+}
+
+// Hae yleisimmät ajat
+function haeYleisimmatAjat(tyyppi) {
+    const avain = `pbp_common_times_${tyyppi}`;
+    const tallennukset = JSON.parse(localStorage.getItem(avain) || '{}');
+    
+    // Järjestä käyttökertojen mukaan
+    const jarjestetty = Object.entries(tallennukset)
+        .sort((a, b) => b[1] - a[1]) // Suurin ensin
+        .slice(0, 5) // 5 yleisintä
+        .map(entry => entry[0]);
+    
+    return jarjestetty;
+}
+
 function handleNumericKey(e) {
     const key = e.target.closest('.key');
     if (!key) return;
     
     const num = key.dataset.num;
+    const isQuickSelect = key.dataset.quickselect === 'true';
     const naytto = document.getElementById('n-naytto');
+    
+    // PIKAVALINTA: Yksi klikkaus tallentaa suoraan
+    if (isQuickSelect) {
+        syoteBuffer = num;
+        naytto.textContent = num;
+        
+        // Vahvista automaattisesti
+        const arvoFloat = parseFloat(num);
+        if (currentInputTarget === 'asetus') {
+            const pyoristetty = Math.round(arvoFloat);
+            document.getElementById('v-asetus').textContent = pyoristetty + ' min';
+            tallennaKaytettyAika('asetus', String(pyoristetty));
+        } else if (currentInputTarget === 'taivutus') {
+            const nayttoTeksti = arvoFloat % 1 === 0 ? arvoFloat + ' min' : arvoFloat.toFixed(1) + ' min';
+            document.getElementById('v-taivutus').textContent = nayttoTeksti;
+            const tallennaArvo = arvoFloat % 1 === 0 ? String(arvoFloat) : arvoFloat.toFixed(1);
+            tallennaKaytettyAika('taivutus', tallennaArvo);
+        } else if (currentInputTarget === 'muut') {
+            tallennaKaytettyAika('muut', String(Math.round(arvoFloat)));
+        }
+        
+        // Näytä vihreä välähdys
+        naytto.style.color = 'var(--success)';
+        setTimeout(() => naytto.style.color = '', 300);
+        
+        // Sulje automaattisesti
+        setTimeout(() => suljeNumeroNaytto(), 400);
+        return;
+    }
     
     if (num === 'C') {
         syoteBuffer = '';
@@ -3639,10 +3707,19 @@ function handleNumericKey(e) {
         if (currentInputTarget === 'kortti') {
             document.getElementById('v-kortti').textContent = syoteBuffer;
         } else if (currentInputTarget === 'asetus') {
-            document.getElementById('v-asetus').textContent = Math.round(arvoFloat) + ' min';
+            const pyoristetty = Math.round(arvoFloat);
+            document.getElementById('v-asetus').textContent = pyoristetty + ' min';
+            // OPPIMINEN: Tallenna käytetty aika
+            tallennaKaytettyAika('asetus', String(pyoristetty));
         } else if (currentInputTarget === 'taivutus') {
             const nayttoTeksti = arvoFloat % 1 === 0 ? arvoFloat + ' min' : arvoFloat.toFixed(1) + ' min';
             document.getElementById('v-taivutus').textContent = nayttoTeksti;
+            // OPPIMINEN: Tallenna käytetty aika
+            const tallennaArvo = arvoFloat % 1 === 0 ? String(arvoFloat) : arvoFloat.toFixed(1);
+            tallennaKaytettyAika('taivutus', tallennaArvo);
+        } else if (currentInputTarget === 'muut') {
+            // OPPIMINEN: Tallenna käytetty aika
+            tallennaKaytettyAika('muut', String(Math.round(arvoFloat)));
         }
         suljeNumeroNaytto();
         return;
@@ -3710,11 +3787,24 @@ document.querySelector('#time-modal .time-keypad').addEventListener('click', fun
 });
 
 function avaaSkanneri(kohde) {
+    // Tarkista että skannerikirjasto on ladattu
+    if (typeof Html5Qrcode === 'undefined') {
+        alert('⚠️ Skanneri ei ole käytettävissä\n\nSkannerikirjasto ei latautunut.\n\n💡 Kokeile:\n1. Lataa sivu uudelleen\n2. Varmista internet-yhteys\n3. Käytä manuaalista syöttöä');
+        document.getElementById('s-ruutu').style.display = 'none';
+        return;
+    }
+    
     skannausKohde = kohde;
     document.getElementById('s-ruutu').style.display = 'flex';
     
     if (!html5QrcodeScanner) {
-        html5QrcodeScanner = new Html5Qrcode("reader");
+        try {
+            html5QrcodeScanner = new Html5Qrcode("reader");
+        } catch(e) {
+            alert('⚠️ Skannerin alustus epäonnistui\n\n' + e.message);
+            document.getElementById('s-ruutu').style.display = 'none';
+            return;
+        }
     }
     
     // Parannettu konfiguraatio muovitaskuja varten
@@ -3835,58 +3925,54 @@ function onScanSuccess(decodedText, decodedResult) {
     
     soitaSkannausAani();
     
-    if (skannausKohde === 'kortti') {
-        // Validoi että kortti on tasan 6 numeroa (etunollat poistettu)
-        if (!/^\d{6}$/.test(teksti)) {
-            const virhe = /^\d+$/.test(teksti) 
-                ? `Kortin pitää olla 6-numeroinen! (Skannattiin: ${teksti.length} numeroa)`
-                : 'Kortissa saa olla vain numeroita!';
-            naytaIlmoitus(`❌ ${virhe}`, 2000);
-            console.log('Kortin validointi epäonnistui:', teksti);
-            return; // Älä hyväksy
-        }
-        
+    // ÄLYKÄS TUNNISTUS: 6 numeroa = KORTTI, muu = LAJIKE
+    const onKortti = /^\d{6}$/.test(teksti);
+    
+    if (onKortti) {
+        // KORTTI skannattu (riippumatta siitä missä skannerissa)
         document.getElementById('v-kortti').textContent = upperText;
         naytaIlmoitus(`✅ Kortti: ${upperText}`, 700);
         
-        // ÄLYKÄS SIIRTYMÄ: Jos lajike on täynnä → asetus, muuten → lajike-skanneri
+        // Tarkista onko lajike täynnä
         const lajikeArvo = document.getElementById('v-lajike').textContent;
         if (lajikeArvo && lajikeArvo !== '-') {
-            // Lajike on täynnä → siirry suoraan asetus-ikkunaan
+            // Molemmat täynnä → siirry asetus-ikkunaan
             setTimeout(() => {
                 suljeSkanneri();
                 setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 400);
             }, 500);
         } else {
             // Lajike tyhjä → siirry lajike-skanneriin
-            setTimeout(() => suljeSkanneriJaAvaaSeuraava('lajike'), 500);
+            if (skannausKohde === 'kortti') {
+                setTimeout(() => suljeSkanneriJaAvaaSeuraava('lajike'), 500);
+            } else {
+                // Oltiin lajike-skannerissa, avaa kortti-skanneri (jatka samaa kierrosta)
+                naytaIlmoitus('📝 Skannaa nyt lajike', 1500);
+            }
         }
-    } else if (skannausKohde === 'lajike') {
-        // Estä kortin tallennus lajimerkkinä
-        if (/^\d{6}$/.test(teksti)) {
-            naytaIlmoitus('❌ Skannasit KORTIN! Lajimerkki ei voi olla 6-numeroinen.', 2500);
-            console.log('Lajimerkki hylätty (6 numeroa):', teksti);
-            return; // Älä hyväksy
-        }
-        
+    } else {
+        // LAJIKE skannattu (riippumatta siitä missä skannerissa)
         document.getElementById('v-lajike').textContent = upperText;
         localStorage.setItem('viimeinenLajimerkki', upperText);
         naytaIlmoitus(`✅ Lajike: ${upperText}`, 700);
         
-        // ÄLYKÄS SIIRTYMÄ: Jos kortti on tyhjä → kortti-skanneri, muuten → asetus
+        // Tarkista onko kortti täynnä
         const korttiArvo = document.getElementById('v-kortti').textContent;
-        if (!korttiArvo || korttiArvo === '-') {
-            // Kortti tyhjä → siirry kortti-skanneriin
-            setTimeout(() => suljeSkanneriJaAvaaSeuraava('kortti'), 400);
-        } else {
-            // Kortti täynnä → siirry asetus-ikkunaan
+        if (korttiArvo && korttiArvo !== '-') {
+            // Molemmat täynnä → siirry asetus-ikkunaan
             setTimeout(() => {
                 suljeSkanneri();
                 setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 400);
             }, 400);
+        } else {
+            // Kortti tyhjä → siirry kortti-skanneriin
+            if (skannausKohde === 'lajike') {
+                setTimeout(() => suljeSkanneriJaAvaaSeuraava('kortti'), 400);
+            } else {
+                // Oltiin kortti-skannerissa, avaa lajike-skanneri (jatka samaa kierrosta)
+                naytaIlmoitus('📝 Skannaa nyt kortti', 1500);
+            }
         }
-    } else {
-        setTimeout(() => suljeSkanneri(), 400);
     }
 }
 
