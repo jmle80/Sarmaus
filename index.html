@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.27</title>
+    <title>Press Brake Pro v4.30</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -922,7 +922,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.27</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.30</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -984,7 +984,9 @@
             <button id="s-PROTO" class="btn-spec">PROTO</button>
             <button id="s-HÄIRIÖ" class="btn-spec">HÄIRIÖ</button>
             <button id="s-HUOLTO" class="btn-spec">HUOLTO</button>
+            <button id="s-PEKKANEN" class="btn-spec" style="background:linear-gradient(145deg, #2196F3 0%, #1565C0 100%); color:white;">🔧 PEKKANEN</button>
             <button id="s-SAIRASLOMA" class="btn-spec" style="background:linear-gradient(145deg, #c62828 0%, #8e0000 100%); color:white;">🏥 SAIRASLOMA</button>
+            <button id="s-LOMA" class="btn-spec" style="background:linear-gradient(145deg, #FF9800 0%, #E65100 100%); color:white;">🏖️ LOMA</button>
         </div>
 
         <!-- Tietojen syöttö -->
@@ -1138,6 +1140,48 @@
         </div>
         <button id="btn-tallenna-sairasloma" class="btn-jatka" style="padding:14px; background:linear-gradient(145deg, #c62828 0%, #8e0000 100%);">💾 TALLENNA SAIRASLOMA</button>
         <button id="btn-peruuta-sairasloma" style="margin-top:12px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600; width:100%; padding:8px;">PERUUTA</button>
+    </div>
+</div>
+
+<!-- Loma Modal -->
+<div id="loma-modal" class="overlay" style="display:none;">
+    <div class="modal">
+        <h3 style="color:#FF9800; margin-top:0; font-size:1.1em;">🏖️ LOMA</h3>
+        <div style="text-align:left; margin-bottom:12px;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">ALKUPÄIVÄ</div>
+            <input type="date" id="loma-alku-pvm" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid #FF9800; color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
+        </div>
+        <div style="text-align:left; margin-bottom:12px;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">LOPPUPÄIVÄ</div>
+            <input type="date" id="loma-loppu-pvm" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid #FF9800; color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
+        </div>
+        <div style="background:#0a0a0a; padding:10px; border-radius:8px; margin-bottom:15px;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:3px;">KESTO</div>
+            <div id="loma-kesto" style="color:#FF9800; font-weight:700; font-size:1.1em;">--</div>
+        </div>
+        <button id="btn-tallenna-loma" class="btn-jatka" style="padding:14px; background:linear-gradient(145deg, #FF9800 0%, #E65100 100%);">💾 TALLENNA LOMA</button>
+        <button id="btn-peruuta-loma" style="margin-top:12px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600; width:100%; padding:8px;">PERUUTA</button>
+    </div>
+</div>
+
+<!-- Pekkanen Modal -->
+<div id="pekkanen-modal" class="overlay" style="display:none;">
+    <div class="modal">
+        <h3 style="color:#2196F3; margin-top:0; font-size:1.1em;">🔧 PEKKANEN</h3>
+        <div style="text-align:left; margin-bottom:12px;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">ALKUPÄIVÄ</div>
+            <input type="date" id="pekkanen-alku-pvm" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid #2196F3; color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
+        </div>
+        <div style="text-align:left; margin-bottom:12px;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">LOPPUPÄIVÄ</div>
+            <input type="date" id="pekkanen-loppu-pvm" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid #2196F3; color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
+        </div>
+        <div style="background:#0a0a0a; padding:10px; border-radius:8px; margin-bottom:15px;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:3px;">KESTO</div>
+            <div id="pekkanen-kesto" style="color:#2196F3; font-weight:700; font-size:1.1em;">--</div>
+        </div>
+        <button id="btn-tallenna-pekkanen" class="btn-jatka" style="padding:14px; background:linear-gradient(145deg, #2196F3 0%, #1565C0 100%);">💾 TALLENNA PEKKANEN</button>
+        <button id="btn-peruuta-pekkanen" style="margin-top:12px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600; width:100%; padding:8px;">PERUUTA</button>
     </div>
 </div>
 
@@ -1997,6 +2041,14 @@ function setupVuorojenHallinta() {
     document.getElementById('new-vuoro-alku-display').addEventListener('click', () => avaaUudenVuoronAika('alku'));
     document.getElementById('new-vuoro-loppu-display').addEventListener('click', () => avaaUudenVuoronAika('loppu'));
     
+    // Erikoistilanappit
+    document.getElementById('s-PROTO').addEventListener('click', () => toggleErikoistila('PROTO'));
+    document.getElementById('s-HÄIRIÖ').addEventListener('click', () => toggleErikoistila('HÄIRIÖ'));
+    document.getElementById('s-HUOLTO').addEventListener('click', () => toggleErikoistila('HUOLTO'));
+    document.getElementById('s-PEKKANEN').addEventListener('click', () => toggleErikoistila('PEKKANEN'));
+    document.getElementById('s-SAIRASLOMA').addEventListener('click', () => toggleErikoistila('SAIRASLOMA'));
+    document.getElementById('s-LOMA').addEventListener('click', () => toggleErikoistila('LOMA'));
+    
     // Sairasloma
     document.getElementById('btn-tallenna-sairasloma').addEventListener('click', tallennaSairasloma);
     document.getElementById('btn-peruuta-sairasloma').addEventListener('click', () => {
@@ -2004,6 +2056,22 @@ function setupVuorojenHallinta() {
     });
     document.getElementById('sairasloma-alku-pvm').addEventListener('change', paivitaSairaslomanKesto);
     document.getElementById('sairasloma-loppu-pvm').addEventListener('change', paivitaSairaslomanKesto);
+    
+    // Loma
+    document.getElementById('btn-tallenna-loma').addEventListener('click', tallennaLoma);
+    document.getElementById('btn-peruuta-loma').addEventListener('click', () => {
+        suljeModal('loma-modal');
+    });
+    document.getElementById('loma-alku-pvm').addEventListener('change', paivitaLomanKesto);
+    document.getElementById('loma-loppu-pvm').addEventListener('change', paivitaLomanKesto);
+    
+    // Pekkanen
+    document.getElementById('btn-tallenna-pekkanen').addEventListener('click', tallennaPekkanen);
+    document.getElementById('btn-peruuta-pekkanen').addEventListener('click', () => {
+        suljeModal('pekkanen-modal');
+    });
+    document.getElementById('pekkanen-alku-pvm').addEventListener('change', paivitaPekkasenKesto);
+    document.getElementById('pekkanen-loppu-pvm').addEventListener('change', paivitaPekkasenKesto);
     
     // Vuoronvalinta kortille
     document.getElementById('btn-peruuta-vuoro-valinta').addEventListener('click', () => {
@@ -2425,8 +2493,11 @@ function paivitaVuoroRaportti() {
         totalTaivutus += e.taivutus || 0;
         totalMuut += e.muutAika || 0;
         
-        if (e.muut && ['PROTO', 'HÄIRIÖ', 'HUOLTO'].includes(e.muut)) {
-            erikoistilat.push({ tila: e.muut, aika: e.muutAika || 0 });
+        // Tunnista kaikki erikoistilat
+        if (e.muut && (e.muut.includes('PROTO') || e.muut.includes('HÄIRIÖ') || e.muut.includes('HUOLTO') || 
+                       e.muut.includes('SAIRASLOMA') || e.muut.includes('LOMA') || e.muut.includes('PEKKANEN'))) {
+            const tila = e.muut.split(' ')[0]; // Ota ensimmäinen sana (tilan nimi)
+            erikoistilat.push({ tila: tila, aika: e.muutAika || 0, teksti: e.muut });
         }
     });
     
@@ -3512,6 +3583,16 @@ function onScanSuccess(decodedText, decodedResult) {
     soitaSkannausAani();
     
     if (skannausKohde === 'kortti') {
+        // Validoi että kortti on tasan 6 numeroa (etunollat poistettu)
+        if (!/^\d{6}$/.test(teksti)) {
+            const virhe = /^\d+$/.test(teksti) 
+                ? `Kortin pitää olla 6-numeroinen! (Skannattiin: ${teksti.length} numeroa)`
+                : 'Kortissa saa olla vain numeroita!';
+            naytaIlmoitus(`❌ ${virhe}`, 2000);
+            console.log('Kortin validointi epäonnistui:', teksti);
+            return; // Älä hyväksy
+        }
+        
         document.getElementById('v-kortti').textContent = upperText;
         naytaIlmoitus(`✅ Kortti: ${upperText}`, 700);
         // Siirry automaattisesti lajimerkki-skanneriin
@@ -4006,9 +4087,13 @@ function toggleErikoistila(tila) {
         }
         erikoistilaNimi = tila;
         
-        // SAIRASLOMA kysyy päivämäärän, muut kysyvät aikoja
+        // SAIRASLOMA, LOMA ja PEKKANEN kysyvät päivämäärät, muut kysyvät kellonajat
         if (tila === 'SAIRASLOMA') {
             avaaSairaslomaPaivat();
+        } else if (tila === 'LOMA') {
+            avaaLomaPaivat();
+        } else if (tila === 'PEKKANEN') {
+            avaaPekkasenPaivat();
         } else {
             avaaErikoistilanAika('alku');
         }
@@ -4117,6 +4202,118 @@ function tallennaSairasloma() {
     
     suljeModal('sairasloma-modal');
     naytaIlmoitus(`✅ SAIRASLOMA: ${paivat} päivää (${tunnit}h)`);
+    
+    erikoistilaNimi = null;
+}
+
+// LOMA funktiot
+function avaaLomaPaivat() {
+    const tanaan = new Date();
+    const pvmStr = `${tanaan.getFullYear()}-${String(tanaan.getMonth()+1).padStart(2,'0')}-${String(tanaan.getDate()).padStart(2,'0')}`;
+    document.getElementById('loma-alku-pvm').value = pvmStr;
+    document.getElementById('loma-loppu-pvm').value = pvmStr;
+    document.getElementById('loma-kesto').textContent = '--';
+    
+    document.getElementById('loma-modal').style.display = 'flex';
+    avoinModal = 'loma-modal';
+}
+
+function paivitaLomanKesto() {
+    const alkuPvm = document.getElementById('loma-alku-pvm').value;
+    const loppuPvm = document.getElementById('loma-loppu-pvm').value;
+    
+    if (alkuPvm && loppuPvm) {
+        const alku = new Date(alkuPvm);
+        const loppu = new Date(loppuPvm);
+        const eroMs = loppu - alku;
+        const paivat = Math.floor(eroMs / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('loma-kesto').textContent = `${paivat} päivä${paivat !== 1 ? 'ä' : ''}`;
+    }
+}
+
+function tallennaLoma() {
+    const alkuPvm = document.getElementById('loma-alku-pvm').value;
+    const loppuPvm = document.getElementById('loma-loppu-pvm').value;
+    
+    if (!alkuPvm || !loppuPvm) {
+        alert('Täytä molemmat päivämäärät!');
+        return;
+    }
+    
+    const alku = new Date(alkuPvm);
+    const loppu = new Date(loppuPvm);
+    
+    if (loppu < alku) {
+        alert('Loppupäivä ei voi olla ennen alkupäivää!');
+        return;
+    }
+    
+    const eroMs = loppu - alku;
+    const paivat = Math.floor(eroMs / (1000 * 60 * 60 * 24)) + 1;
+    const tunnit = paivat * 8;
+    
+    AppState.erikoistilaAktiivinen = 'LOMA';
+    document.getElementById('s-LOMA').classList.add('active');
+    document.getElementById('v-muut').textContent = `LOMA (${tunnit}h / ${paivat}pv)`;
+    
+    suljeModal('loma-modal');
+    naytaIlmoitus(`✅ LOMA: ${paivat} päivää (${tunnit}h)`);
+    
+    erikoistilaNimi = null;
+}
+
+// PEKKANEN funktiot
+function avaaPekkasenPaivat() {
+    const tanaan = new Date();
+    const pvmStr = `${tanaan.getFullYear()}-${String(tanaan.getMonth()+1).padStart(2,'0')}-${String(tanaan.getDate()).padStart(2,'0')}`;
+    document.getElementById('pekkanen-alku-pvm').value = pvmStr;
+    document.getElementById('pekkanen-loppu-pvm').value = pvmStr;
+    document.getElementById('pekkanen-kesto').textContent = '--';
+    
+    document.getElementById('pekkanen-modal').style.display = 'flex';
+    avoinModal = 'pekkanen-modal';
+}
+
+function paivitaPekkasenKesto() {
+    const alkuPvm = document.getElementById('pekkanen-alku-pvm').value;
+    const loppuPvm = document.getElementById('pekkanen-loppu-pvm').value;
+    
+    if (alkuPvm && loppuPvm) {
+        const alku = new Date(alkuPvm);
+        const loppu = new Date(loppuPvm);
+        const eroMs = loppu - alku;
+        const paivat = Math.floor(eroMs / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('pekkanen-kesto').textContent = `${paivat} päivä${paivat !== 1 ? 'ä' : ''}`;
+    }
+}
+
+function tallennaPekkanen() {
+    const alkuPvm = document.getElementById('pekkanen-alku-pvm').value;
+    const loppuPvm = document.getElementById('pekkanen-loppu-pvm').value;
+    
+    if (!alkuPvm || !loppuPvm) {
+        alert('Täytä molemmat päivämäärät!');
+        return;
+    }
+    
+    const alku = new Date(alkuPvm);
+    const loppu = new Date(loppuPvm);
+    
+    if (loppu < alku) {
+        alert('Loppupäivä ei voi olla ennen alkupäivää!');
+        return;
+    }
+    
+    const eroMs = loppu - alku;
+    const paivat = Math.floor(eroMs / (1000 * 60 * 60 * 24)) + 1;
+    const tunnit = paivat * 8;
+    
+    AppState.erikoistilaAktiivinen = 'PEKKANEN';
+    document.getElementById('s-PEKKANEN').classList.add('active');
+    document.getElementById('v-muut').textContent = `PEKKANEN (${tunnit}h / ${paivat}pv)`;
+    
+    suljeModal('pekkanen-modal');
+    naytaIlmoitus(`✅ PEKKANEN: ${paivat} päivää (${tunnit}h)`);
     
     erikoistilaNimi = null;
 }
