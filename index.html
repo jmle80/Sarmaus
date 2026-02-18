@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.22</title>
+    <title>Press Brake Pro v4.27</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -922,7 +922,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.22</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.27</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1125,18 +1125,12 @@
     <div class="modal">
         <h3 style="color:#c62828; margin-top:0; font-size:1.1em;">🏥 SAIRASLOMA</h3>
         <div style="text-align:left; margin-bottom:12px;">
-            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">PÄIVÄMÄÄRÄ</div>
-            <input type="date" id="sairasloma-pvm" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid #333; color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">ALKUPÄIVÄ</div>
+            <input type="date" id="sairasloma-alku-pvm" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid #c62828; color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-            <div>
-                <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600;">ALOITUS</div>
-                <div id="sairasloma-alku-display" style="font-size:1.8em; font-weight:300; color:#c62828; text-align:center; padding:10px; border:2px solid #c62828; border-radius:8px; cursor:pointer; letter-spacing:2px;">--:--</div>
-            </div>
-            <div>
-                <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600;">LOPETUS</div>
-                <div id="sairasloma-loppu-display" style="font-size:1.8em; font-weight:300; color:#c62828; text-align:center; padding:10px; border:2px solid #c62828; border-radius:8px; cursor:pointer; letter-spacing:2px;">--:--</div>
-            </div>
+        <div style="text-align:left; margin-bottom:12px;">
+            <div style="color:#666; font-size:0.75em; margin-bottom:5px; text-transform:uppercase; font-weight:600; letter-spacing:0.5px;">LOPPUPÄIVÄ</div>
+            <input type="date" id="sairasloma-loppu-pvm" style="width:100%; padding:12px; background:#0a0a0a; border:2px solid #c62828; color:white; border-radius:8px; font-size:1em; font-family:inherit; box-sizing:border-box;">
         </div>
         <div style="background:#0a0a0a; padding:10px; border-radius:8px; margin-bottom:15px;">
             <div style="color:#666; font-size:0.75em; margin-bottom:3px;">KESTO</div>
@@ -1584,18 +1578,7 @@
         </div>
         
         <div id="combined-keyboard" class="keyboard-container" style="display:none;">
-            <div class="keyboard-row">
-                <div class="key-number" data-key="1">1</div>
-                <div class="key-number" data-key="2">2</div>
-                <div class="key-number" data-key="3">3</div>
-                <div class="key-number" data-key="4">4</div>
-                <div class="key-number" data-key="5">5</div>
-                <div class="key-number" data-key="6">6</div>
-                <div class="key-number" data-key="7">7</div>
-                <div class="key-number" data-key="8">8</div>
-                <div class="key-number" data-key="9">9</div>
-                <div class="key-number" data-key="0">0</div>
-            </div>
+            <!-- Kirjainrivit -->
             <div class="keyboard-row">
                 <div class="key-letter" data-key="Q">Q</div>
                 <div class="key-letter" data-key="W">W</div>
@@ -1607,7 +1590,6 @@
                 <div class="key-letter" data-key="I">I</div>
                 <div class="key-letter" data-key="O">O</div>
                 <div class="key-letter" data-key="P">P</div>
-                <div class="key-letter" data-key="Å">Å</div>
             </div>
             <div class="keyboard-row">
                 <div class="key-letter" data-key="A">A</div>
@@ -1620,25 +1602,42 @@
                 <div class="key-letter" data-key="K">K</div>
                 <div class="key-letter" data-key="L">L</div>
                 <div class="key-letter" data-key="Ö">Ö</div>
-                <div class="key-letter" data-key="Ä">Ä</div>
             </div>
             <div class="keyboard-row">
                 <div class="key-letter" data-key="Z">Z</div>
                 <div class="key-letter" data-key="X">X</div>
-                <div class="key-letter" data-key="C">C</div>
                 <div class="key-letter" data-key="V">V</div>
                 <div class="key-letter" data-key="B">B</div>
                 <div class="key-letter" data-key="N">N</div>
                 <div class="key-letter" data-key="M">M</div>
+                <div class="key-letter" data-key="Å">Å</div>
+                <div class="key-letter" data-key="Ä">Ä</div>
                 <div class="key-letter" data-key="-">-</div>
-                <div class="key-letter" data-key="_">_</div>
-            </div>
-            <div class="keyboard-row">
-                <div class="key-letter key-shift" data-key="SHIFT">⇧</div>
-                <div class="key-letter key-space" data-key="SPACE">VÄLI</div>
                 <div class="key-letter" data-key=".">.</div>
-                <div class="key-letter key-backspace" data-key="BACKSPACE">⌫</div>
-                <div class="key-letter key-enter" data-key="ENTER">OK</div>
+            </div>
+            
+            <!-- Numeroiden rivi -->
+            <div class="keyboard-row" style="margin-top:8px;">
+                <div class="key-number" data-key="1">1</div>
+                <div class="key-number" data-key="2">2</div>
+                <div class="key-number" data-key="3">3</div>
+                <div class="key-number" data-key="4">4</div>
+                <div class="key-number" data-key="5">5</div>
+                <div class="key-number" data-key="6">6</div>
+                <div class="key-number" data-key="7">7</div>
+                <div class="key-number" data-key="8">8</div>
+                <div class="key-number" data-key="9">9</div>
+                <div class="key-number" data-key="0">0</div>
+            </div>
+            
+            <!-- Toimintorivit -->
+            <div class="keyboard-row" style="margin-top:12px;">
+                <div class="key-letter key-space" data-key="SPACE" style="flex:2;">VÄLI</div>
+                <div class="key-letter key-backspace" data-key="BACKSPACE" style="flex:1.5;">⌫</div>
+            </div>
+            <div class="keyboard-row" style="margin-top:8px;">
+                <div class="key-letter" data-key="C" style="flex:1; background:linear-gradient(145deg, #c62828 0%, #8e0000 100%); color:white; font-weight:700; font-size:0.85em;">C NOLLAA</div>
+                <div class="key-letter key-enter" data-key="ENTER" style="flex:1.5; background:linear-gradient(145deg, #2e7d32 0%, #1b5e20 100%); font-size:1.1em; font-weight:800;">✓ OK</div>
             </div>
         </div>
         
@@ -2002,12 +2001,9 @@ function setupVuorojenHallinta() {
     document.getElementById('btn-tallenna-sairasloma').addEventListener('click', tallennaSairasloma);
     document.getElementById('btn-peruuta-sairasloma').addEventListener('click', () => {
         suljeModal('sairasloma-modal');
-        sairaslomaPvm = null;
-        sairasloma_Alku = null;
-        sairasloma_Loppu = null;
     });
-    document.getElementById('sairasloma-alku-display').addEventListener('click', () => avaaSairaslomanAika('alku'));
-    document.getElementById('sairasloma-loppu-display').addEventListener('click', () => avaaSairaslomanAika('loppu'));
+    document.getElementById('sairasloma-alku-pvm').addEventListener('change', paivitaSairaslomanKesto);
+    document.getElementById('sairasloma-loppu-pvm').addEventListener('change', paivitaSairaslomanKesto);
     
     // Vuoronvalinta kortille
     document.getElementById('btn-peruuta-vuoro-valinta').addEventListener('click', () => {
@@ -2241,10 +2237,6 @@ function setupVuoroTimeKeypad() {
                     // Erikoistilan ajan syöttö
                     const kohde = avoinModal.replace('erikoistila-aika-', '');
                     kasitteleErikoistilanAika(kohde, timeStr);
-                } else if (avoinModal && avoinModal.startsWith('sairasloma-aika-')) {
-                    // Sairasloman ajan syöttö
-                    const kohde = avoinModal.replace('sairasloma-aika-', '');
-                    kasitteleSairaslomanAika(kohde, timeStr);
                 } else {
                     // Vanhan vuoron muokkaus
                     const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
@@ -2858,11 +2850,6 @@ function setupEventListeners() {
                 erikoistilaLoppuAika = null;
                 erikoistilaNimi = null;
             }
-            else if (avoinModal && avoinModal.startsWith('sairasloma-aika-')) {
-                suljeModal('vuoro-time-modal');
-                document.getElementById('sairasloma-modal').style.display = 'flex';
-                avoinModal = 'sairasloma-modal';
-            }
             else suljeModal(avoinModal);
         }
     });
@@ -3089,10 +3076,19 @@ function setupCombinedKeyboard() {
         const naytto = document.getElementById('n-naytto');
         
         switch(keyValue) {
-            case 'SHIFT':
-                isShiftActive = !isShiftActive;
-                key.classList.toggle('active', isShiftActive);
-                paivitaNappaimistoKirjaimet();
+            case 'C':
+                // Sulje modal ja palaa etusivulle
+                suljeModal('n-ruutu');
+                // Nollaa näytettävät kentät
+                document.getElementById('v-lajike').textContent = '-';
+                document.getElementById('v-kortti').textContent = '-';
+                document.getElementById('v-asetus').textContent = '-';
+                document.getElementById('v-taivutus').textContent = '-';
+                document.getElementById('v-muut').textContent = '-';
+                // Nollaa syöttökentät
+                document.getElementById('muut-lajimerkki').value = '';
+                document.getElementById('muut-aika').value = '';
+                syoteBuffer = '';
                 return;
                 
             case 'ENTER':
@@ -3152,10 +3148,8 @@ function setupCombinedKeyboard() {
                 return;
         }
         
-        let char = keyValue;
-        if (isShiftActive && /^[A-ZÄÖÅ]$/.test(char)) {
-            char = char.toLowerCase();
-        }
+        // Kaikki kirjaimet aina isoilla
+        const char = keyValue;
         
         if (currentInputTarget === 'lajike' || (currentInputTarget === 'muut' && aktiivinenMuutKentta === 'lajimerkki')) {
             lajimerkkiInput.value += char;
@@ -3182,15 +3176,6 @@ function setupCombinedKeyboard() {
         aktiivinenMuutKentta = 'aika';
         document.getElementById('muut-aika').style.borderColor = 'var(--primary)';
         document.getElementById('muut-lajimerkki').style.borderColor = '#333';
-    });
-}
-
-function paivitaNappaimistoKirjaimet() {
-    document.querySelectorAll('#combined-keyboard .key-letter[data-key]').forEach(key => {
-        const original = key.getAttribute('data-key');
-        if (original.length === 1 && /^[A-ZÄÖÅ]$/.test(original)) {
-            key.textContent = isShiftActive ? original.toLowerCase() : original;
-        }
     });
 }
 
@@ -3312,6 +3297,14 @@ function handleNumericKey(e) {
     if (num === 'C') {
         syoteBuffer = '';
         naytto.textContent = '';
+        // Sulje modal ja palaa etusivulle
+        suljeModal('n-ruutu');
+        // Nollaa kentät
+        document.getElementById('v-kortti').textContent = '-';
+        document.getElementById('v-asetus').textContent = '-';
+        document.getElementById('v-taivutus').textContent = '-';
+        document.getElementById('v-muut').textContent = '-';
+        return;
     } else if (num === 'HALF') {
         if (syoteBuffer) {
             const arvo = parseFloat(syoteBuffer);
@@ -4076,86 +4069,55 @@ let sairasloma_Loppu = null;
 function avaaSairaslomaPaivat() {
     const tanaan = new Date();
     const pvmStr = `${tanaan.getFullYear()}-${String(tanaan.getMonth()+1).padStart(2,'0')}-${String(tanaan.getDate()).padStart(2,'0')}`;
-    document.getElementById('sairasloma-pvm').value = pvmStr;
-    document.getElementById('sairasloma-alku-display').textContent = '--:--';
-    document.getElementById('sairasloma-loppu-display').textContent = '--:--';
+    document.getElementById('sairasloma-alku-pvm').value = pvmStr;
+    document.getElementById('sairasloma-loppu-pvm').value = pvmStr;
     document.getElementById('sairasloma-kesto').textContent = '--';
-    sairaslomaPvm = null;
-    sairasloma_Alku = null;
-    sairasloma_Loppu = null;
     
     document.getElementById('sairasloma-modal').style.display = 'flex';
     avoinModal = 'sairasloma-modal';
 }
 
-function avaaSairaslomanAika(kohde) {
-    const pvmStr = document.getElementById('sairasloma-pvm').value;
-    if (!pvmStr) {
-        alert('Valitse ensin päivämäärä!');
-        return;
-    }
-    sairaslomaPvm = pvmStr;
+function paivitaSairaslomanKesto() {
+    const alkuPvm = document.getElementById('sairasloma-alku-pvm').value;
+    const loppuPvm = document.getElementById('sairasloma-loppu-pvm').value;
     
-    const otsikko = kohde === 'alku' ? 'SAIRASLOMA - ALOITUS' : 'SAIRASLOMA - LOPETUS';
-    document.getElementById('vuoro-time-otsikko').textContent = otsikko;
-    document.getElementById('vuoro-time-display').textContent = '--:--';
-    timeBuffer = '';
-    document.getElementById('sairasloma-modal').style.display = 'none';
-    document.getElementById('vuoro-time-modal').style.display = 'flex';
-    avoinModal = 'sairasloma-aika-' + kohde;
-}
-
-function kasitteleSairaslomanAika(kohde, timeStr) {
-    const [y, mo, d] = sairaslomaPvm.split('-').map(Number);
-    const [h, m] = timeStr.split(':').map(Number);
-    const aika = new Date(y, mo-1, d, h, m, 0, 0);
-    
-    if (kohde === 'alku') {
-        sairasloma_Alku = aika.getTime();
-        document.getElementById('sairasloma-alku-display').textContent = timeStr;
-        suljeModal('vuoro-time-modal');
-        document.getElementById('sairasloma-modal').style.display = 'flex';
-        avoinModal = 'sairasloma-modal';
-    } else {
-        sairasloma_Loppu = aika.getTime();
-        
-        if (sairasloma_Loppu <= sairasloma_Alku) {
-            const loppu = new Date(sairasloma_Loppu);
-            loppu.setDate(loppu.getDate() + 1);
-            sairasloma_Loppu = loppu.getTime();
-        }
-        
-        document.getElementById('sairasloma-loppu-display').textContent = timeStr;
-        
-        const kestoMs = sairasloma_Loppu - sairasloma_Alku;
-        const kestoH = Math.round(kestoMs / (1000 * 60 * 60) * 10) / 10;
-        document.getElementById('sairasloma-kesto').textContent = `${kestoH}h`;
-        
-        suljeModal('vuoro-time-modal');
-        document.getElementById('sairasloma-modal').style.display = 'flex';
-        avoinModal = 'sairasloma-modal';
+    if (alkuPvm && loppuPvm) {
+        const alku = new Date(alkuPvm);
+        const loppu = new Date(loppuPvm);
+        const eroMs = loppu - alku;
+        const paivat = Math.floor(eroMs / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('sairasloma-kesto').textContent = `${paivat} päivä${paivat !== 1 ? 'ä' : ''}`;
     }
 }
 
 function tallennaSairasloma() {
-    if (!sairaslomaPvm || !sairasloma_Alku || !sairasloma_Loppu) {
-        alert('Täytä kaikki kentät!');
+    const alkuPvm = document.getElementById('sairasloma-alku-pvm').value;
+    const loppuPvm = document.getElementById('sairasloma-loppu-pvm').value;
+    
+    if (!alkuPvm || !loppuPvm) {
+        alert('Täytä molemmat päivämäärät!');
         return;
     }
     
-    const kestoMs = sairasloma_Loppu - sairasloma_Alku;
-    const kestoMin = Math.round(kestoMs / (1000 * 60));
+    const alku = new Date(alkuPvm);
+    const loppu = new Date(loppuPvm);
+    
+    if (loppu < alku) {
+        alert('Loppupäivä ei voi olla ennen alkupäivää!');
+        return;
+    }
+    
+    const eroMs = loppu - alku;
+    const paivat = Math.floor(eroMs / (1000 * 60 * 60 * 24)) + 1;
+    const tunnit = paivat * 8; // Oletetaan 8h työpäivä
     
     AppState.erikoistilaAktiivinen = 'SAIRASLOMA';
     document.getElementById('s-SAIRASLOMA').classList.add('active');
-    document.getElementById('v-muut').textContent = `SAIRASLOMA (${kestoMin} min)`;
+    document.getElementById('v-muut').textContent = `SAIRASLOMA (${tunnit}h / ${paivat}pv)`;
     
     suljeModal('sairasloma-modal');
-    naytaIlmoitus(`✅ SAIRASLOMA: ${kestoMin} min`);
+    naytaIlmoitus(`✅ SAIRASLOMA: ${paivat} päivää (${tunnit}h)`);
     
-    sairaslomaPvm = null;
-    sairasloma_Alku = null;
-    sairasloma_Loppu = null;
     erikoistilaNimi = null;
 }
 
