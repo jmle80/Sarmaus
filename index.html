@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.38</title>
+    <title>Press Brake Pro v4.41</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -922,7 +922,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.38</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.41</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1037,19 +1037,73 @@
             <button id="btn-tyokalut" class="btn-tool btn-toolbox">🔧 TYÖKALUPAKKI</button>
             <button id="btn-raportit" class="btn-tool" style="background: linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%); color: white; border: none;">📊 RAPORTIT</button>
             
-            <!-- Tavoitetunnit -->
+            <!-- Historiallinen Joutuisuus (piilotettuna napun taakse) -->
             <div style="background:#1a1a1a; padding:12px; border-radius:8px; border:1px solid #333; margin:8px 0;">
-                <div style="color:var(--primary); font-weight:700; margin-bottom:8px; font-size:0.9em;">🎯 TAVOITETUNNIT</div>
-                <div style="display:grid; gap:8px;">
-                    <div>
-                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Päivittäinen tavoite (h):</label>
-                        <input type="number" id="target-daily" step="0.5" min="0" max="24" placeholder="8" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                <button id="btn-toggle-history" style="width:100%; padding:10px; background:#0a0a0a; border:1px solid #333; color:#999; border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.9em; text-align:left; display:flex; align-items:center; justify-content:space-between;">
+                    <span>📊 Historiallinen joutuisuus</span>
+                    <span id="history-arrow" style="transition:transform 0.2s;">▼</span>
+                </button>
+                <div id="history-container" style="display:none; margin-top:10px;">
+                    <div style="display:grid; gap:8px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <div>
+                                <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Alkupäivä:</label>
+                                <input type="date" id="history-start-date" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                            </div>
+                            <div>
+                                <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Loppupäivä:</label>
+                                <input type="date" id="history-end-date" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <button id="btn-calculate-history" class="btn-jatka" style="padding:10px;">📊 LASKE</button>
+                            <button id="btn-all-history" class="btn-jatka" style="padding:10px; background:linear-gradient(145deg, #6a1b9a 0%, #4a148c 100%);">🌍 KOKO HISTORIA</button>
+                        </div>
                     </div>
-                    <div style="background:#0a0a0a; padding:10px; border-radius:6px; border:1px solid #333;">
-                        <div style="color:#999; font-size:0.8em; margin-bottom:4px;">ℹ️ PALKKAJAKSON TAVOITE</div>
-                        <div style="color:var(--primary); font-size:0.85em;">Lasketaan automaattisesti:<br>Arkipäivät × 8h - Poissaolot</div>
+                    
+                    <!-- Tulokset -->
+                    <div id="history-results" style="display:none; margin-top:15px; padding:12px; background:#0a0a0a; border-radius:6px; border:1px solid var(--primary);">
+                        <div style="text-align:center; margin-bottom:12px;">
+                            <div style="color:#999; font-size:0.8em; margin-bottom:4px;">JOUTUISUUS</div>
+                            <div id="history-efficiency" style="font-size:2.5em; font-weight:800; color:var(--success);">-</div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:0.85em;">
+                            <div style="text-align:center;">
+                                <div style="color:#666;">Työtunnit</div>
+                                <div id="history-work-hours" style="color:var(--primary); font-weight:700;">-</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="color:#666;">Valmiit</div>
+                                <div id="history-done-hours" style="color:var(--success); font-weight:700;">-</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="color:#666;">Kortit</div>
+                                <div id="history-cards" style="color:#aaa; font-weight:700;">-</div>
+                            </div>
+                        </div>
+                        <div id="history-date-range" style="color:#666; font-size:0.8em; text-align:center; margin-top:10px;">-</div>
                     </div>
-                    <button id="btn-save-targets" class="btn-jatka" style="padding:10px; margin-top:4px;">💾 TALLENNA TAVOITTEET</button>
+                </div>
+            </div>
+            
+            <!-- Tavoitetunnit (piilotettuna napun taakse) -->
+            <div style="background:#1a1a1a; padding:12px; border-radius:8px; border:1px solid #333; margin:8px 0;">
+                <button id="btn-toggle-targets" style="width:100%; padding:10px; background:#0a0a0a; border:1px solid #333; color:#999; border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.9em; text-align:left; display:flex; align-items:center; justify-content:space-between;">
+                    <span>🎯 Muokkaa tavoiteaikoja</span>
+                    <span id="targets-arrow" style="transition:transform 0.2s;">▼</span>
+                </button>
+                <div id="targets-container" style="display:none; margin-top:10px;">
+                    <div style="display:grid; gap:8px;">
+                        <div>
+                            <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Päivittäinen tavoite (h):</label>
+                            <input type="number" id="target-daily" step="0.5" min="0" max="24" placeholder="8" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                        </div>
+                        <div style="background:#0a0a0a; padding:10px; border-radius:6px; border:1px solid #333;">
+                            <div style="color:#999; font-size:0.8em; margin-bottom:4px;">ℹ️ PALKKAJAKSON TAVOITE</div>
+                            <div style="color:var(--primary); font-size:0.85em;">Lasketaan automaattisesti:<br>Arkipäivät × 8h - Poissaolot</div>
+                        </div>
+                        <button id="btn-save-targets" class="btn-jatka" style="padding:10px; margin-top:4px;">💾 TALLENNA TAVOITTEET</button>
+                    </div>
                 </div>
             </div>
             
@@ -1764,15 +1818,56 @@
 <div id="edit-modal" class="overlay">
     <div class="modal">
         <h3 style="color:var(--primary); margin-top:0; font-size:1.1em;">MUOKKAA KORTTIA</h3>
-        <div class="edit-grid">
-            <div><div class="edit-label">KORTTI</div><input id="ed-kortti" class="edit-input"></div>
-            <div><div class="edit-label">LAJIMERKKI</div><input id="ed-laji" class="edit-input"></div>
+        
+        <!-- Erikoistilan muokkaus -->
+        <div id="edit-special-state" style="display:none; background:#1a1a1a; padding:12px; border-radius:8px; border:1px solid var(--primary); margin-bottom:15px;">
+            <div style="color:var(--primary); font-weight:700; margin-bottom:10px; font-size:0.9em;">📌 ERIKOISTILA</div>
+            <div id="edit-special-type" style="color:#fff; font-size:1.1em; margin-bottom:12px;">-</div>
+            
+            <!-- Päivämäärätilat (SAIRASLOMA, LOMA, PEKKANEN) -->
+            <div id="edit-special-dates" style="display:none;">
+                <div style="display:grid; gap:10px;">
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Alkupäivä:</label>
+                        <input type="date" id="ed-special-start-date" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Loppupäivä:</label>
+                        <input type="date" id="ed-special-end-date" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                </div>
+                <div id="ed-special-duration" style="color:var(--success); margin-top:8px; font-size:0.9em;">-</div>
+            </div>
+            
+            <!-- Aikatilat (PROTO, HÄIRIÖ, HUOLTO) -->
+            <div id="edit-special-times" style="display:none;">
+                <div style="display:grid; gap:10px;">
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Alkuaika:</label>
+                        <input type="time" id="ed-special-start-time" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                    <div>
+                        <label style="color:#999; font-size:0.8em; display:block; margin-bottom:4px;">Loppuaika:</label>
+                        <input type="time" id="ed-special-end-time" style="width:100%; padding:8px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:6px; font-family:inherit;">
+                    </div>
+                </div>
+                <div id="ed-special-time-duration" style="color:var(--success); margin-top:8px; font-size:0.9em;">-</div>
+            </div>
         </div>
-        <div class="edit-grid">
-            <div><div class="edit-label">ASETUS (min)</div><input type="number" id="ed-as" class="edit-input"></div>
-            <div><div class="edit-label">TAIVUTUS (min)</div><input type="number" id="ed-ta" class="edit-input"></div>
+        
+        <!-- Normaalit kentät -->
+        <div id="edit-normal-fields">
+            <div class="edit-grid">
+                <div><div class="edit-label">KORTTI</div><input id="ed-kortti" class="edit-input"></div>
+                <div><div class="edit-label">LAJIMERKKI</div><input id="ed-laji" class="edit-input"></div>
+            </div>
+            <div class="edit-grid">
+                <div><div class="edit-label">ASETUS (min)</div><input type="number" id="ed-as" class="edit-input"></div>
+                <div><div class="edit-label">TAIVUTUS (min)</div><input type="number" id="ed-ta" class="edit-input"></div>
+            </div>
+            <div style="margin:12px 0;"><div class="edit-label">MUUT (min)</div><input type="number" id="ed-mu" class="edit-input"></div>
         </div>
-        <div style="margin:12px 0;"><div class="edit-label">MUUT (min)</div><input type="number" id="ed-mu" class="edit-input"></div>
+        
         <button id="btn-tallenna-muutos" class="btn-jatka" style="padding: 14px;">💾 TALLENNA MUUTOKSET</button>
         <button id="btn-poista" class="btn-hard-reset" style="margin-top:10px; width:100%; background:linear-gradient(145deg, #666 0%, #444 100%); padding: 14px;">🗑️ POISTA RIVI</button>
         <button id="btn-peruuta-edit" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:0.9em; font-weight:600;">PERUUTA</button>
@@ -2944,7 +3039,13 @@ function setupEventListeners() {
     document.getElementById('btn-hard-reset').addEventListener('click', hardReset);
     
     // Tavoitetunnit
+    document.getElementById('btn-toggle-targets').addEventListener('click', toggleTargets);
     document.getElementById('btn-save-targets').addEventListener('click', saveTargets);
+    
+    // Historiallinen joutuisuus
+    document.getElementById('btn-toggle-history').addEventListener('click', toggleHistory);
+    document.getElementById('btn-calculate-history').addEventListener('click', calculateHistoricalEfficiency);
+    document.getElementById('btn-all-history').addEventListener('click', showAllHistory);
     
     // Suodattimet
     document.getElementById('btn-apply-filters').addEventListener('click', applyFilters);
@@ -2992,6 +3093,65 @@ function setupEventListeners() {
             else suljeModal(avoinModal);
         }
     });
+    
+    // Erikoistilan muokkaus - päivämääräkentät
+    document.getElementById('ed-special-start-date').addEventListener('change', paivitaErikoistilanKesto);
+    document.getElementById('ed-special-end-date').addEventListener('change', paivitaErikoistilanKesto);
+    
+    // Erikoistilan muokkaus - aikakentät
+    document.getElementById('ed-special-start-time').addEventListener('change', paivitaErikoistilanAikakesto);
+    document.getElementById('ed-special-end-time').addEventListener('change', paivitaErikoistilanAikakesto);
+}
+
+function paivitaErikoistilanKesto() {
+    const alkuPvm = document.getElementById('ed-special-start-date').value;
+    const loppuPvm = document.getElementById('ed-special-end-date').value;
+    
+    if (!alkuPvm || !loppuPvm) {
+        document.getElementById('ed-special-duration').textContent = '-';
+        return;
+    }
+    
+    const alku = new Date(alkuPvm);
+    const loppu = new Date(loppuPvm);
+    const eroMs = loppu - alku;
+    const paivat = Math.floor(eroMs / (1000*60*60*24)) + 1;
+    
+    if (paivat < 1) {
+        document.getElementById('ed-special-duration').textContent = '❌ Loppupäivä ennen alkupäivää!';
+        document.getElementById('ed-special-duration').style.color = '#c62828';
+        return;
+    }
+    
+    const tunnit = paivat * 8;
+    document.getElementById('ed-special-duration').textContent = `✓ Kesto: ${paivat} pv (${tunnit}h)`;
+    document.getElementById('ed-special-duration').style.color = 'var(--success)';
+}
+
+function paivitaErikoistilanAikakesto() {
+    const alkuAika = document.getElementById('ed-special-start-time').value;
+    const loppuAika = document.getElementById('ed-special-end-time').value;
+    
+    if (!alkuAika || !loppuAika) {
+        document.getElementById('ed-special-time-duration').textContent = '-';
+        return;
+    }
+    
+    const [alkuH, alkuM] = alkuAika.split(':').map(Number);
+    const [loppuH, loppuM] = loppuAika.split(':').map(Number);
+    const minuutit = (loppuH * 60 + loppuM) - (alkuH * 60 + alkuM);
+    
+    if (minuutit <= 0) {
+        document.getElementById('ed-special-time-duration').textContent = '❌ Loppuaika ennen alkuaikaa!';
+        document.getElementById('ed-special-time-duration').style.color = '#c62828';
+        return;
+    }
+    
+    const tunnit = Math.floor(minuutit / 60);
+    const min = minuutit % 60;
+    const kestoTeksti = tunnit > 0 ? `${tunnit}h ${min}min` : `${min}min`;
+    document.getElementById('ed-special-time-duration').textContent = `✓ Kesto: ${kestoTeksti} (${minuutit}min)`;
+    document.getElementById('ed-special-time-duration').style.color = 'var(--success)';
 }
 
 function setupStartTimeModal() {
@@ -3557,21 +3717,31 @@ function avaaSkanneri(kohde) {
         html5QrcodeScanner = new Html5Qrcode("reader");
     }
     
+    // Parannettu konfiguraatio muovitaskuja varten
     const config = {
-        fps: 15,
-        qrbox: { width: 280, height: 110 },
+        fps: 20, // Nostettu 15 -> 20 (enemmän yrityksiä per sekunti)
+        qrbox: { width: 300, height: 120 }, // Hieman isompi alue
         aspectRatio: 1.7778,
         disableFlip: false,
         formatsToSupport: [
             Html5QrcodeSupportedFormats.CODE_128,
             Html5QrcodeSupportedFormats.CODE_39,
             Html5QrcodeSupportedFormats.ITF,
-            Html5QrcodeSupportedFormats.QR_CODE
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8
         ],
         videoConstraints: {
             facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920 }, // Nostettu 1280 -> 1920 (parempi resoluutio)
+            height: { ideal: 1080 }, // Nostettu 720 -> 1080
+            focusMode: "continuous", // Jatkuva tarkennus
+            whiteBalanceMode: "continuous", // Automaattinen valkotasapaino
+            exposureMode: "continuous" // Automaattinen valotus
+        },
+        // Lisää herkkyyttä epäselviin koodeihin
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true // Käytä laitteen natiivia tunnistusta jos saatavilla
         }
     };
     
@@ -3830,6 +4000,48 @@ function tallennaKortti() {
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
     arkisto.push(entry);
     localStorage.setItem(CONFIG.STORAGE_KEYS.ARKISTO, JSON.stringify(arkisto));
+    
+    // Tallenna erikoistiladata sessionStorageen myöhempää muokkausta varten
+    if (muut.includes('SAIRASLOMA') || muut.includes('LOMA') || muut.includes('PEKKANEN')) {
+        // Päivämäärätilat - tallenna päivämäärät jos saatavilla
+        const alkuPvm = document.getElementById('sairasloma-alku-pvm')?.value || 
+                       document.getElementById('loma-alku-pvm')?.value ||
+                       document.getElementById('pekkanen-alku-pvm')?.value ||
+                       new Date().toISOString().split('T')[0];
+        const loppuPvm = document.getElementById('sairasloma-loppu-pvm')?.value ||
+                        document.getElementById('loma-loppu-pvm')?.value ||
+                        document.getElementById('pekkanen-loppu-pvm')?.value ||
+                        new Date().toISOString().split('T')[0];
+        
+        let tyyppi = '';
+        if (muut.includes('SAIRASLOMA')) tyyppi = 'SAIRASLOMA';
+        else if (muut.includes('LOMA')) tyyppi = 'LOMA';
+        else if (muut.includes('PEKKANEN')) tyyppi = 'PEKKANEN';
+        
+        // Parse tunnit ja päivät muut-kentästä
+        const tunnitMatch = muut.match(/(\d+)h/);
+        const paivatMatch = muut.match(/(\d+)pv/);
+        const tunnit = tunnitMatch ? parseInt(tunnitMatch[1]) : 0;
+        const paivat = paivatMatch ? parseInt(paivatMatch[1]) : 0;
+        
+        sessionStorage.setItem('erikoistilaData_' + entry.id, JSON.stringify({
+            tyyppi, alkuPvm, loppuPvm, paivat, tunnit
+        }));
+    } else if (muut.includes('PROTO') || muut.includes('HÄIRIÖ') || muut.includes('HUOLTO')) {
+        // Aikatilat - yritä hakea data erikoistilaAlkuAika/erikoistilaLoppuAika muuttujista
+        // Jos ei saatavilla, jätä tyhjäksi
+        let tyyppi = '';
+        if (muut.includes('PROTO')) tyyppi = 'PROTO';
+        else if (muut.includes('HÄIRIÖ')) tyyppi = 'HÄIRIÖ';
+        else if (muut.includes('HUOLTO')) tyyppi = 'HUOLTO';
+        
+        const minuutitMatch = muut.match(/(\d+)min/);
+        const minuutit = minuutitMatch ? parseInt(minuutitMatch[1]) : 0;
+        
+        sessionStorage.setItem('erikoistilaData_' + entry.id, JSON.stringify({
+            tyyppi, minuutit, alkuAika: '', loppuAika: ''
+        }));
+    }
     
     ['v-kortti', 'v-lajike', 'v-asetus', 'v-taivutus', 'v-muut'].forEach(id => {
         document.getElementById(id).textContent = '-';
@@ -4097,11 +4309,72 @@ function avaaMuokkaus(index) {
     if (!entry) return;
     
     muokkausIndex = index;
-    document.getElementById('ed-kortti').value = entry.kortti;
-    document.getElementById('ed-laji').value = entry.lajike || '';
-    document.getElementById('ed-as').value = entry.asetus || '';
-    document.getElementById('ed-ta').value = entry.taivutus || '';
-    document.getElementById('ed-mu').value = entry.muutAika || '';
+    
+    // Tarkista onko erikoistila
+    const muut = entry.muut || '';
+    const isSpecialState = muut.includes('SAIRASLOMA') || muut.includes('LOMA') || muut.includes('PEKKANEN') ||
+                           muut.includes('PROTO') || muut.includes('HÄIRIÖ') || muut.includes('HUOLTO');
+    
+    if (isSpecialState) {
+        // Näytä erikoistila-osio, piilota normaalit kentät
+        document.getElementById('edit-special-state').style.display = 'block';
+        document.getElementById('edit-normal-fields').style.display = 'none';
+        
+        // Tunnista erikoistilan tyyppi
+        let specialType = '';
+        if (muut.includes('SAIRASLOMA')) specialType = 'SAIRASLOMA';
+        else if (muut.includes('LOMA')) specialType = 'LOMA';
+        else if (muut.includes('PEKKANEN')) specialType = 'PEKKANEN';
+        else if (muut.includes('PROTO')) specialType = 'PROTO';
+        else if (muut.includes('HÄIRIÖ')) specialType = 'HÄIRIÖ';
+        else if (muut.includes('HUOLTO')) specialType = 'HUOLTO';
+        
+        document.getElementById('edit-special-type').textContent = specialType;
+        
+        // Jos päivämäärätila (SAIRASLOMA, LOMA, PEKKANEN)
+        if (specialType === 'SAIRASLOMA' || specialType === 'LOMA' || specialType === 'PEKKANEN') {
+            document.getElementById('edit-special-dates').style.display = 'block';
+            document.getElementById('edit-special-times').style.display = 'none';
+            
+            // Parse päivämäärät muut-kentästä
+            // Tallennettu erikoistilaData sessionStorageen jos saatavilla
+            const erikoistilaData = JSON.parse(sessionStorage.getItem('erikoistilaData_' + entry.id) || 'null');
+            if (erikoistilaData) {
+                document.getElementById('ed-special-start-date').value = erikoistilaData.alkuPvm;
+                document.getElementById('ed-special-end-date').value = erikoistilaData.loppuPvm;
+            } else {
+                // Yritä arvata päivämäärät (käytä kortin pvm:ää)
+                const entryDate = new Date(entry.pvm).toISOString().split('T')[0];
+                document.getElementById('ed-special-start-date').value = entryDate;
+                document.getElementById('ed-special-end-date').value = entryDate;
+            }
+        }
+        // Jos aikatila (PROTO, HÄIRIÖ, HUOLTO)
+        else {
+            document.getElementById('edit-special-dates').style.display = 'none';
+            document.getElementById('edit-special-times').style.display = 'block';
+            
+            // Parse ajat muut-kentästä
+            const erikoistilaData = JSON.parse(sessionStorage.getItem('erikoistilaData_' + entry.id) || 'null');
+            if (erikoistilaData) {
+                document.getElementById('ed-special-start-time').value = erikoistilaData.alkuAika || '00:00';
+                document.getElementById('ed-special-end-time').value = erikoistilaData.loppuAika || '00:00';
+            } else {
+                document.getElementById('ed-special-start-time').value = '00:00';
+                document.getElementById('ed-special-end-time').value = '00:00';
+            }
+        }
+    } else {
+        // Normaali kortti
+        document.getElementById('edit-special-state').style.display = 'none';
+        document.getElementById('edit-normal-fields').style.display = 'block';
+        
+        document.getElementById('ed-kortti').value = entry.kortti;
+        document.getElementById('ed-laji').value = entry.lajike || '';
+        document.getElementById('ed-as').value = entry.asetus || '';
+        document.getElementById('ed-ta').value = entry.taivutus || '';
+        document.getElementById('ed-mu').value = entry.muutAika || '';
+    }
     
     document.getElementById('edit-modal').style.display = 'flex';
     avoinModal = 'edit-modal';
@@ -4111,19 +4384,101 @@ function tallennaMuokkaus() {
     if (muokkausIndex < 0) return;
     
     const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
-    arkisto[muokkausIndex] = {
-        ...arkisto[muokkausIndex],
-        kortti: document.getElementById('ed-kortti').value.toUpperCase(),
-        lajike: document.getElementById('ed-laji').value.toUpperCase(),
-        asetus: parseInt(document.getElementById('ed-as').value) || 0,
-        taivutus: parseInt(document.getElementById('ed-ta').value) || 0,
-        muutAika: parseInt(document.getElementById('ed-mu').value) || 0
-    };
+    const entry = arkisto[muokkausIndex];
+    
+    // Tarkista onko erikoistila
+    const muut = entry.muut || '';
+    const isSpecialState = muut.includes('SAIRASLOMA') || muut.includes('LOMA') || muut.includes('PEKKANEN') ||
+                           muut.includes('PROTO') || muut.includes('HÄIRIÖ') || muut.includes('HUOLTO');
+    
+    if (isSpecialState) {
+        // Tunnista tyyppi
+        let specialType = '';
+        if (muut.includes('SAIRASLOMA')) specialType = 'SAIRASLOMA';
+        else if (muut.includes('LOMA')) specialType = 'LOMA';
+        else if (muut.includes('PEKKANEN')) specialType = 'PEKKANEN';
+        else if (muut.includes('PROTO')) specialType = 'PROTO';
+        else if (muut.includes('HÄIRIÖ')) specialType = 'HÄIRIÖ';
+        else if (muut.includes('HUOLTO')) specialType = 'HUOLTO';
+        
+        // Päivämäärätilat
+        if (specialType === 'SAIRASLOMA' || specialType === 'LOMA' || specialType === 'PEKKANEN') {
+            const alkuPvm = document.getElementById('ed-special-start-date').value;
+            const loppuPvm = document.getElementById('ed-special-end-date').value;
+            
+            if (!alkuPvm || !loppuPvm) {
+                alert('Anna sekä alku- että loppupäivä!');
+                return;
+            }
+            
+            const alku = new Date(alkuPvm);
+            const loppu = new Date(loppuPvm);
+            const eroMs = loppu - alku;
+            const paivat = Math.floor(eroMs / (1000*60*60*24)) + 1;
+            const tunnit = paivat * 8;
+            
+            // Päivitä entry
+            arkisto[muokkausIndex] = {
+                ...entry,
+                muut: `${specialType} (${tunnit}h / ${paivat}pv)`,
+                muutAika: tunnit * 60 // Tallennetaan minuutteina
+            };
+            
+            // Tallenna data sessionStorageen myöhempää muokkausta varten
+            sessionStorage.setItem('erikoistilaData_' + entry.id, JSON.stringify({
+                tyyppi: specialType,
+                alkuPvm, loppuPvm, paivat, tunnit
+            }));
+        }
+        // Aikatilat
+        else {
+            const alkuAika = document.getElementById('ed-special-start-time').value;
+            const loppuAika = document.getElementById('ed-special-end-time').value;
+            
+            if (!alkuAika || !loppuAika) {
+                alert('Anna sekä alku- että loppuaika!');
+                return;
+            }
+            
+            const [alkuH, alkuM] = alkuAika.split(':').map(Number);
+            const [loppuH, loppuM] = loppuAika.split(':').map(Number);
+            const minuutit = (loppuH * 60 + loppuM) - (alkuH * 60 + alkuM);
+            
+            if (minuutit <= 0) {
+                alert('Loppuajan pitää olla alkuajan jälkeen!');
+                return;
+            }
+            
+            // Päivitä entry
+            arkisto[muokkausIndex] = {
+                ...entry,
+                muut: `${specialType} (${minuutit}min)`,
+                muutAika: minuutit
+            };
+            
+            // Tallenna data sessionStorageen
+            sessionStorage.setItem('erikoistilaData_' + entry.id, JSON.stringify({
+                tyyppi: specialType,
+                alkuAika, loppuAika, minuutit
+            }));
+        }
+    } else {
+        // Normaali kortti
+        arkisto[muokkausIndex] = {
+            ...entry,
+            kortti: document.getElementById('ed-kortti').value.toUpperCase(),
+            lajike: document.getElementById('ed-laji').value.toUpperCase(),
+            asetus: parseInt(document.getElementById('ed-as').value) || 0,
+            taivutus: parseInt(document.getElementById('ed-ta').value) || 0,
+            muutAika: parseInt(document.getElementById('ed-mu').value) || 0
+        };
+    }
     
     localStorage.setItem(CONFIG.STORAGE_KEYS.ARKISTO, JSON.stringify(arkisto));
     suljeModal('edit-modal');
     paivitaHistoria();
     paivitaTilastot();
+    updateTargetDisplay(); // Päivitä tavoitteet (erikoistilat vaikuttavat jaksotavoitteeseen!)
     naytaIlmoitus('Muutokset tallennettu!');
 }
 
@@ -4446,6 +4801,134 @@ function toggleNotes() {
         btn.style.borderColor = '#333';
         btn.style.color = '#999';
     }
+}
+
+function toggleTargets() {
+    const container = document.getElementById('targets-container');
+    const arrow = document.getElementById('targets-arrow');
+    const btn = document.getElementById('btn-toggle-targets');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+    } else {
+        container.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+        btn.style.borderColor = '#333';
+        btn.style.color = '#999';
+    }
+}
+
+function toggleHistory() {
+    const container = document.getElementById('history-container');
+    const arrow = document.getElementById('history-arrow');
+    const btn = document.getElementById('btn-toggle-history');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+        btn.style.borderColor = 'var(--primary)';
+        btn.style.color = 'var(--primary)';
+    } else {
+        container.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+        btn.style.borderColor = '#333';
+        btn.style.color = '#999';
+    }
+}
+
+function calculateHistoricalEfficiency() {
+    const startDate = document.getElementById('history-start-date').value;
+    const endDate = document.getElementById('history-end-date').value;
+    
+    if (!startDate || !endDate) {
+        alert('Valitse sekä alku- että loppupäivä!');
+        return;
+    }
+    
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T23:59:59');
+    
+    if (end < start) {
+        alert('Loppupäivä ei voi olla ennen alkupäivää!');
+        return;
+    }
+    
+    showHistoricalResults(start, end);
+}
+
+function showAllHistory() {
+    // Hae kaikki kortit ja etsi vanhin ja uusin
+    const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
+    
+    if (arkisto.length === 0) {
+        alert('Ei dataa historiassa!');
+        return;
+    }
+    
+    const dates = arkisto.map(e => new Date(e.pvm));
+    const oldest = new Date(Math.min(...dates));
+    const newest = new Date(Math.max(...dates));
+    
+    // Aseta päivämäärät kenttiin
+    document.getElementById('history-start-date').value = oldest.toISOString().split('T')[0];
+    document.getElementById('history-end-date').value = newest.toISOString().split('T')[0];
+    
+    showHistoricalResults(oldest, newest);
+}
+
+function showHistoricalResults(start, end) {
+    const arkisto = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.ARKISTO) || '[]');
+    const vuorot = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.VUOROT) || '[]');
+    
+    // Suodata aikavälille
+    const periodData = arkisto.filter(e => {
+        const d = new Date(e.pvm);
+        return d >= start && d <= end;
+    });
+    
+    const periodVuorot = vuorot.filter(v => {
+        if (!v.lopetusAika) return false;
+        const d = new Date(v.aloitusAika);
+        return d >= start && d <= end;
+    });
+    
+    // Laske valmiit tunnit
+    const valmiitMin = periodData.reduce((sum, e) => {
+        return sum + (e.asetus || 0) + (e.taivutus || 0) + (e.muutAika || 0);
+    }, 0);
+    const valmiitH = valmiitMin / 60;
+    
+    // Laske työtunnit
+    const tyotunnit = periodVuorot.reduce((sum, v) => {
+        return sum + (v.lopetusAika - v.aloitusAika) / (1000 * 60 * 60);
+    }, 0);
+    
+    // Laske joutuisuus
+    const efficiency = tyotunnit > 0 ? ((valmiitH / tyotunnit) * 100).toFixed(2) : '0.00';
+    
+    // Näytä tulokset
+    document.getElementById('history-results').style.display = 'block';
+    document.getElementById('history-efficiency').textContent = efficiency + '%';
+    document.getElementById('history-work-hours').textContent = tyotunnit.toFixed(1) + 'h';
+    document.getElementById('history-done-hours').textContent = valmiitH.toFixed(1) + 'h';
+    document.getElementById('history-cards').textContent = periodData.length + ' kpl';
+    
+    // Värikoodit joutuisuudelle
+    const effNum = parseFloat(efficiency);
+    const effElement = document.getElementById('history-efficiency');
+    if (effNum >= 100) effElement.style.color = 'var(--success)';
+    else if (effNum >= 90) effElement.style.color = '#FF9800';
+    else if (effNum >= 70) effElement.style.color = '#FFC107';
+    else effElement.style.color = '#c62828';
+    
+    // Näytä aikaväli
+    const startStr = start.toLocaleDateString('fi-FI');
+    const endStr = end.toLocaleDateString('fi-FI');
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    document.getElementById('history-date-range').textContent = `${startStr} - ${endStr} (${days} päivää)`;
 }
 
 function avaaTyokalut() {
