@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v5.1 SIMPLE</title>
+    <title>Press Brake Pro v5.1.5</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -937,7 +937,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.1</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.1.5</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1024,7 +1024,7 @@
                 <span id="notes-arrow" style="transition:transform 0.2s;">▼</span>
             </button>
             <div id="notes-container" style="display:none; margin-top:8px;">
-                <textarea id="v-notes" placeholder="Esim: Ohut materiaali, paljon hylkyä..." style="width:100%; padding:10px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:8px; font-family:inherit; font-size:0.9em; resize:vertical; min-height:60px; box-sizing:border-box;"></textarea>
+                <textarea id="v-notes" placeholder="" style="width:100%; padding:10px; background:#0a0a0a; border:1px solid #333; color:white; border-radius:8px; font-family:inherit; font-size:0.9em; resize:vertical; min-height:60px; box-sizing:border-box;"></textarea>
             </div>
         </div>
         </div>
@@ -1735,12 +1735,12 @@
         
         <div id="muut-fields" class="muut-extra-fields" style="display:none;">
             <div class="muut-field">
-                <input type="text" id="muut-lajimerkki" placeholder="Työvaihe..." autocomplete="off">
+                <input type="text" id="muut-lajimerkki" placeholder="" autocomplete="off">
                 <div id="autocomplete-list" class="autocomplete-items"></div>
             </div>
             <div class="muut-field">
                 <label>Aika (min)</label>
-                <input type="text" id="muut-aika" placeholder="0" readonly>
+                <input type="text" id="muut-aika" placeholder="" readonly>
             </div>
         </div>
         
@@ -3068,7 +3068,7 @@ function setupEventListeners() {
     
     document.getElementById('search-hist').addEventListener('input', haeHistoria);
     
-    document.getElementById('btn-peruuta').addEventListener('click', suljeNumeroNaytto);
+    document.getElementById('btn-peruuta').addEventListener('click', peruutaJaTyhjenna);
     document.getElementById('btn-peruuta-aika').addEventListener('click', suljeAikaNaytto);
     document.getElementById('btn-peruuta-edit').addEventListener('click', () => suljeModal('edit-modal'));
     
@@ -3578,14 +3578,12 @@ function avaaNumeroNaytto(otsikko, tyyppi) {
     document.getElementById('k-alue').style.display = isMuut ? 'none' : 'grid';
     
     if (isMuut) {
-        // Lataa aiempi syöte muistista jos löytyy
-        const muistettu = localStorage.getItem('tempMuutLajimerkki') || '';
-        document.getElementById('muut-lajimerkki').value = muistettu;
+        // Aloita tyhjällä kentällä
+        document.getElementById('muut-lajimerkki').value = '';
         document.getElementById('muut-aika').value = '';
         aktiivinenMuutKentta = 'lajimerkki';
         document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
         document.getElementById('muut-aika').style.borderColor = '#333';
-        if (muistettu) naytaAutocomplete(muistettu);
     } else {
         luoNumeronappaimisto();
     }
@@ -3606,13 +3604,9 @@ function avaaTekstiNaytto(otsikko, tyyppi) {
     document.getElementById('k-alue').style.display = 'none';
     
     aktiivinenMuutKentta = 'lajimerkki';
-    // Lataa viimeksi käytetty lajimerkki muistista
-    const muistettu = localStorage.getItem('viimeinenLajimerkki') || '';
-    document.getElementById('muut-lajimerkki').value = muistettu;
+    // Aloita tyhjällä kentällä (EI ladata viimeksi käytettyä)
+    document.getElementById('muut-lajimerkki').value = '';
     document.getElementById('muut-lajimerkki').style.borderColor = 'var(--primary)';
-    if (muistettu) {
-        naytaAutocomplete(muistettu);
-    }
     
     avoinModal = 'n-ruutu';
     document.getElementById('n-ruutu').style.display = 'flex';
@@ -3774,6 +3768,22 @@ function handleNumericKey(e) {
     }
 }
 
+function peruutaJaTyhjenna() {
+    // Tyhjennä kentät
+    document.getElementById('v-kortti').textContent = '-';
+    document.getElementById('v-lajike').textContent = '-';
+    document.getElementById('v-asetus').textContent = '-';
+    document.getElementById('v-taivutus').textContent = '-';
+    document.getElementById('v-muut').textContent = '-';
+    
+    // Tyhjennä myös muut-kentät jos auki
+    document.getElementById('muut-lajimerkki').value = '';
+    document.getElementById('muut-aika').value = '';
+    
+    // Sulje ikkuna
+    suljeNumeroNaytto();
+}
+
 function suljeNumeroNaytto() {
     document.getElementById('n-ruutu').style.display = 'none';
     document.getElementById('n-naytto').style.display = 'block';
@@ -3784,7 +3794,6 @@ function suljeNumeroNaytto() {
     isShiftActive = false;
     currentInputTarget = null;
     document.querySelector('.key-shift')?.classList.remove('active');
-    paivitaNappaimistoKirjaimet();
 }
 
 function avaaAikaNaytto(otsikko, callback) {
@@ -4064,16 +4073,21 @@ function suljeSkanneriJaAvaaSeuraava(seuraava) {
 function onScanSuccess(decodedText, decodedResult) {
     console.log('Skannattu:', decodedText);
     
-    // Poista etunollat jos pelkkä numero
     let teksti = decodedText.trim();
-    if (/^\d+$/.test(teksti)) {
+    
+    // Tarkista onko 6-numeroinen kortti
+    const onKortti = /^\d{6}$/.test(teksti);
+    
+    // Poista etunollat VAIN kortista, lajimerkeistä EI
+    if (onKortti && /^\d+$/.test(teksti)) {
         teksti = String(parseInt(teksti, 10));
     }
+    
     const upperText = teksti.toUpperCase();
     
-    // Estä sama koodi 2 sekunnin sisällä (debounce)
+    // Estä sama koodi 5 sekunnin sisällä (PIDEMPI esto tuplille)
     const nyt = Date.now();
-    if (viimeisinSkannattuKoodi === upperText && (nyt - viimeisinSkannausAika) < 2000) {
+    if (viimeisinSkannattuKoodi === upperText && (nyt - viimeisinSkannausAika) < 5000) {
         console.log('Duplikaatti estetty:', upperText);
         return; // Älä käsittele samaa koodia uudelleen
     }
@@ -4083,9 +4097,6 @@ function onScanSuccess(decodedText, decodedResult) {
     viimeisinSkannausAika = nyt;
     
     soitaSkannausAani();
-    
-    // ÄLYKÄS TUNNISTUS: 6 numeroa = KORTTI, muu = LAJIKE
-    const onKortti = /^\d{6}$/.test(teksti);
     
     if (onKortti) {
         // KORTTI skannattu (riippumatta siitä missä skannerissa)
