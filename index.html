@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.50</title>
+    <title>Press Brake Pro v5.0</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -937,7 +937,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.50</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.0</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -3643,8 +3643,9 @@ function luoNumeronappaimisto() {
                 btn.dataset.quickselect = 'true';
                 btn.textContent = aika;
                 btn.style.cssText = 'background:linear-gradient(145deg,#2a4a2a,#1a3a1a);color:var(--success);border:1px solid #3a5a3a;font-size:0.75em;padding:8px 12px;min-width:45px;flex:0 0 auto;cursor:pointer;';
-                btn.onclick = handleNumericKey;
                 quickButtons.appendChild(btn);
+                // LISÄÄ LISTENER HETI
+                btn.addEventListener('click', window.handleNumericKey);
             });
         } else {
             quickArea.style.display = 'none';
@@ -3653,26 +3654,81 @@ function luoNumeronappaimisto() {
         quickArea.style.display = 'none';
     }
     
-    // Varsinaiset numeronäppäimet
+    // Varsinaiset numeronäppäimet - luodaan elementteinä
     for (let i = 1; i <= 9; i++) {
-        alue.innerHTML += `<div class="key" data-num="${i}" onclick="handleNumericKey(event)">${i}</div>`;
+        const btn = document.createElement('div');
+        btn.className = 'key';
+        btn.dataset.num = String(i);
+        btn.textContent = String(i);
+        alue.appendChild(btn);
+        btn.addEventListener('click', window.handleNumericKey);
     }
     
     // TAIVUTUS: erikoisjärjestely
     if (currentInputTarget === 'taivutus') {
         alue.style.gridTemplateColumns = 'repeat(3, 1fr)';
-        // Desimaali C:n paikalla
-        alue.innerHTML += `<div class="key" data-num="." onclick="handleNumericKey(event)" style="background:linear-gradient(145deg,#1a3a4a,#0a2a3a);color:var(--tb-blue);border-color:#334;font-size:1.8em;">&#46;</div>`;
-        alue.innerHTML += `<div class="key" data-num="0" onclick="handleNumericKey(event)">0</div>`;
-        // Puolita OK:n paikalla
-        alue.innerHTML += `<div class="key" data-num="HALF" onclick="handleNumericKey(event)" style="background:linear-gradient(145deg,#3a1a5a,#1a0a3a);color:#ce93d8;border:1px solid #5a2a7a;font-size:1.5em;">½</div>`;
-        // OK koko rivin levyinen
-        alue.innerHTML += `<div class="key key-ok" data-num="OK" onclick="handleNumericKey(event)" style="grid-column:span 3;">OK</div>`;
+        
+        // Desimaali
+        const btnDot = document.createElement('div');
+        btnDot.className = 'key';
+        btnDot.dataset.num = '.';
+        btnDot.innerHTML = '&#46;';
+        btnDot.style.cssText = 'background:linear-gradient(145deg,#1a3a4a,#0a2a3a);color:var(--tb-blue);border-color:#334;font-size:1.8em;';
+        alue.appendChild(btnDot);
+        btnDot.addEventListener('click', window.handleNumericKey);
+        
+        // 0
+        const btn0 = document.createElement('div');
+        btn0.className = 'key';
+        btn0.dataset.num = '0';
+        btn0.textContent = '0';
+        alue.appendChild(btn0);
+        btn0.addEventListener('click', window.handleNumericKey);
+        
+        // Puolita
+        const btnHalf = document.createElement('div');
+        btnHalf.className = 'key';
+        btnHalf.dataset.num = 'HALF';
+        btnHalf.textContent = '½';
+        btnHalf.style.cssText = 'background:linear-gradient(145deg,#3a1a5a,#1a0a3a);color:#ce93d8;border:1px solid #5a2a7a;font-size:1.5em;';
+        alue.appendChild(btnHalf);
+        btnHalf.addEventListener('click', window.handleNumericKey);
+        
+        // OK
+        const btnOk = document.createElement('div');
+        btnOk.className = 'key key-ok';
+        btnOk.dataset.num = 'OK';
+        btnOk.textContent = 'OK';
+        btnOk.style.cssText = 'grid-column:span 3;';
+        alue.appendChild(btnOk);
+        btnOk.addEventListener('click', window.handleNumericKey);
+        
     } else {
-        // Muut ikkunat: normaali C, 0, OK
-        alue.innerHTML += `<div class="key key-c" data-num="C" onclick="handleNumericKey(event)">C</div>`;
-        alue.innerHTML += `<div class="key" data-num="0" onclick="handleNumericKey(event)">0</div>`;
-        alue.innerHTML += `<div class="key key-ok" data-num="OK" onclick="handleNumericKey(event)">OK</div>`;
+        // Muut ikkunat: C, 0, OK
+        
+        // C
+        const btnC = document.createElement('div');
+        btnC.className = 'key key-c';
+        btnC.dataset.num = 'C';
+        btnC.textContent = 'C';
+        alue.appendChild(btnC);
+        btnC.addEventListener('click', window.handleNumericKey);
+        
+        // 0
+        const btn0 = document.createElement('div');
+        btn0.className = 'key';
+        btn0.dataset.num = '0';
+        btn0.textContent = '0';
+        alue.appendChild(btn0);
+        btn0.addEventListener('click', window.handleNumericKey);
+        
+        // OK
+        const btnOk = document.createElement('div');
+        btnOk.className = 'key key-ok';
+        btnOk.dataset.num = 'OK';
+        btnOk.textContent = 'OK';
+        alue.appendChild(btnOk);
+        btnOk.addEventListener('click', window.handleNumericKey);
     }
 }
 
@@ -3709,7 +3765,7 @@ function haeYleisimmatAjat(tyyppi) {
     return jarjestetty;
 }
 
-function handleNumericKey(e) {
+window.handleNumericKey = function(e) {
     const key = e.target.closest('.key');
     if (!key) return;
     
