@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v5.1.5</title>
+    <title>Press Brake Pro v5.1.6</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -937,7 +937,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.1.5</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.1.6</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -4079,7 +4079,7 @@ function onScanSuccess(decodedText, decodedResult) {
     const onKortti = /^\d{6}$/.test(teksti);
     
     // Poista etunollat VAIN kortista, lajimerkeistä EI
-    if (onKortti && /^\d+$/.test(teksti)) {
+    if (onKortti) {
         teksti = String(parseInt(teksti, 10));
     }
     
@@ -4099,7 +4099,7 @@ function onScanSuccess(decodedText, decodedResult) {
     soitaSkannausAani();
     
     if (onKortti) {
-        // KORTTI skannattu (riippumatta siitä missä skannerissa)
+        // KORTTI skannattu - käytä upperText (ilman etunollia, isot kirjaimet)
         document.getElementById('v-kortti').textContent = upperText;
         naytaIlmoitus(`✅ Kortti: ${upperText}`, 700);
         
