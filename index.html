@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v5.0</title>
+    <title>Press Brake Pro v5.1 SIMPLE</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -937,7 +937,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.0</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.1</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1805,11 +1805,6 @@
             <div class="keyboard-row" style="margin-top:8px;">
                 <div class="key-letter key-enter" data-key="ENTER" style="flex:1; background:linear-gradient(145deg, #2e7d32 0%, #1b5e20 100%); font-size:1.1em; font-weight:800;">✓ OK</div>
             </div>
-        </div>
-        
-        <div id="quick-select-area" style="display:none; margin-bottom:8px; padding:8px 0; border-bottom:1px solid #333;">
-            <div style="color:#666; font-size:0.65em; text-align:center; margin-bottom:6px; letter-spacing:0.5px;">⚡ PIKAVALINTA</div>
-            <div id="quick-select-buttons" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;"></div>
         </div>
         
         <div id="k-alue" class="key-grid"></div>
@@ -3080,7 +3075,7 @@ function setupEventListeners() {
     document.getElementById('btn-tallenna-muutos').addEventListener('click', tallennaMuokkaus);
     document.getElementById('btn-poista').addEventListener('click', poistaRivi);
     
-    // Napit saavat onclick-käsittelijät suoraan kun ne luodaan luoNumeronappaimisto()-funktiossa
+    document.getElementById('k-alue').addEventListener('click', handleNumericKey);
     
     ['PROTO', 'HÄIRIÖ', 'HUOLTO', 'SAIRASLOMA'].forEach(tila => {
         document.getElementById(`s-${tila}`).addEventListener('click', () => toggleErikoistila(tila));
@@ -3625,113 +3620,25 @@ function avaaTekstiNaytto(otsikko, tyyppi) {
 
 function luoNumeronappaimisto() {
     const alue = document.getElementById('k-alue');
-    const quickArea = document.getElementById('quick-select-area');
-    const quickButtons = document.getElementById('quick-select-buttons');
-    
     alue.innerHTML = '';
-    quickButtons.innerHTML = '';
     
-    // OPPIVAT PIKAVALINTANAPIT - VAIN ASETUKSESSA
-    if (currentInputTarget === 'asetus') {
-        const yleisimmat = haeYleisimmatAjat(currentInputTarget);
-        if (yleisimmat.length > 0) {
-            quickArea.style.display = 'block';
-            yleisimmat.forEach(aika => {
-                const btn = document.createElement('div');
-                btn.className = 'key';
-                btn.dataset.num = aika;
-                btn.dataset.quickselect = 'true';
-                btn.textContent = aika;
-                btn.style.cssText = 'background:linear-gradient(145deg,#2a4a2a,#1a3a1a);color:var(--success);border:1px solid #3a5a3a;font-size:0.75em;padding:8px 12px;min-width:45px;flex:0 0 auto;cursor:pointer;';
-                quickButtons.appendChild(btn);
-                // LISÄÄ LISTENER HETI
-                btn.addEventListener('click', window.handleNumericKey);
-            });
-        } else {
-            quickArea.style.display = 'none';
-        }
-    } else {
-        quickArea.style.display = 'none';
-    }
-    
-    // Varsinaiset numeronäppäimet - luodaan elementteinä
+    // Varsinaiset numeronäppäimet
     for (let i = 1; i <= 9; i++) {
-        const btn = document.createElement('div');
-        btn.className = 'key';
-        btn.dataset.num = String(i);
-        btn.textContent = String(i);
-        alue.appendChild(btn);
-        btn.addEventListener('click', window.handleNumericKey);
+        alue.innerHTML += `<div class="key" data-num="${i}">${i}</div>`;
     }
     
     // TAIVUTUS: erikoisjärjestely
     if (currentInputTarget === 'taivutus') {
         alue.style.gridTemplateColumns = 'repeat(3, 1fr)';
-        
-        // Desimaali
-        const btnDot = document.createElement('div');
-        btnDot.className = 'key';
-        btnDot.dataset.num = '.';
-        btnDot.innerHTML = '&#46;';
-        btnDot.style.cssText = 'background:linear-gradient(145deg,#1a3a4a,#0a2a3a);color:var(--tb-blue);border-color:#334;font-size:1.8em;';
-        alue.appendChild(btnDot);
-        btnDot.addEventListener('click', window.handleNumericKey);
-        
-        // 0
-        const btn0 = document.createElement('div');
-        btn0.className = 'key';
-        btn0.dataset.num = '0';
-        btn0.textContent = '0';
-        alue.appendChild(btn0);
-        btn0.addEventListener('click', window.handleNumericKey);
-        
-        // Puolita
-        const btnHalf = document.createElement('div');
-        btnHalf.className = 'key';
-        btnHalf.dataset.num = 'HALF';
-        btnHalf.textContent = '½';
-        btnHalf.style.cssText = 'background:linear-gradient(145deg,#3a1a5a,#1a0a3a);color:#ce93d8;border:1px solid #5a2a7a;font-size:1.5em;';
-        alue.appendChild(btnHalf);
-        btnHalf.addEventListener('click', window.handleNumericKey);
-        
-        // OK
-        const btnOk = document.createElement('div');
-        btnOk.className = 'key key-ok';
-        btnOk.dataset.num = 'OK';
-        btnOk.textContent = 'OK';
-        btnOk.style.cssText = 'grid-column:span 3;';
-        alue.appendChild(btnOk);
-        btnOk.addEventListener('click', window.handleNumericKey);
-        
+        // Desimaali C:n paikalla
+        alue.innerHTML += `<div class="key" data-num="." style="background:linear-gradient(145deg,#1a3a4a,#0a2a3a);color:var(--tb-blue);border-color:#334;font-size:1.8em;">&#46;</div>`;
+        alue.innerHTML += `<div class="key" data-num="0">0</div>`;
+        // Puolita OK:n paikalla
+        alue.innerHTML += `<div class="key" data-num="HALF" style="background:linear-gradient(145deg,#3a1a5a,#1a0a3a);color:#ce93d8;border:1px solid #5a2a7a;font-size:1.5em;">½</div>`;
+        // OK koko rivin levyinen
+        alue.innerHTML += `<div class="key key-ok" data-num="OK" style="grid-column:span 3;">OK</div>`;
     } else {
-        // Muut ikkunat: C, 0, OK
-        
-        // C
-        const btnC = document.createElement('div');
-        btnC.className = 'key key-c';
-        btnC.dataset.num = 'C';
-        btnC.textContent = 'C';
-        alue.appendChild(btnC);
-        btnC.addEventListener('click', window.handleNumericKey);
-        
-        // 0
-        const btn0 = document.createElement('div');
-        btn0.className = 'key';
-        btn0.dataset.num = '0';
-        btn0.textContent = '0';
-        alue.appendChild(btn0);
-        btn0.addEventListener('click', window.handleNumericKey);
-        
-        // OK
-        const btnOk = document.createElement('div');
-        btnOk.className = 'key key-ok';
-        btnOk.dataset.num = 'OK';
-        btnOk.textContent = 'OK';
-        alue.appendChild(btnOk);
-        btnOk.addEventListener('click', window.handleNumericKey);
-    }
-}
-
+        // Muut ikkunat: normaali C, 0, OK
         alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
         alue.innerHTML += `<div class="key" data-num="0">0</div>`;
         alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
@@ -3765,7 +3672,7 @@ function haeYleisimmatAjat(tyyppi) {
     return jarjestetty;
 }
 
-window.handleNumericKey = function(e) {
+function handleNumericKey(e) {
     const key = e.target.closest('.key');
     if (!key) return;
     
@@ -4188,14 +4095,19 @@ function onScanSuccess(decodedText, decodedResult) {
         // Tarkista onko lajike täynnä
         const lajikeArvo = document.getElementById('v-lajike').textContent;
         if (lajikeArvo && lajikeArvo !== '-') {
-            // Molemmat täynnä → sulje ja siirry asetus-ikkunaan
+            // Molemmat täynnä → siirry asetus-ikkunaan
             setTimeout(() => {
                 suljeSkanneri();
                 setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 400);
             }, 500);
         } else {
-            // Lajike tyhjä → PIDÄ SKANNERI AUKI, jatka skannausta
-            naytaIlmoitus('📝 Skannaa lajike', 1200);
+            // Lajike tyhjä → siirry lajike-skanneriin
+            if (skannausKohde === 'kortti') {
+                setTimeout(() => suljeSkanneriJaAvaaSeuraava('lajike'), 500);
+            } else {
+                // Oltiin lajike-skannerissa, avaa kortti-skanneri (jatka samaa kierrosta)
+                naytaIlmoitus('📝 Skannaa nyt lajike', 1500);
+            }
         }
     } else {
         // LAJIKE skannattu (riippumatta siitä missä skannerissa)
@@ -4206,14 +4118,19 @@ function onScanSuccess(decodedText, decodedResult) {
         // Tarkista onko kortti täynnä
         const korttiArvo = document.getElementById('v-kortti').textContent;
         if (korttiArvo && korttiArvo !== '-') {
-            // Molemmat täynnä → sulje ja siirry asetus-ikkunaan
+            // Molemmat täynnä → siirry asetus-ikkunaan
             setTimeout(() => {
                 suljeSkanneri();
                 setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 400);
             }, 400);
         } else {
-            // Kortti tyhjä → PIDÄ SKANNERI AUKI, jatka skannausta
-            naytaIlmoitus('📝 Skannaa kortti', 1200);
+            // Kortti tyhjä → siirry kortti-skanneriin
+            if (skannausKohde === 'lajike') {
+                setTimeout(() => suljeSkanneriJaAvaaSeuraava('kortti'), 400);
+            } else {
+                // Oltiin kortti-skannerissa, avaa lajike-skanneri (jatka samaa kierrosta)
+                naytaIlmoitus('📝 Skannaa nyt kortti', 1500);
+            }
         }
     }
 }
