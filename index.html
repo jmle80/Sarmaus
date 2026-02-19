@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v5.3.7</title>
+    <title>Press Brake Pro v5.4</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -939,7 +939,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.3.7</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.4 AI</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -1011,7 +1011,7 @@
         <!-- UUSI: Skannaa koko arkki nappi -->
         <div style="margin-bottom:15px;">
             <button id="btn-scan-document" style="width:100%; padding:12px; background:linear-gradient(145deg,#1a4a1a,#0a3a0a); border:2px solid var(--success); color:var(--success); border-radius:8px; cursor:pointer; font-family:inherit; font-size:1em; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
-                📄 SKANNAA A4 ARKKI
+                🤖 SKANNAA ARKKI (AI)
             </button>
         </div>
         
@@ -4087,88 +4087,100 @@ async function skannaaArkki() {
             naytaIlmoitus('⏳ Luetaan tekstiä...', 0);
             
             try {
-                // OCR tekstintunnistus PARANNETUILLA ASETUKSILLA
-                const result = await Tesseract.recognize(
-                    canvas,
-                    'fin+eng', // Suomi ensisijaisena
-                    {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                const progress = Math.round(m.progress * 100);
-                                naytaIlmoitus(`⏳ Tunnistetaan: ${progress}%`, 0);
-                            }
-                        },
-                        tessedit_pageseg_mode: Tesseract.PSM.AUTO_OSD, // Automaattinen suunnan tunnistus
-                        tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÅabcdefghijklmnopqrstuvwxyzäöå/:., ', // Sallitut merkit
-                    }
-                );
+                // Käytä CLAUDE API:a tekstintunnistukseen (parempi kuin Tesseract!)
+                naytaIlmoitus('⏳ Lähetetään Claude AI:lle...', 0);
                 
-                const text = result.data.text;
-                console.log('=== TUNNISTETTU TEKSTI ===');
-                console.log(text);
-                console.log('=========================');
+                // Muunna canvas base64:ksi
+                const base64Image = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
                 
-                // TYÖNUMERO - Etsi 6-numeroinen koodi mistä tahansa
-                let tyonumero = null;
-                // Yritä ensin löytää "Työnumero" sanan läheltä
-                let tyonumeroMatch = text.match(/ty[öo]numero[:\s]*(\d{6})/i);
-                if (!tyonumeroMatch) {
-                    // Jos ei löydy, etsi mikä tahansa 6-numeroinen joka ei ole sisällä pidemmässä numerosarjassa
-                    const kaikki6numeroiset = text.match(/(?<!\d)\d{6}(?!\d)/g);
-                    if (kaikki6numeroiset && kaikki6numeroiset.length > 0) {
-                        tyonumero = kaikki6numeroiset[0]; // Ota ensimmäinen
-                        console.log('Työnumero löytyi (vapaa haku):', tyonumero);
-                    }
-                } else {
-                    tyonumero = tyonumeroMatch[1];
-                    console.log('Työnumero löytyi (lähellä sanaa):', tyonumero);
+                // Lähetä Claude API:lle
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'anthropic-version': '2023-06-01'
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 1024,
+                        messages: [{
+                            role: 'user',
+                            content: [
+                                {
+                                    type: 'image',
+                                    source: {
+                                        type: 'base64',
+                                        media_type: 'image/jpeg',
+                                        data: base64Image
+                                    }
+                                },
+                                {
+                                    type: 'text',
+                                    text: `Analysoi tämä työkortti ja palauta VAIN JSON-muodossa (ei muuta tekstiä):
+{
+  "tyonumero": "6-numeroinen työnumero",
+  "tuote": "tuotekoodi muodossa numero/kirjain",
+  "asetus": numero,
+  "std_aika": numero (desimaaliluku)
+}
+
+Etsi:
+- Työnumero: 6 numeroa "Työnumero" kentästä
+- Tuote: numero/kirjain muoto kuten "5300218/L"
+- Asetus: numero "Asetus" sarakkeesta (ensimmäisen rivin arvo)
+- Std aika: desimaaliluku "Std aika" sarakkeesta (ensimmäisen rivin arvo)
+
+Palauta VAIN JSON, ei selityksiä.`
+                                }
+                            ]
+                        }]
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API virhe: ' + response.status);
                 }
+                
+                const data = await response.json();
+                const textContent = data.content.find(c => c.type === 'text')?.text || '';
+                console.log('=== CLAUDE VASTAUS ===');
+                console.log(textContent);
+                console.log('===================');
+                
+                // Parsoi JSON
+                const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) {
+                    throw new Error('Ei JSON-vastausta');
+                }
+                
+                const parsed = JSON.parse(jsonMatch[0]);
+                console.log('Parsittu data:', parsed);
+                
+                // Täytä kentät Claude API:n vastauksesta
+                let tyonumero = parsed.tyonumero || null;
+                let tuote = parsed.tuote || null;
+                let asetus = parsed.asetus || null;
+                let stdAika = parsed.std_aika || null;
+                
                 if (tyonumero) {
                     document.getElementById('v-kortti').textContent = tyonumero;
+                    console.log('✅ Työnumero:', tyonumero);
                 }
                 
-                // TUOTE/LAJIMERKKI - Etsi numero/kirjain yhdistelmä
-                let tuote = null;
-                // Yritä löytää muoto: 1234567/X tai 12345/XX
-                const tuoteMatch = text.match(/(\d{4,8}\/[A-ZÄÖÅa-zäöå]{1,3})/);
-                if (tuoteMatch) {
-                    tuote = tuoteMatch[1].toUpperCase();
-                    document.getElementById('v-lajike').textContent = tuote;
-                    console.log('Tuote/Lajimerkki löytyi:', tuote);
-                } else {
-                    // Yritä etsiä "Tuote" sanan läheltä
-                    const tuoteMatch2 = text.match(/tuote[:\s]*(\S+)/i);
-                    if (tuoteMatch2) {
-                        tuote = tuoteMatch2[1].toUpperCase();
-                        document.getElementById('v-lajike').textContent = tuote;
-                        console.log('Tuote löytyi (lähellä sanaa):', tuote);
-                    }
+                if (tuote) {
+                    document.getElementById('v-lajike').textContent = tuote.toUpperCase();
+                    console.log('✅ Tuote:', tuote);
                 }
                 
-                // ASETUS - Etsi numero "Asetus" sanan läheltä tai taulukosta
-                let asetus = null;
-                let asetusMatch = text.match(/asetus[:\s]*(\d+(?:[.,]\d+)?)/i);
-                if (asetusMatch) {
-                    const aikaStr = asetusMatch[1].replace(',', '.');
-                    asetus = Math.round(parseFloat(aikaStr));
-                    document.getElementById('v-asetus').textContent = asetus + ' min';
-                    console.log('Asetus löytyi:', asetus);
+                if (asetus) {
+                    document.getElementById('v-asetus').textContent = Math.round(asetus) + ' min';
+                    console.log('✅ Asetus:', asetus);
                 }
                 
-                // STD AIKA - Etsi "Std aika" tai "Std" sanan jälkeinen numero
-                let stdAika = null;
-                // Yritä ensin "Std aika" muotoa
-                let stdMatch = text.match(/std[\s]+aika[:\s]*(\d+(?:[.,]\d+)?)/i);
-                if (!stdMatch) {
-                    // Yritä "Std:" tai "Std " muotoa
-                    stdMatch = text.match(/std[:\s]+(\d+(?:[.,]\d+)?)/i);
-                }
-                if (stdMatch) {
-                    const aikaStr = stdMatch[1].replace(',', '.');
-                    stdAika = parseFloat(aikaStr);
+                if (stdAika) {
                     const nayttoTeksti = stdAika % 1 === 0 ? stdAika + ' min' : stdAika.toFixed(2) + ' min';
                     document.getElementById('v-taivutus').textContent = nayttoTeksti;
-                    console.log('Std aika (taivutus) löytyi:', stdAika);
+                    console.log('✅ Std aika:', stdAika);
                 }
                 
                 // Näytä tulos + VAROITUS
