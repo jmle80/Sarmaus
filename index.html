@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v5.4</title>
+    <title>Press Brake Pro v5.4.1 AI</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -4137,11 +4137,21 @@ Palauta VAIN JSON, ei selityksiä.`
                     })
                 });
                 
+                console.log('API Response status:', response.status);
+                
                 if (!response.ok) {
-                    throw new Error('API virhe: ' + response.status);
+                    const errorText = await response.text();
+                    console.error('API virhe:', errorText);
+                    throw new Error(`API virhe ${response.status}: ${errorText.substring(0, 100)}`);
                 }
                 
                 const data = await response.json();
+                console.log('API Response data:', data);
+                
+                if (!data.content || data.content.length === 0) {
+                    throw new Error('Tyhjä vastaus API:lta');
+                }
+                
                 const textContent = data.content.find(c => c.type === 'text')?.text || '';
                 console.log('=== CLAUDE VASTAUS ===');
                 console.log(textContent);
@@ -4209,8 +4219,26 @@ Palauta VAIN JSON, ei selityksiä.`
                 }
                 
             } catch (error) {
-                console.error('OCR virhe:', error);
-                naytaIlmoitus('❌ Tekstin lukeminen epäonnistui', 3000);
+                console.error('=== OCR VIRHE ===');
+                console.error('Virhe:', error);
+                console.error('Virhetyyppi:', error.name);
+                console.error('Virheviesti:', error.message);
+                console.error('================');
+                
+                // Näytä tarkempi virheviesti
+                let virheviesti = '❌ Tekstin lukeminen epäonnistui';
+                if (error.message.includes('API virhe')) {
+                    virheviesti = '❌ API-kutsu epäonnistui. Tarkista verkko.';
+                } else if (error.message.includes('JSON')) {
+                    virheviesti = '❌ Vastauksen parsinta epäonnistui';
+                } else if (error.message.includes('fetch')) {
+                    virheviesti = '❌ Yhteys epäonnistui. Tarkista internet.';
+                }
+                
+                naytaIlmoitus(virheviesti, 5000);
+                
+                // Näytä myös alert jos haluat nähdä virheen
+                alert('VIRHE: ' + error.message + '\n\nKatso Console (F12) lisätietoja varten.');
             }
         };
         
