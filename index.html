@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v5.3.3</title>
+    <title>Press Brake Pro v5.3.6</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -939,7 +939,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.3.3</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v5.3.6</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -4028,24 +4028,68 @@ function onScanFailure(error) {
 
 async function skannaaArkki() {
     try {
-        // Luo file input kameralle
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.capture = 'environment'; // Käytä takakameraa
+        // Avaa kamera suoraan (kuten viivakoodiskanneri)
+        naytaIlmoitus('📷 Avaa kamera...', 1000);
         
-        naytaIlmoitus('📷 Ota kuva työkortista...', 2000);
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' } // Takakamera
+        });
         
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        // Luo video-elementti kameravirtaa varten
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+        
+        // Näytä kameraesikatselu modalissa
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        
+        const videoContainer = document.createElement('div');
+        videoContainer.style.cssText = 'width:90%;max-width:600px;position:relative;';
+        
+        video.style.cssText = 'width:100%;border-radius:12px;';
+        videoContainer.appendChild(video);
+        
+        // Ota kuva -nappi
+        const captureBtn = document.createElement('button');
+        captureBtn.textContent = '📸 OTA KUVA';
+        captureBtn.style.cssText = 'margin-top:20px;padding:15px 30px;font-size:1.2em;background:var(--success);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;';
+        
+        // Peruuta-nappi
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '✕ PERUUTA';
+        cancelBtn.style.cssText = 'margin-top:10px;padding:10px 20px;background:#333;color:#fff;border:none;border-radius:8px;cursor:pointer;';
+        
+        modal.appendChild(videoContainer);
+        modal.appendChild(captureBtn);
+        modal.appendChild(cancelBtn);
+        document.body.appendChild(modal);
+        
+        // Peruuta-toiminto
+        cancelBtn.onclick = () => {
+            stream.getTracks().forEach(track => track.stop());
+            document.body.removeChild(modal);
+        };
+        
+        // Ota kuva -toiminto
+        captureBtn.onclick = async () => {
+            // Luo canvas ja ota kuvakaappaus videosta
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            // Sulje kamera
+            stream.getTracks().forEach(track => track.stop());
+            document.body.removeChild(modal);
             
             naytaIlmoitus('⏳ Luetaan tekstiä...', 0);
             
             try {
                 // OCR tekstintunnistus
                 const result = await Tesseract.recognize(
-                    file,
+                    canvas,
                     'eng+fin', // Englanti ja suomi
                     {
                         logger: m => {
@@ -4060,64 +4104,57 @@ async function skannaaArkki() {
                 const text = result.data.text;
                 console.log('Tunnistettu teksti:', text);
                 
-                // Etsi 12-numeroinen työnumero
-                const korttiMatch = text.match(/\b\d{12}\b/);
-                if (korttiMatch) {
-                    const kortti = korttiMatch[0];
-                    // SÄILYTÄ sellaisenaan - paperilla ei ole etunollia
-                    document.getElementById('v-kortti').textContent = kortti;
-                    console.log('Työnumero löytyi:', kortti);
+                // Etsi TYÖNUMERO (6-numeroinen, sanan "Työnumero" jälkeen)
+                let tyonumero = null;
+                const tyonumeroMatch = text.match(/työnumero[:\s]*(\d{6})/i);
+                if (tyonumeroMatch) {
+                    tyonumero = tyonumeroMatch[1];
+                    document.getElementById('v-kortti').textContent = tyonumero;
+                    console.log('Työnumero löytyi:', tyonumero);
                 }
                 
-                // Etsi lajimerkki (esim. kirjain+numerot tai pelkkä numero)
-                // Etsitään 4-10 merkin pituisia koodeja jotka eivät ole 12-numeroisia
-                const lajikeMatcher = text.match(/\b[A-Z0-9]{4,10}\b/g);
-                if (lajikeMatcher) {
-                    // Etsi ensimmäinen joka EI ole 12 numeroa
-                    const lajike = lajikeMatcher.find(code => !/^\d{12}$/.test(code));
-                    if (lajike) {
-                        document.getElementById('v-lajike').textContent = lajike;
-                        console.log('Lajike löytyi:', lajike);
-                    }
+                // Etsi TUOTE/LAJIMERKKI (muoto: numero/kirjain, esim. 5300218/L)
+                let tuote = null;
+                const tuoteMatch = text.match(/tuote[:\s]*(\d+\/[A-Z])/i);
+                if (tuoteMatch) {
+                    tuote = tuoteMatch[1];
+                    document.getElementById('v-lajike').textContent = tuote;
+                    console.log('Tuote/Lajimerkki löytyi:', tuote);
                 }
                 
-                // UUSI: Etsi "std" ajat
-                // Etsitään kaikki "std" sanan jälkeiset numerot
-                const stdMatches = text.matchAll(/std[:\s.]*(\d+(?:[.,]\d+)?)/gi);
-                const stdAjat = [];
-                for (const match of stdMatches) {
-                    const aika = match[1].replace(',', '.');
-                    stdAjat.push(parseFloat(aika));
+                // Etsi ASETUS (numero, sanan "Asetus" jälkeen)
+                let asetus = null;
+                const asetusMatch = text.match(/asetus[:\s]*(\d+(?:[.,]\d+)?)/i);
+                if (asetusMatch) {
+                    const aikaStr = asetusMatch[1].replace(',', '.');
+                    asetus = Math.round(parseFloat(aikaStr));
+                    document.getElementById('v-asetus').textContent = asetus + ' min';
+                    console.log('Asetus löytyi:', asetus);
                 }
                 
-                console.log('Löydetyt std-ajat:', stdAjat);
-                
-                // Ensimmäinen std = Asetusaika, Toinen std = Taivutusaika
-                if (stdAjat.length >= 1) {
-                    const asetusAika = Math.round(stdAjat[0]);
-                    document.getElementById('v-asetus').textContent = asetusAika + ' min';
-                    console.log('Asetusaika (std 1):', asetusAika);
-                }
-                
-                if (stdAjat.length >= 2) {
-                    const taivutusAika = stdAjat[1];
-                    const nayttoTeksti = taivutusAika % 1 === 0 ? taivutusAika + ' min' : taivutusAika.toFixed(1) + ' min';
+                // Etsi STD AIKA (numero, sanan "Std aika" tai "Std" jälkeen taulukossa)
+                let stdAika = null;
+                const stdMatch = text.match(/std\s+aika[:\s]*(\d+(?:[.,]\d+)?)/i);
+                if (stdMatch) {
+                    const aikaStr = stdMatch[1].replace(',', '.');
+                    stdAika = parseFloat(aikaStr);
+                    const nayttoTeksti = stdAika % 1 === 0 ? stdAika + ' min' : stdAika.toFixed(2) + ' min';
                     document.getElementById('v-taivutus').textContent = nayttoTeksti;
-                    console.log('Taivutusaika (std 2):', taivutusAika);
+                    console.log('Std aika (taivutus) löytyi:', stdAika);
                 }
                 
                 // Näytä tulos
-                const korttiOk = korttiMatch ? '✅ Työnro' : '❌ Työnro';
-                const lajikeOk = lajikeMatcher && lajikeMatcher.length > 0 ? '✅ Lajike' : '❌ Lajike';
-                const asetusOk = stdAjat.length >= 1 ? '✅ Asetus' : '❌ Asetus';
-                const taivutusOk = stdAjat.length >= 2 ? '✅ Taivutus' : '❌ Taivutus';
-                naytaIlmoitus(`${korttiOk} ${lajikeOk} ${asetusOk} ${taivutusOk}`, 4000);
+                const tyonroOk = tyonumero ? '✅ Työnro' : '❌ Työnro';
+                const tuoteOk = tuote ? '✅ Tuote' : '❌ Tuote';
+                const asetusOk = asetus ? '✅ Asetus' : '❌ Asetus';
+                const stdOk = stdAika ? '✅ Std' : '❌ Std';
+                naytaIlmoitus(`${tyonroOk} ${tuoteOk} ${asetusOk} ${stdOk}`, 4000);
                 
-                // Jos kaikki löytyivät, ei avata ikkunaa - kaikki valmiina!
-                const kaikkiloytyi = korttiMatch && lajikeMatcher && stdAjat.length >= 2;
+                // Jos kaikki löytyivät, ilmoita
+                const kaikkiloytyi = tyonumero && tuote && asetus && stdAika;
                 if (kaikkiloytyi) {
                     naytaIlmoitus('✅ Kaikki tiedot haettu! Tarkista ja tallenna.', 3000);
-                } else if (korttiMatch && lajikeMatcher) {
+                } else if (tyonumero && tuote) {
                     // Avaa asetus-ikkuna jos ajat puuttuu
                     setTimeout(() => {
                         avaaNumeroNaytto('Asetus (min)', 'asetus');
@@ -4130,9 +4167,8 @@ async function skannaaArkki() {
             }
         };
         
-        input.click();
     } catch (error) {
-        console.error('Skannaus virhe:', error);
+        console.error('Kamera virhe:', error);
         naytaIlmoitus('❌ Kameran avaus epäonnistui', 3000);
     }
 }
@@ -4195,11 +4231,16 @@ function suljeSkanneriJaAvaaSeuraava(seuraava) {
 function onScanSuccess(decodedText, decodedResult) {
     let teksti = decodedText.trim();
     
-    // Tarkista onko 12-numeroinen työnumero
-    const onKortti = /^\d{12}$/.test(teksti);
+    // Tarkista onko työnumero:
+    // - 6 numeroa (paperilla näkyvä, ilman etunollia)
+    // - 12 numeroa (viivakoodi etunollilla)
+    const on6Numeroa = /^\d{6}$/.test(teksti);
+    const on12Numeroa = /^\d{12}$/.test(teksti);
+    const onKortti = on6Numeroa || on12Numeroa;
     
-    // ÄLÄ POISTA ETUNOLLIA - työnumero on paperilla sellaisenaan!
-    // (Lajimerkki säilyy myös muuttumattomana)
+    // SÄILYTÄ SELLAISENAAN - sekä 6 että 12 numeroa
+    // Viivakoodi: 000000247033 → 000000247033 (kaikki näkyvät)
+    // Paperilta: 247033 → 247033
     
     const upperText = teksti.toUpperCase();
     
