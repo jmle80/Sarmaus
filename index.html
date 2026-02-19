@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Press Brake Pro">
     
-    <title>Press Brake Pro v4.47</title>
+    <title>Press Brake Pro v4.49</title>
     
     <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMjEyMTIiLCJ0aGVtZV9jb2xvciI6IiNGRjY3MDAiLCJpY29ucyI6W3sic3JjIjoiaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIn1dfQ==">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6700' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>&#9881;</text></svg>">
@@ -937,7 +937,7 @@
         <!-- Versio -->
         <div style="text-align:center; padding:10px; margin-bottom:10px; background:linear-gradient(145deg, #1a1a1a 0%, #0f0f0f 100%); border-radius:12px; border:2px solid var(--primary); box-shadow: 0 4px 15px rgba(255,103,0,0.2);">
             <div style="color:#888; font-size:0.75em; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;">Press Brake Pro</div>
-            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.47</div>
+            <div style="color:var(--primary); font-weight:800; font-size:1.2em; margin-top:3px; letter-spacing:1px;">v4.49</div>
         </div>
         
         <!-- Aikanäyttö -->
@@ -3081,6 +3081,7 @@ function setupEventListeners() {
     document.getElementById('btn-poista').addEventListener('click', poistaRivi);
     
     document.getElementById('k-alue').addEventListener('click', handleNumericKey);
+    document.getElementById('quick-select-buttons').addEventListener('click', handleNumericKey);
     
     ['PROTO', 'HÄIRIÖ', 'HUOLTO', 'SAIRASLOMA'].forEach(tila => {
         document.getElementById(`s-${tila}`).addEventListener('click', () => toggleErikoistila(tila));
@@ -3631,13 +3632,13 @@ function luoNumeronappaimisto() {
     alue.innerHTML = '';
     quickButtons.innerHTML = '';
     
-    // OPPIVAT PIKAVALINTANAPIT - siirretty ylös omaan alueeseen
-    if (currentInputTarget === 'asetus' || currentInputTarget === 'taivutus' || currentInputTarget === 'muut') {
+    // OPPIVAT PIKAVALINTANAPIT - VAIN ASETUKSESSA
+    if (currentInputTarget === 'asetus') {
         const yleisimmat = haeYleisimmatAjat(currentInputTarget);
         if (yleisimmat.length > 0) {
             quickArea.style.display = 'block';
             yleisimmat.forEach(aika => {
-                quickButtons.innerHTML += `<div class="key" data-num="${aika}" data-quickselect="true" style="background:linear-gradient(145deg,#2a4a2a,#1a3a1a);color:var(--success);border-color:#3a5a3a;font-size:0.75em;padding:8px 12px;min-width:45px;flex:0 0 auto;">${aika}</div>`;
+                quickButtons.innerHTML += `<div class="key quick-select-btn" data-num="${aika}" data-quickselect="true" style="background:linear-gradient(145deg,#2a4a2a,#1a3a1a);color:var(--success);border-color:#3a5a3a;font-size:0.75em;padding:8px 12px;min-width:45px;flex:0 0 auto;">${aika}</div>`;
             });
         } else {
             quickArea.style.display = 'none';
@@ -3663,6 +3664,12 @@ function luoNumeronappaimisto() {
         alue.innerHTML += `<div class="key key-ok" data-num="OK" style="grid-column:span 3;">OK</div>`;
     } else {
         // Muut ikkunat: normaali C, 0, OK
+        alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
+        alue.innerHTML += `<div class="key" data-num="0">0</div>`;
+        alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
+    }
+}
+
         alue.innerHTML += `<div class="key key-c" data-num="C">C</div>`;
         alue.innerHTML += `<div class="key" data-num="0">0</div>`;
         alue.innerHTML += `<div class="key key-ok" data-num="OK">OK</div>`;
@@ -3910,8 +3917,9 @@ function avaaSkanneri(kohde) {
         onScanSuccess,
         onScanFailure
     ).then(() => {
-        // Skanneri käynnistyi - yritä sytyttää taskulamppu
-        sytytatTaskulamppu();
+        // Skanneri käynnistyi onnistuneesti
+        // HUOM: Taskulamppu EI syttyä automaattisesti - käyttäjä voi sytyttää napilla
+        console.log('Skanneri käynnistyi. Taskulamppu hallittavissa 💡-napilla.');
     }).catch(err => {
         console.error('Skannaus epäonnistui:', err);
         alert('Kameran käyttö epäonnistui. Tarkista oikeudet.');
@@ -4118,19 +4126,14 @@ function onScanSuccess(decodedText, decodedResult) {
         // Tarkista onko lajike täynnä
         const lajikeArvo = document.getElementById('v-lajike').textContent;
         if (lajikeArvo && lajikeArvo !== '-') {
-            // Molemmat täynnä → siirry asetus-ikkunaan
+            // Molemmat täynnä → sulje ja siirry asetus-ikkunaan
             setTimeout(() => {
                 suljeSkanneri();
                 setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 400);
             }, 500);
         } else {
-            // Lajike tyhjä → siirry lajike-skanneriin
-            if (skannausKohde === 'kortti') {
-                setTimeout(() => suljeSkanneriJaAvaaSeuraava('lajike'), 500);
-            } else {
-                // Oltiin lajike-skannerissa, avaa kortti-skanneri (jatka samaa kierrosta)
-                naytaIlmoitus('📝 Skannaa nyt lajike', 1500);
-            }
+            // Lajike tyhjä → PIDÄ SKANNERI AUKI, jatka skannausta
+            naytaIlmoitus('📝 Skannaa lajike', 1200);
         }
     } else {
         // LAJIKE skannattu (riippumatta siitä missä skannerissa)
@@ -4141,19 +4144,14 @@ function onScanSuccess(decodedText, decodedResult) {
         // Tarkista onko kortti täynnä
         const korttiArvo = document.getElementById('v-kortti').textContent;
         if (korttiArvo && korttiArvo !== '-') {
-            // Molemmat täynnä → siirry asetus-ikkunaan
+            // Molemmat täynnä → sulje ja siirry asetus-ikkunaan
             setTimeout(() => {
                 suljeSkanneri();
                 setTimeout(() => avaaNumeroNaytto('Asetus (min)', 'asetus'), 400);
             }, 400);
         } else {
-            // Kortti tyhjä → siirry kortti-skanneriin
-            if (skannausKohde === 'lajike') {
-                setTimeout(() => suljeSkanneriJaAvaaSeuraava('kortti'), 400);
-            } else {
-                // Oltiin kortti-skannerissa, avaa lajike-skanneri (jatka samaa kierrosta)
-                naytaIlmoitus('📝 Skannaa nyt kortti', 1500);
-            }
+            // Kortti tyhjä → PIDÄ SKANNERI AUKI, jatka skannausta
+            naytaIlmoitus('📝 Skannaa kortti', 1200);
         }
     }
 }
