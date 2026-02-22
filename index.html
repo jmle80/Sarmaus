@@ -1,4 +1,72 @@
-// Päivitetty snap-funktio v13.7 - Konekohtainen suodatus
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PBPro v13.8</title>
+    <style>
+        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
+        body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
+        .version-tag { color: var(--openai); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
+        .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; border: 1px solid #333; }
+        .dash-val { font-size: 1.8em; font-weight: 800; display: block; color: var(--success); }
+        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+        .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; text-align: left; cursor: pointer; }
+        .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
+        .info-box b { color: var(--primary); font-size: 1.05em; word-break: break-all; }
+        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
+        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
+    </style>
+</head>
+<body>
+
+<div class="version-tag">v13.8 SMART FILTER (AUTO-SKIP)</div>
+
+<div class="container">
+    <div class="dashboard">
+        <div class="dash-box"><span>Työaika</span><span id="txt-timer" class="dash-val">00:00</span></div>
+        <div class="dash-box"><span>Kpl/h</span><span id="txt-eff" class="dash-val">0.0</span></div>
+    </div>
+
+    <button id="btn-open-camera" class="btn-scan">📸 SKANNAA KORTTI</button>
+    
+    <div class="info-grid">
+        <div class="info-box" onclick="manualInput('tyonr')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
+        <div class="info-box" onclick="manualInput('lajike')"><span>Tuote</span><b id="val-lajike">-</b></div>
+        <div class="info-box" onclick="manualInput('piirnro')"><span>Piirustus nro</span><b id="val-piirnro">-</b></div>
+        <div class="info-box" onclick="manualInput('asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
+        <div class="info-box" onclick="manualInput('asetusaika')"><span>Asetusaika (kortti)</span><b id="val-asetusaika">-</b></div>
+        <div class="info-box" onclick="manualInput('taivutusaika')"><span>Taivutusaika (kortti)</span><b id="val-taivutusaika">-</b></div>
+    </div>
+
+    <button id="btn-save" style="background:var(--primary); color:white" class="main-btn">💾 TALLENNA KORTTI</button>
+    <button id="btn-shift" style="background:var(--success); color:black" class="main-btn">ALOITA VUORO</button>
+    
+    <div id="hist-list" style="margin-top:20px;"></div>
+</div>
+
+<div id="loader"><p id="status-text">Analysoidaan...</p></div>
+<div id="cam-overlay">
+    <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
+    <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--openai); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
+</div>
+
+<script>
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v138_hist') || '[]') };
+
+document.getElementById('btn-open-camera').onclick = async () => {
+    try {
+        const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: 1280}});
+        const v = document.getElementById('video');
+        v.srcObject = s; v.play();
+        document.getElementById('cam-overlay').style.display = 'flex';
+    } catch(e) { alert("Kamera-virhe"); }
+};
+
 document.getElementById('snap').onclick = async () => {
     const v = document.getElementById('video'), c = document.createElement('canvas');
     c.width = v.videoWidth; c.height = v.videoHeight;
@@ -21,7 +89,7 @@ document.getElementById('snap').onclick = async () => {
                     content: [
                         { 
                           type: "text", 
-                          text: "Lue tämä TYÖMÄÄRÄIN-kortti ja suodata vaiheet:\n1. Työnumero: 6 numeroa kohdasta 'Työnumero'.\n2. Tuote: Koodi kohdasta 'Tuote'.\n3. Piirustus nro & Asiakas: Omat kenttänsä.\n4. AIKAFILTERI: Etsi kaikki 'Taivutus'-rivit. TARKISTA jokaisen rivin kohdalla 'Kone'-sarake. Jos koneena on 'taivutusautomaatti', OHITA se rivi. Laske yhteen vain manuaalisten taivutusvaiheiden 'Asetus' ja 'Kapasiteetti' ajat.\nPalauta vain JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" 
+                          text: "Lue tämä TYÖMÄÄRÄIN-kortti dynaamisesti:\n1. Työnumero: 6 numeroa sanan 'Työnumero' alta.\n2. Tuote: VAIN välitön koodi sanan 'Tuote' alta. ÄLÄ lue kuvausta tai päivämääriä.\n3. Piirustus & Asiakas: Omat kenttänsä.\n4. TÄRKEÄÄ: Etsi kaikki 'Taivutus'-rivit. TARKISTA 'Kone'-sarake. Jos kone on 'taivutusautomaatti', OHITA se. Laske yhteen muiden taivutusrivien 'Asetus' ja 'Kapasiteetti' ajat.\nPalauta vain JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" 
                         },
                         { type: "image_url", image_url: { url: b64 } }
                     ]
@@ -42,3 +110,52 @@ document.getElementById('snap').onclick = async () => {
     } catch(e) { alert("Skannaus epäonnistui."); }
     finally { document.getElementById('loader').style.display = 'none'; }
 };
+
+window.manualInput = function(id) {
+    let v = prompt("Syötä arvo:");
+    if(v !== null) document.getElementById('val-'+id).innerText = (id==='lajike'?v.toUpperCase():v);
+};
+
+document.getElementById('btn-shift').onclick = function() {
+    if(!State.running) {
+        State.running = true; State.startTime = Date.now();
+        this.innerText = "LOPETA VUORO"; this.style.background = "var(--danger)";
+    } else {
+        State.running = false; this.innerText = "ALOITA VUORO"; this.style.background = "var(--success)";
+    }
+};
+
+document.getElementById('btn-save').onclick = () => {
+    const tyo = document.getElementById('val-tyonr').innerText;
+    if(tyo === "-") return alert("Työnumero puuttuu!");
+    State.history.unshift({
+        tyo: tyo,
+        asia: document.getElementById('val-asiakas').innerText,
+        tuote: document.getElementById('val-lajike').innerText,
+        time: new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})
+    });
+    localStorage.setItem('pbpro_v138_hist', JSON.stringify(State.history));
+    renderHistory();
+};
+
+function renderHistory() {
+    document.getElementById('hist-list').innerHTML = State.history.slice(0, 10).map(e => `
+        <div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:8px;text-align:left;border-left:4px solid var(--primary);">
+            <b>${e.tyo}</b> | ${e.tuote}<br>
+            Aika: ${e.time}
+        </div>
+    `).join('');
+}
+
+setInterval(() => {
+    if (State.running) {
+        const diff = Date.now() - State.startTime;
+        const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
+        document.getElementById('txt-timer').innerText = h.toString().padStart(2,'0') + ":" + m.toString().padStart(2,'0');
+    }
+}, 1000);
+
+renderHistory();
+</script>
+</body>
+</html>
