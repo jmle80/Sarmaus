@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v10.2 Gemini</title>
+    <title>PBPro v10.3 Gemini</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --gemini: #4285f4; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
@@ -22,7 +22,7 @@
 </head>
 <body>
 
-<div class="version-tag">v10.2 GEMINI 1.5 FLASH</div>
+<div class="version-tag">v10.3 GEMINI FIXED</div>
 
 <div class="container">
     <div class="dashboard">
@@ -53,7 +53,7 @@
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v102_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v103_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
@@ -77,13 +77,14 @@ document.getElementById('snap').onclick = async () => {
     if(key) localStorage.setItem('gemini_api_key', key.trim());
 
     try {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        // Korjattu mallin polku: gemini-1.5-flash-latest
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        { text: "Extract tyonumero (6 digits) and lajike (uppercase string) from this image. Return only JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
+                        { text: "Etsi tyonumero ja lajike. Palauta vain JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
                         { inline_data: { mime_type: "image/jpeg", data: b64 } }
                     ]
                 }]
@@ -99,13 +100,12 @@ document.getElementById('snap').onclick = async () => {
         document.getElementById('val-kortti').innerText = res.nr || "-";
         document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
     } catch(e) { 
-        alert("Gemini-virhe: " + e.message);
+        alert("Virhe: " + e.message);
     } finally { 
         document.getElementById('loader').style.display = 'none'; 
     }
 };
 
-// --- LOGIIKKA (sama kuin aiemmin) ---
 function manualInput(type) {
     let v = prompt("Syötä arvo:");
     if (!v) return;
@@ -125,7 +125,7 @@ document.getElementById('btn-save').onclick = () => {
     const nr = document.getElementById('val-kortti').innerText;
     if (nr === "-") { alert("Työnumero puuttuu!"); return; }
     State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, time: new Date().toLocaleTimeString() });
-    localStorage.setItem('pbpro_v102_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v103_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
