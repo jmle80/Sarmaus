@@ -9,37 +9,75 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a0a0a">
     
-    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiaW5kZXguaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwic2NvcGUiOiIvU2FybWEvIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwYTBhMGEiLCJ0aGVtZV9jb2xvciI6IiMwYTBhMGEifQ==">
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUEJQcm8iLCJzaG9ydF9uYW1lIjoiUEJQcm8iLCJzdGFydF91cmwiOiIuL2luZGV4Lmh0bWwiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGEwYTBhIiwidGhlbWVfY29sb3IiOiIjMGEwYTBhIn0=">
 
-    <title>Press Brake Pro v7.2</title>
+    <title>Press Brake Pro v7.5</title>
+    
     <style>
-        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; }
-        body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; padding-top: env(safe-area-inset-top); }
-        .version-tag { color: #00e676; font-weight: bold; text-align: center; padding: 10px; background: #111; font-size: 0.9em; border-bottom: 1px solid #333; }
-        .container { max-width: 480px; margin: 0 auto; padding: 15px; }
-        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; cursor: pointer; }
-        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        :root { 
+            --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744;
+            --text-light: #f5f5f5; --text-muted: #888; 
+        }
+        * { box-sizing: border-box; touch-action: manipulation; }
+        body {
+            margin: 0; background: var(--bg); color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden; padding-top: env(safe-area-inset-top);
+        }
+        .version-tag { color: #00e676; font-weight: 800; text-align: center; padding: 10px; background: #111; border-bottom: 1px solid #333; }
+        .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; text-align: center; border: 1px solid #333; }
+        .dash-val { font-size: 1.8em; font-weight: 800; display: block; }
+        .btn-full-scan {
+            width: 100%; padding: 22px; border-radius: 16px; border: 3px solid var(--success);
+            background: linear-gradient(145deg, #0d2b0d 0%, #051505 100%);
+            color: var(--success); font-weight: 900; font-size: 1.1em; margin-bottom: 20px;
+        }
+        .info-row { display: grid; gap: 8px; margin-bottom: 20px; }
+        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .info-box b { color: var(--primary); }
+        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-start { background: var(--success); color: black; }
+        .btn-stop { background: var(--danger); color: white; }
         #camera-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         .video-wrapper { width: 95%; height: 60%; border: 2px solid var(--success); border-radius: 15px; overflow: hidden; position: relative; }
         #video { width: 100%; height: 100%; object-fit: cover; }
         .loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10001; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid #333; border-top: 4px solid var(--success); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #numpad-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 85%; }
+        .key { background: #222; padding: 25px; border-radius: 12px; text-align: center; font-size: 1.8em; font-weight: 800; color: white; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v7.2 STANDALONE FIX</div>
+<div class="version-tag">v7.5 PRO • FULL CODE</div>
 
 <div class="container">
-    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI (AI)</button>
-    <div style="margin: 20px 0;">
-        <div class="info-box"><span>Työnumero</span><b id="val-kortti">-</b></div>
-        <div class="info-box"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
-        <div class="info-box"><span>Asetus</span><b id="val-asetus">-</b></div>
-        <div class="info-box"><span>Std-aika</span><b id="val-taivutus">-</b></div>
+    <div class="dashboard">
+        <div class="dash-box"><span>Vuoro</span><span id="txt-timer" class="dash-val">00:00</span></div>
+        <div class="dash-box"><span>Tehokkuus</span><span id="txt-eff" class="dash-val">0.00</span></div>
     </div>
-    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="width:100%; background:none; border:1px solid #333; border-radius:8px; color:#444; padding:8px; font-size:0.7em;">NOLLAA API-AVAIN</button>
+
+    <button id="btn-open-camera" class="btn-full-scan">🤖 SKANNAA KORTTI (AI)</button>
+
+    <div class="info-row">
+        <div class="info-box" onclick="openPad('kortti')"><span>Työnumero</span><b id="val-kortti">-</b></div>
+        <div class="info-box" onclick="askLajike()"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
+        <div class="info-box" onclick="openPad('asetus')"><span>Asetus (min)</span><b id="val-asetus">-</b></div>
+        <div class="info-box" onclick="openPad('taivutus')"><span>Std-aika (min)</span><b id="val-taivutus">-</b></div>
+    </div>
+
+    <button id="btn-save" class="main-btn btn-save">💾 TALLENNA KORTTI</button>
+    <button id="btn-shift" class="main-btn btn-start">ALOITA VUORO</button>
+    
+    <div id="hist-list" style="margin-top:20px; background:#111; border-radius:12px; font-size:0.8em;"></div>
+
+    <button onclick="resetHistory()" style="width:100%; background:none; border:none; color:#444; margin-top:20px; font-size:0.7em; text-decoration:underline;">NOLLAA HISTORIA</button>
+    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="width:100%; background:none; border:none; color:#444; margin-top:10px; font-size:0.7em; text-decoration:underline;">VAIHDA API-AVAIN</button>
 </div>
 
 <div id="camera-overlay">
@@ -48,29 +86,41 @@
     <button onclick="stopCamera()" style="background:none; border:none; color:white; margin-top:20px; text-decoration:underline;">PERUUTA</button>
 </div>
 
+<div id="numpad-overlay">
+    <div id="pad-display" style="color:var(--primary); font-size:3em; font-weight:800; margin-bottom:20px;">-</div>
+    <div class="numpad-grid" id="keys"></div>
+    <button onclick="document.getElementById('numpad-overlay').style.display='none'" style="margin-top:25px; color:#666; background:none; border:none;">SULJE</button>
+</div>
+
 <div id="loader" class="loader">
     <div class="spinner"></div>
-    <p style="margin-top:20px; font-weight:bold; color:var(--success);">Analysoidaan...</p>
+    <p style="margin-top:20px; font-weight:bold; color:var(--success);">AI analysoi...</p>
 </div>
 
 <script>
-let videoStream = null;
+let State = {
+    running: false, startTime: null, padTarget: '', padBuffer: '',
+    history: JSON.parse(localStorage.getItem('pbpro_v75') || '[]')
+};
 
+// Kamera
 async function startCamera() {
     const video = document.getElementById('video');
     document.getElementById('camera-overlay').style.display = 'flex';
     try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } });
-        video.srcObject = videoStream;
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } });
+        video.srcObject = stream;
         await video.play();
     } catch (err) { alert("Kamera-virhe: " + err.message); stopCamera(); }
 }
 
 function stopCamera() {
-    if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); }
+    const video = document.getElementById('video');
+    if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
     document.getElementById('camera-overlay').style.display = 'none';
 }
 
+// AI Analyysi
 document.getElementById('btn-capture').onclick = async () => {
     const video = document.getElementById('video');
     const canvas = document.createElement('canvas');
@@ -80,34 +130,104 @@ document.getElementById('btn-capture').onclick = async () => {
     stopCamera();
     document.getElementById('loader').style.display = 'flex';
 
-    let apiKey = localStorage.getItem('claude_api_key');
-    if (!apiKey) {
-        apiKey = prompt("Syötä Claude API-avain:");
-        if (apiKey) localStorage.setItem('claude_api_key', apiKey.trim());
-        else { document.getElementById('loader').style.display = 'none'; return; }
-    }
+    let apiKey = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
+    if (apiKey) localStorage.setItem('claude_api_key', apiKey.trim());
+    else { document.getElementById('loader').style.display = 'none'; return; }
 
     try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01',
-                'dangerously-allow-browser': 'true'
-            },
+            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'dangerously-allow-browser': 'true' },
             body: JSON.stringify({
-                model: "claude-3-5-sonnet-20240620",
-                max_tokens: 1024,
-                messages: [{
-                    role: "user",
-                    content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64Image } },
-                             { type: "text", text: "Extract JSON: tyonumero (6-digits), lajike (uppercase), asetus (min), stdaika (min). Focus on SÄRMÄYS. Return ONLY JSON." }]
-                }]
+                model: "claude-3-5-sonnet-20240620", max_tokens: 1024,
+                messages: [{ role: "user", content: [
+                    { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64Image } },
+                    { type: "text", text: "Etsi SÄRMÄYS. Palauta VAIN JSON: {tyonumero:6-digit, lajike:uppercase, asetus:min, stdaika:min}" }
+                ]}]
             })
         });
+        const d = await r.json();
+        const res = JSON.parse(d.content[0].text);
+        document.getElementById('val-kortti').innerText = res.tyonumero || "-";
+        document.getElementById('val-lajike').innerText = (res.lajike || "-").toUpperCase();
+        document.getElementById('val-asetus').innerText = res.asetus + " min";
+        document.getElementById('val-taivutus').innerText = res.stdaika + " min";
+    } catch (e) { alert("Virhe: " + e.message); }
+    finally { document.getElementById('loader').style.display = 'none'; }
+};
 
-        if (!response.ok) { const err = await response.json(); throw new Error(err.error.message); }
-        const result = await response.json();
-        const data = JSON.parse(result.content[0].text);
-        document.getElementById('val-kortti').innerText = data.tyonumero || "-";
+// Numpad & Lajike
+function openPad(target) {
+    State.padTarget = target; State.padBuffer = '';
+    document.getElementById('pad-display').innerText = '-';
+    document.getElementById('numpad-overlay').style.display = 'flex';
+    const grid = document.getElementById('keys');
+    grid.innerHTML = '';
+    for(let i=1; i<=9; i++) grid.innerHTML += `<div class="key" onclick="press(${i})">${i}</div>`;
+    grid.innerHTML += `<div class="key" onclick="State.padBuffer=''">C</div><div class="key" onclick="press(0)">0</div><div class="key" style="background:var(--success);color:black" onclick="savePad()">OK</div>`;
+}
+
+function press(n) {
+    if (State.padTarget === 'kortti' && State.padBuffer.length >= 6) return;
+    State.padBuffer += n; document.getElementById('pad-display').innerText = State.padBuffer;
+}
+
+function savePad() {
+    if (State.padTarget === 'kortti' && State.padBuffer.length !== 6) { alert("Työnumeron oltava 6 numeroa!"); return; }
+    document.getElementById('val-' + State.padTarget).innerText = State.padBuffer + (State.padTarget==='kortti'?'':' min');
+    document.getElementById('numpad-overlay').style.display = 'none';
+}
+
+function askLajike() {
+    let v = prompt("Syötä lajimerkki:");
+    if (v) document.getElementById('val-lajike').innerText = v.toUpperCase();
+}
+
+// Historia & Tallennus
+function saveEntry() {
+    const nr = document.getElementById('val-kortti').innerText;
+    if (nr === "-" || nr.length !== 6) { alert("Syötä 6-numeroinen työnumero!"); return; }
+    State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, min: (parseFloat(document.getElementById('val-asetus').innerText) || 0) + (parseFloat(document.getElementById('val-taivutus').innerText) || 0) });
+    localStorage.setItem('pbpro_v75', JSON.stringify(State.history));
+    renderHistory();
+}
+
+function renderHistory() {
+    document.getElementById('hist-list').innerHTML = State.history.slice(0, 10).map(e => `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between;"><b>${e.nr}</b> <span>${e.laji}</span> <span>${e.min}m</span></div>`).join('');
+}
+
+function resetHistory() {
+    if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
+        State.history = []; localStorage.removeItem('pbpro_v75'); renderHistory();
+    }
+}
+
+// Vuoro
+document.getElementById('btn-shift').onclick = () => {
+    if (!State.running) {
+        State.running = true; State.startTime = Date.now();
+        document.getElementById('btn-shift').innerText = "LOPETA VUORO";
+        document.getElementById('btn-shift').className = "main-btn btn-stop";
+    } else { State.running = false; document.getElementById('btn-shift').innerText = "ALOITA VUORO"; document.getElementById('btn-shift').className = "main-btn btn-start"; }
+};
+
+setInterval(() => {
+    if (State.running) {
+        const diff = Date.now() - State.startTime;
+        const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
+        document.getElementById('txt-timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+        let total = State.history.reduce((a, b) => a + b.min, 0);
+        document.getElementById('txt-eff').innerText = (total / (diff / 60000 || 1)).toFixed(2);
+    }
+}, 1000);
+
+document.getElementById('btn-open-camera').onclick = startCamera;
+document.getElementById('btn-save').onclick = saveEntry;
+renderHistory();
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('data:application/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGU9Pnt9KTs=');
+}
+</script>
+</body>
+</html>
