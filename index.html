@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v18.3</title>
+    <title>PBPro v18.4</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
@@ -20,8 +20,6 @@
         .info-box b { color: var(--primary); font-size: 1.05em; display: block; word-break: break-all; }
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
-        #search-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; border-radius: 10px; color: white; margin-bottom: 15px; box-sizing: border-box; }
-        .hist-item { background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 12px; text-align: left; border-left: 4px solid var(--primary); cursor: pointer; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
         #video { width: 100%; height: 100%; object-fit: cover; }
         .crop-guide {
@@ -39,7 +37,7 @@
 </head>
 <body>
 
-<div class="version-tag">v18.3 • A4 PRECISION SCAN</div>
+<div class="version-tag">v18.4 • PRODUCT CODE REPAIR</div>
 
 <div class="container">
     <div id="txt-period-label" class="period-info">Ladataan jaksoa...</div>
@@ -55,7 +53,7 @@
         </div>
     </div>
 
-    <button id="btn-open-camera" class="btn-scan">📸 SKANNAA (OPTIMAL)</button>
+    <button id="btn-open-camera" class="btn-scan">📸 SKANNAA (PRECISION)</button>
     
     <div class="info-grid">
         <div class="info-box" onclick="editV('val-tyonr', 'Työnumero')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
@@ -70,16 +68,15 @@
     <button id="btn-start-shift" style="background:var(--success); color:black" class="main-btn">ALOITA VUORO</button>
     <button id="btn-stop-shift" style="background:var(--danger); color:white; display:none;" class="main-btn">LOPETA VUORO</button>
     
-    <input type="text" id="search-input" placeholder="Hae historiasta..." oninput="renderHistory()">
     <div id="hist-list"></div>
 </div>
 
-<div id="loader"><p>GPT-4o analysoi A4-rajausta...</p></div>
+<div id="loader"><p>GPT-4o Precision Scan käynnissä...</p></div>
 
 <div id="cam-overlay">
     <video id="video" playsinline muted></video>
     <div class="crop-guide">
-        <span style="color:white; font-size:0.6em; background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:5px; margin-top:5px;">Kohdista Työnumero ja Vaiheet tähän</span>
+        <span style="color:white; font-size:0.6em; background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:5px; margin-top:5px;">Kohdista Työnumero ja Tuote tähän</span>
     </div>
     <div class="cam-controls">
         <button id="btn-toggle-torch" style="background:#333;color:white;border:none;padding:10px 20px;border-radius:20px;">💡 VALO: ON</button>
@@ -89,7 +86,7 @@
 </div>
 
 <script>
-// Palkkajaksot 2026 ennallaan
+// Palkkajaksot ja State-logiikka aiempien ohjeiden mukaisesti
 const payPeriods2026 = [
     { start: "2025-12-16", end: "2025-12-31", payDay: "10.1.2026" },
     { start: "2026-01-01", end: "2026-01-15", payDay: "25.1.2026" },
@@ -168,7 +165,6 @@ document.getElementById('snap').onclick = async () => {
     const c = document.createElement('canvas');
     const ctx = c.getContext('2d');
     
-    // Rajaussuhde optimoitu A4-kortille
     const cropW = v.videoWidth * 0.85;
     const cropH = v.videoHeight * 0.45;
     const startX = (v.videoWidth - cropW) / 2;
@@ -187,20 +183,18 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "Lue kortti TÄYSIN TARKASTI. Noudata sääntöjä:\n1. TUOTE: Lue koodi ylhäältä (esim. 5300218). ÄLÄ lue sanaa 'TAIVUTUS'. Jos näet nimen nimen yllä numerokoodin, se on TUOTE.\n2. TYÖNUMERO: Otsikon 'Työnumero' alta VAIN 6-numeroinen luku.\n3. VAIHE: Etsi rivi jossa lukee 'Taivutus'. Lue sen rivin sarakkeet Asetus ja Kapasiteetti.\nJSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Lue kortti TÄYSIN TARKASTI. Noudata näitä SÄÄNTÖJÄ:\n1. TUOTE: Poimi numerokoodi (esim. 5300218). ÄLÄ lue sanoja 'TAIVUTUS', 'SÄRMÄYS', 'ISO' tai koneiden nimiä kuten 'URSVIKEN'. Tuotekoodi on piirustusnumeron yläpuolella.\n2. TYÖNUMERO: Etsi sana 'Työnumero' ja lue sen alta VAIN 6-numeroinen luku (esim. 247022).\n3. TAIVUTUS-VAIHE: Etsi rivi jossa lukee 'Taivutus'. Lue VAIN sen rivin sarakkeet Asetus ja Kapasiteetti.\nJSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
         });
         const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
         
-        // Puhdistuslogiikka
-        let tyo = (res.tyo || "").replace(/\D/g, '').substring(0,6);
         let laji = (res.laji || "").toUpperCase();
-        if(laji === "TAIVUTUS") laji = "-";
+        if(laji.includes("TAIVUTUS") || laji.includes("SÄRMÄYS") || laji.includes("ISO")) laji = "-";
 
-        document.getElementById('val-tyonr').innerText = tyo || "-";
-        document.getElementById('val-lajike').innerText = laji || "-";
+        document.getElementById('val-tyonr').innerText = (res.tyo || "").replace(/\D/g, '').substring(0,6) || "-";
+        document.getElementById('val-lajike').innerText = laji;
         document.getElementById('val-piirnro').innerText = res.piir || "-";
         document.getElementById('val-asiakas').innerText = res.asia || "-";
         document.getElementById('val-asetusaika').innerText = res.asetus || "0";
@@ -215,7 +209,7 @@ document.getElementById('btn-save').onclick = () => {
     const a = parseFloat(document.getElementById('val-asetusaika').innerText.replace(',','.')) || 0;
     const k = parseFloat(document.getElementById('val-taivutusaika').innerText.replace(',','.')) || 0;
     State.history.unshift({ pvm: new Date().toLocaleDateString('fi-FI'), tyo, tuote: document.getElementById('val-lajike').innerText, kpl, sumMins: a + (k * parseInt(kpl)) });
-    localStorage.setItem('pbpro_v16_hist', JSON.stringify(State.history)); renderHistory(); updateUI();
+    localStorage.setItem('pbpro_v16_hist', JSON.stringify(State.history)); updateUI();
 };
 
 document.getElementById('btn-start-shift').onclick = () => {
@@ -227,17 +221,7 @@ document.getElementById('btn-start-shift').onclick = () => {
 };
 document.getElementById('btn-stop-shift').onclick = () => { if(confirm("Lopeta?")) { State.running = false; document.getElementById('btn-start-shift').style.display='block'; document.getElementById('btn-stop-shift').style.display='none'; } };
 
-function renderHistory() {
-    const s = document.getElementById('search-input').value.toLowerCase();
-    const f = State.history.filter(h => h.tyo.toLowerCase().includes(s) || h.tuote.toLowerCase().includes(s));
-    document.getElementById('hist-list').innerHTML = f.slice(0, 30).map((e, i) => `
-        <div class="hist-item" onclick="if(confirm('Poista?')){State.history.splice(${State.history.indexOf(e)},1);localStorage.setItem('pbpro_v16_hist',JSON.stringify(State.history));renderHistory();}">
-            <div style="display:flex; justify-content:space-between;"><b>${e.tyo}</b><span>${e.pvm}</span></div>
-            <small>${e.tuote} | ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>
-        </div>
-    `).join('');
-}
-setInterval(updateUI, 5000); renderHistory();
+updateUI();
 </script>
 </body>
 </html>
