@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v12.8</title>
+    <title>PBPro v12.9</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 
-<div class="version-tag">v12.8 ROW-BY-ROW SCAN</div>
+<div class="version-tag">v12.9 TUOTE SCANNER</div>
 
 <div class="container">
     <div class="dashboard">
@@ -38,7 +38,7 @@
         <div class="info-box" onclick="manualInput('tyonr')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
         <div class="info-box" onclick="manualInput('piirnro')"><span>Piirustus nro</span><b id="val-piirnro">-</b></div>
         <div class="info-box" onclick="manualInput('asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
-        <div class="info-box" onclick="manualInput('lajike')"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
+        <div class="info-box" onclick="manualInput('lajike')"><span>Tuote</span><b id="val-lajike">-</b></div>
         <div class="info-box" onclick="manualInput('asetusaika')"><span>Asetusaika (kortti)</span><b id="val-asetusaika">-</b></div>
         <div class="info-box" onclick="manualInput('taivutusaika')"><span>Taivutusaika (kortti)</span><b id="val-taivutusaika">-</b></div>
     </div>
@@ -49,14 +49,14 @@
     <div id="hist-list" style="margin-top:20px;"></div>
 </div>
 
-<div id="loader"><p id="status-text">OpenAI lukee rivejä...</p></div>
+<div id="loader"><p id="status-text">OpenAI lukee tuotetta...</p></div>
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
     <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--openai); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v128_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v129_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
@@ -87,7 +87,10 @@ document.getElementById('snap').onclick = async () => {
                 messages: [{
                     role: "user",
                     content: [
-                        { type: "text", text: "Lue sarmouskortti. Etsi tiedot näin:\n1. Työnumero: Etsi sana 'Työnumero' ja lue sen alapuolella oleva 6-numeroinen luku.\n2. Lajimerkki: Etsi sana 'Tuote' ja lue heti sen alapuolella oleva rivi. Älä lue tuotekuvausta.\n3. Etsi rivi, jolla lukee 'Taivutus'. Lue tältä riviltä luku, joka on sarakkeessa 'Asetus' (asetusaika) ja luku, joka on sarakkeessa 'Kapasiteetti' (taivutusaika).\n4. Etsi Asiakas ja Piirustusnumero.\nPalauta vain JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                        { 
+                          type: "text", 
+                          text: "Lue sarmouskortti. Noudata näitä tarkasti:\n1. Työnumero: Etsi sana 'Työnumero' ja lue suoraan sen alapuolella oleva 6-numeroinen luku.\n2. Tuote (Lajimerkki): Etsi sana 'Tuote' ja lue heti sen alapuolella oleva rivi. Älä ota sen alla olevaa sanallista kuvausta.\n3. Etsi rivi 'Taivutus'. Lue siltä riviltä luku kohdasta 'Asetus' ja luku kohdasta 'Kapasiteetti'.\n4. Lue myös Asiakas ja Piirustusnumero.\nPalauta vain JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" 
+                        },
                         { type: "image_url", image_url: { url: b64 } }
                     ]
                 }]
@@ -128,19 +131,21 @@ document.getElementById('btn-save').onclick = () => {
     State.history.unshift({
         tyo: tyo,
         asia: document.getElementById('val-asiakas').innerText,
+        tuote: document.getElementById('val-lajike').innerText,
         asetus: document.getElementById('val-asetusaika').innerText,
         taivutus: document.getElementById('val-taivutusaika').innerText,
         time: new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})
     });
-    localStorage.setItem('pbpro_v128_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v129_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
 function renderHistory() {
     document.getElementById('hist-list').innerHTML = State.history.slice(0, 10).map(e => `
-        <div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:8px;text-align:left;">
+        <div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:8px;text-align:left;border-left:4px solid var(--primary);">
             <b>${e.asia} | ${e.tyo}</b><br>
-            Asetus: ${e.asetus} | Taivutus: ${e.taivutus} | ${e.time}
+            Tuote: ${e.tuote}<br>
+            Kortti: ${e.asetus} / ${e.taivutus} min | ${e.time}
         </div>
     `).join('');
 }
