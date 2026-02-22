@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v10.1</title>
+    <title>PBPro v10.2 Gemini</title>
     <style>
-        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; }
+        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --gemini: #4285f4; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
-        .version-tag { color: var(--success); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
+        .version-tag { color: var(--gemini); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; border: 1px solid #333; }
         .dash-val { font-size: 1.8em; font-weight: 800; display: block; color: var(--success); }
-        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
+        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--gemini); background: #050a15; color: var(--gemini); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .info-box b { color: var(--primary); font-size: 1.2em; }
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
@@ -22,7 +22,7 @@
 </head>
 <body>
 
-<div class="version-tag">v10.1 MULTI-PATH REPAIR</div>
+<div class="version-tag">v10.2 GEMINI 1.5 FLASH</div>
 
 <div class="container">
     <div class="dashboard">
@@ -30,7 +30,7 @@
         <div class="dash-box"><span>Teho</span><span id="txt-eff" class="dash-val">0.00</span></div>
     </div>
 
-    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI</button>
+    <button id="btn-open-camera" class="btn-scan">🤖 GEMINI-SKANNAUS</button>
     
     <div class="info-row">
         <div class="info-box" onclick="manualInput('kortti')"><span>Työnumero</span><b id="val-kortti">-</b></div>
@@ -42,18 +42,18 @@
     
     <div id="hist-list" style="margin-top:20px; text-align:left; font-size:0.9em;"></div>
     
-    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em; width:100%;">VAIHDA API-AVAIN</button>
+    <button onclick="localStorage.removeItem('gemini_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em; width:100%;">VAIHDA GEMINI-AVAIN</button>
 </div>
 
-<div id="loader"><p id="status-text">AI Analysoi (Path 1)...</p></div>
+<div id="loader"><p id="status-text">Google AI analysoi...</p></div>
 
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
-    <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--success); border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
+    <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--gemini); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v101_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v102_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
@@ -73,50 +73,39 @@ document.getElementById('snap').onclick = async () => {
     document.getElementById('cam-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    let key = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
-    if(key) localStorage.setItem('claude_api_key', key.trim());
+    let key = localStorage.getItem('gemini_api_key') || prompt("Syötä Gemini API-avain:");
+    if(key) localStorage.setItem('gemini_api_key', key.trim());
 
-    // Kokeillaan Haikua kahdella eri tavalla
-    const paths = [
-        { url: 'https://api.anthropic.com/v1/messages', useHeader: true },
-        { url: 'https://corsproxy.io/?' + encodeURIComponent('https://api.anthropic.com/v1/messages'), useHeader: false }
-    ];
+    try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: "Extract tyonumero (6 digits) and lajike (uppercase string) from this image. Return only JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
+                        { inline_data: { mime_type: "image/jpeg", data: b64 } }
+                    ]
+                }]
+            })
+        });
 
-    for (let i = 0; i < paths.length; i++) {
-        document.getElementById('status-text').innerText = `AI Analysoi (Path ${i+1})...`;
-        try {
-            const headers = {
-                'Content-Type': 'application/json',
-                'x-api-key': key,
-                'anthropic-version': '2023-06-01'
-            };
-            if(paths[i].useHeader) headers['anthropic-dangerous-direct-browser-access'] = 'true';
-
-            const r = await fetch(paths[i].url, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({
-                    model: "claude-3-haiku-20240307", max_tokens: 500,
-                    messages: [{role: "user", content: [{type: "image", source: {type: "base64", media_type: "image/jpeg", data: b64}}, {type: "text", text: "JSON: {nr, laji}"}]}]
-                })
-            });
-
-            const d = await r.json();
-            if (d.error) throw new Error(d.error.message);
-            
-            const rawText = d.content[0].text;
-            const res = JSON.parse(rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1));
-            document.getElementById('val-kortti').innerText = res.nr || "-";
-            document.getElementById('val-lajike').innerText = (res.lajike || "-").toUpperCase();
-            document.getElementById('loader').style.display = 'none';
-            return; // ONNISTUI
-        } catch(e) { console.log(`Path ${i+1} failed: ${e.message}`); }
+        const d = await r.json();
+        if (d.error) throw new Error(d.error.message);
+        
+        const rawText = d.candidates[0].content.parts[0].text;
+        const res = JSON.parse(rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1));
+        
+        document.getElementById('val-kortti').innerText = res.nr || "-";
+        document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
+    } catch(e) { 
+        alert("Gemini-virhe: " + e.message);
+    } finally { 
+        document.getElementById('loader').style.display = 'none'; 
     }
-    
-    alert("Kaikki yhteysreitit epäonnistuivat. Tämä viittaa siihen, että API-avaimesi PBPro-Final ei ole vielä täysin aktivoitunut Anthropicin järjestelmässä. Odota tunti ja kokeile uudelleen!");
-    document.getElementById('loader').style.display = 'none';
 };
 
+// --- LOGIIKKA (sama kuin aiemmin) ---
 function manualInput(type) {
     let v = prompt("Syötä arvo:");
     if (!v) return;
@@ -134,9 +123,9 @@ document.getElementById('btn-shift').onclick = function() {
 
 document.getElementById('btn-save').onclick = () => {
     const nr = document.getElementById('val-kortti').innerText;
-    if (nr.length < 1 || nr === "-") { alert("Työnumero puuttuu!"); return; }
+    if (nr === "-") { alert("Työnumero puuttuu!"); return; }
     State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, time: new Date().toLocaleTimeString() });
-    localStorage.setItem('pbpro_v101_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v102_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
