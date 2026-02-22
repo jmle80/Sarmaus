@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v10.9</title>
+    <title>PBPro v11.0</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
@@ -15,15 +15,16 @@
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; }
         .info-box b { color: var(--primary); font-size: 1.2em; }
-        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
-        .hist-item { background: #1a1a1a; padding: 10px; border-radius: 8px; margin-bottom: 5px; border-left: 4px solid var(--primary); text-align: left; font-size: 0.9em; }
+        .hist-item { background: #1a1a1a; padding: 12px; border-radius: 10px; margin-bottom: 8px; border-left: 5px solid var(--primary); text-align: left; }
+        .time-tag { font-size: 0.8em; color: #888; display: block; margin-top: 4px; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v10.9 FULL RESTORE (OPENAI)</div>
+<div class="version-tag">v11.0 FULL LOGIC & WINDOWS</div>
 
 <div class="container">
     <div class="dashboard">
@@ -35,26 +36,26 @@
     
     <div class="info-row">
         <div class="info-box" onclick="manualInput('kortti')"><span>Työnumero</span><b id="val-kortti">-</b></div>
-        <div class="info-box" onclick="manualInput('lajike')"><span>Lajike</span><b id="val-lajike">-</b></div>
+        <div class="info-box" onclick="manualInput('lajike')"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
     </div>
 
-    <button id="btn-save" style="background:var(--primary); color:white" class="main-btn">💾 TALLENNA KORTTI</button>
+    <button id="btn-save" style="background:var(--primary); color:white" class="main-btn">💾 TALLENNA & LOPETA KORTTI</button>
     <button id="btn-shift" style="background:var(--success); color:black" class="main-btn">ALOITA VUORO</button>
     
-    <div style="margin-top:20px;">
-        <h3 style="text-align:left; font-size:0.9em; color:#666;">HISTORIA (Viimeisimmät)</h3>
+    <div style="margin-top:25px;">
+        <h3 style="text-align:left; font-size:1em; color:#999; margin-bottom:10px;">HISTORIA JA AIKA-IKKUNAT</h3>
         <div id="hist-list"></div>
-        <button id="btn-reset" style="background:none; border:none; color:var(--danger); font-size:0.7em; margin-top:20px; text-decoration:underline; width:100%;">NOLLAA JAKSON HISTORIA</button>
+        <button id="btn-reset" style="background:none; border:none; color:var(--danger); font-size:0.75em; margin-top:30px; text-decoration:underline; width:100%;">NOLLAA JAKSON HISTORIA</button>
     </div>
     
-    <button onclick="localStorage.removeItem('openai_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em; width:100%;">VAIHDA API-AVAIN</button>
+    <button onclick="localStorage.removeItem('openai_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:50px; text-decoration:underline; font-size:0.7em; width:100%;">VAIHDA API-AVAIN</button>
 </div>
 
-<div id="loader"><p id="status-text">OpenAI analysoi korttia...</p></div>
+<div id="loader"><p id="status-text">OpenAI lukee korttia...</p></div>
 
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
-    <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--openai); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">OTA KUVA</button>
+    <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--openai); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <audio id="sound-start" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
@@ -63,10 +64,11 @@
 let State = { 
     running: false, 
     startTime: null, 
-    history: JSON.parse(localStorage.getItem('pbpro_v109_hist') || '[]') 
+    lastSaveTime: null,
+    history: JSON.parse(localStorage.getItem('pbpro_v11_hist') || '[]') 
 };
 
-// --- KAMERA JA SKANNAUS ---
+// --- SKANNAUS ---
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
         const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: 1280}});
@@ -85,8 +87,11 @@ document.getElementById('snap').onclick = async () => {
     document.getElementById('cam-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    let key = localStorage.getItem('openai_api_key') || prompt("Syötä OpenAI API-avain (sk-...):");
-    if(key) localStorage.setItem('openai_api_key', key.trim());
+    let key = localStorage.getItem('openai_api_key');
+    if(!key) {
+        key = prompt("Syötä OpenAI API-avain (sk-...):");
+        if(key) localStorage.setItem('openai_api_key', key.trim());
+    }
 
     try {
         const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -97,7 +102,7 @@ document.getElementById('snap').onclick = async () => {
                 messages: [{
                     role: "user",
                     content: [
-                        { type: "text", text: "Identify 6-digit 'tyonumero' and 'lajike' (string). Be careful not to swap them. Return JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
+                        { type: "text", text: "Look for a 6-digit number as 'nr' and the text string as 'laji'. DO NOT SWAP. Return JSON: {\"nr\": \"123456\", \"laji\": \"XYZ\"}" },
                         { type: "image_url", image_url: { url: b64 } }
                     ]
                 }],
@@ -106,87 +111,74 @@ document.getElementById('snap').onclick = async () => {
         });
 
         const d = await r.json();
-        if (d.error) throw new Error(d.error.message);
-        
         const rawText = d.choices[0].message.content;
         const res = JSON.parse(rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1));
         
-        let nr = res.nr ? res.nr.replace(/\D/g, "").substring(0,6) : "-";
-        let laji = res.laji ? res.laji.trim().toUpperCase() : "-";
+        // KENTTÄKORJAUS: Varmistetaan että numero on numerokentässä
+        let cleanNr = res.nr ? res.nr.replace(/\D/g, "").substring(0,6) : "-";
+        let cleanLaji = res.laji ? res.laji.trim().toUpperCase() : "-";
 
-        document.getElementById('val-kortti').innerText = nr;
-        document.getElementById('val-lajike').innerText = laji;
-    } catch(e) { alert("Virhe: " + e.message); }
+        document.getElementById('val-kortti').innerText = cleanNr;
+        document.getElementById('val-lajike').innerText = cleanLaji;
+    } catch(e) { alert("Skannaus epäonnistui. Syötä tiedot käsin."); }
     finally { document.getElementById('loader').style.display = 'none'; }
 };
 
-// --- LOGIIKKA JA LASKENTA ---
+// --- LOGIIKKA ---
 function manualInput(type) {
-    let v = prompt(`Syötä ${type}:`);
+    let v = prompt(`Syötä ${type === 'kortti' ? 'työnumero' : 'lajimerkki'}:`);
     if (!v) return;
-    if (type === 'kortti') {
-        document.getElementById('val-kortti').innerText = v.substring(0,6);
-    } else {
-        document.getElementById('val-lajike').innerText = v.toUpperCase();
-    }
+    if (type === 'kortti') document.getElementById('val-kortti').innerText = v.replace(/\D/g, "").substring(0,6);
+    else document.getElementById('val-lajike').innerText = v.toUpperCase();
 }
 
 document.getElementById('btn-shift').onclick = function() {
     if (!State.running) {
-        State.running = true; 
-        State.startTime = Date.now();
+        State.running = true; State.startTime = Date.now(); State.lastSaveTime = Date.now();
         document.getElementById('sound-start').play();
-        this.innerText = "LOPETA VUORO"; 
-        this.style.background = "var(--danger)"; 
-        this.style.color = "white";
+        this.innerText = "LOPETA VUORO"; this.style.background = "var(--danger)"; this.style.color = "white";
     } else {
-        State.running = false; 
-        this.innerText = "ALOITA VUORO"; 
-        this.style.background = "var(--success)"; 
-        this.style.color = "black";
+        State.running = false; this.innerText = "ALOITA VUORO"; this.style.background = "var(--success)"; this.style.color = "black";
     }
 };
 
 document.getElementById('btn-save').onclick = () => {
     const nr = document.getElementById('val-kortti').innerText;
-    if (nr === "-" || nr.length < 1) { alert("Työnumero puuttuu!"); return; }
+    if (nr === "-" || !State.running) { alert("Aloita vuoro ja tarkista työnumero!"); return; }
     
-    State.history.unshift({ 
-        nr: nr, 
-        laji: document.getElementById('val-lajike').innerText, 
-        time: new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}) 
+    const now = Date.now();
+    const duration = Math.round((now - State.lastSaveTime) / 60000);
+    const startTimeStr = new Date(State.lastSaveTime).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+    const endTimeStr = new Date(now).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+
+    State.history.unshift({
+        nr: nr,
+        laji: document.getElementById('val-lajike').innerText,
+        start: startTimeStr,
+        end: endTimeStr,
+        dur: duration
     });
     
-    localStorage.setItem('pbpro_v109_hist', JSON.stringify(State.history));
+    State.lastSaveTime = now;
+    localStorage.setItem('pbpro_v11_hist', JSON.stringify(State.history));
     renderHistory();
-    updateEfficiency();
+    document.getElementById('val-kortti').innerText = "-";
+    document.getElementById('val-lajike').innerText = "-";
 };
 
 document.getElementById('btn-reset').onclick = () => {
     if (confirm("Haluatko varmasti nollata koko jakson historian?")) {
-        State.history = [];
-        localStorage.removeItem('pbpro_v109_hist');
-        renderHistory();
-        updateEfficiency();
+        State.history = []; localStorage.removeItem('pbpro_v11_hist'); renderHistory();
     }
 };
 
 function renderHistory() {
-    const list = document.getElementById('hist-list');
-    list.innerHTML = State.history.slice(0, 10).map(e => `
+    document.getElementById('hist-list').innerHTML = State.history.slice(0, 15).map(e => `
         <div class="hist-item">
-            <strong>${e.nr}</strong> | ${e.laji} <span style="float:right; color:#666;">${e.time}</span>
+            <strong>${e.nr}</strong> | ${e.laji}
+            <span class="time-tag">Klo ${e.start} - ${e.end} (${e.dur} min)</span>
         </div>
     `).join('');
-}
-
-function updateEfficiency() {
-    if (!State.running || State.history.length === 0) return;
-    const hours = (Date.now() - State.startTime) / 3600000;
-    if (hours > 0.01) {
-        const eff = (State.history.length / hours).toFixed(1);
-        document.getElementById('txt-eff').innerText = eff;
-    }
 }
 
 setInterval(() => {
@@ -194,7 +186,8 @@ setInterval(() => {
         const diff = Date.now() - State.startTime;
         const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
         document.getElementById('txt-timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
-        updateEfficiency();
+        const hours = diff / 3600000;
+        if (hours > 0.01) document.getElementById('txt-eff').innerText = (State.history.length / hours).toFixed(1);
     }
 }, 1000);
 
