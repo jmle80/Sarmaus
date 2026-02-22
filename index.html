@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v12.6</title>
+    <title>PBPro v12.8</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
@@ -20,12 +20,11 @@
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
-        .hist-item { background: #1a1a1a; padding: 12px; border-radius: 10px; margin-bottom: 8px; border-left: 5px solid var(--primary); text-align: left; font-size: 0.85em; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v12.6 BUTTONS STABLE</div>
+<div class="version-tag">v12.8 ROW-BY-ROW SCAN</div>
 
 <div class="container">
     <div class="dashboard">
@@ -50,36 +49,22 @@
     <div id="hist-list" style="margin-top:20px;"></div>
 </div>
 
-<div id="loader"><p id="status-text">OpenAI analysoi...</p></div>
+<div id="loader"><p id="status-text">OpenAI lukee rivejä...</p></div>
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
     <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--openai); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <script>
-console.log("App loading...");
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v126_hist') || '[]') };
-
-// Manual Input korjaus
-window.manualInput = function(id) {
-    let v = prompt("Syötä arvo:");
-    if(v !== null) {
-        const el = document.getElementById('val-' + id);
-        if(el) {
-            if(id === 'lajike') el.innerText = v.toUpperCase();
-            else el.innerText = v;
-        }
-    }
-};
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v128_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
-    console.log("Camera button clicked");
     try {
         const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: 1280}});
         const v = document.getElementById('video');
         v.srcObject = s; v.play();
         document.getElementById('cam-overlay').style.display = 'flex';
-    } catch(e) { alert("Kamera-virhe: " + e); }
+    } catch(e) { alert("Kamera-virhe"); }
 };
 
 document.getElementById('snap').onclick = async () => {
@@ -92,7 +77,6 @@ document.getElementById('snap').onclick = async () => {
     document.getElementById('loader').style.display = 'flex';
 
     const key = localStorage.getItem('openai_api_key');
-    if(!key) { alert("API Key puuttuu!"); return; }
 
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -103,7 +87,7 @@ document.getElementById('snap').onclick = async () => {
                 messages: [{
                     role: "user",
                     content: [
-                        { type: "text", text: "Lue sarmouskortista tiedot. 1. Työnumero (6 nro). 2. Asetusaika sanan 'asetus' alla. 3. Taivutusaika sanan 'kapasiteetti' alla. 4. Piirustusnumero. 5. Asiakas. 6. Lajimerkki on teksti sanan 'Tuote' jälkeisellä rivillä. Palauta vain JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                        { type: "text", text: "Lue sarmouskortti. Etsi tiedot näin:\n1. Työnumero: Etsi sana 'Työnumero' ja lue sen alapuolella oleva 6-numeroinen luku.\n2. Lajimerkki: Etsi sana 'Tuote' ja lue heti sen alapuolella oleva rivi. Älä lue tuotekuvausta.\n3. Etsi rivi, jolla lukee 'Taivutus'. Lue tältä riviltä luku, joka on sarakkeessa 'Asetus' (asetusaika) ja luku, joka on sarakkeessa 'Kapasiteetti' (taivutusaika).\n4. Etsi Asiakas ja Piirustusnumero.\nPalauta vain JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                         { type: "image_url", image_url: { url: b64 } }
                     ]
                 }]
@@ -120,8 +104,13 @@ document.getElementById('snap').onclick = async () => {
         document.getElementById('val-asetusaika').innerText = res.asetus || "-";
         document.getElementById('val-taivutusaika').innerText = res.taivutus || "-";
 
-    } catch(e) { alert("Skannaus epäonnistui: " + e); }
+    } catch(e) { alert("Skannaus epäonnistui."); }
     finally { document.getElementById('loader').style.display = 'none'; }
+};
+
+window.manualInput = function(id) {
+    let v = prompt("Syötä arvo:");
+    if(v !== null) document.getElementById('val-'+id).innerText = (id==='lajike'?v.toUpperCase():v);
 };
 
 document.getElementById('btn-shift').onclick = function() {
@@ -143,15 +132,13 @@ document.getElementById('btn-save').onclick = () => {
         taivutus: document.getElementById('val-taivutusaika').innerText,
         time: new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})
     });
-    localStorage.setItem('pbpro_v126_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v128_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
 function renderHistory() {
-    const list = document.getElementById('hist-list');
-    if(!list) return;
-    list.innerHTML = State.history.slice(0, 10).map(e => `
-        <div class="hist-item">
+    document.getElementById('hist-list').innerHTML = State.history.slice(0, 10).map(e => `
+        <div style="background:#1a1a1a;padding:10px;margin-bottom:5px;border-radius:8px;text-align:left;">
             <b>${e.asia} | ${e.tyo}</b><br>
             Asetus: ${e.asetus} | Taivutus: ${e.taivutus} | ${e.time}
         </div>
@@ -163,13 +150,10 @@ setInterval(() => {
         const diff = Date.now() - State.startTime;
         const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
         document.getElementById('txt-timer').innerText = h.toString().padStart(2,'0') + ":" + m.toString().padStart(2,'0');
-        const hours = diff / 3600000;
-        if (hours > 0.01) document.getElementById('txt-eff').innerText = (State.history.length / hours).toFixed(1);
     }
 }, 1000);
 
 renderHistory();
-console.log("Ready.");
 </script>
 </body>
 </html>
