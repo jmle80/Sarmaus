@@ -3,31 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v9.3</title>
+    <title>PBPro v9.5</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
         .version-tag { color: var(--success); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
-        
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; border: 1px solid #333; }
         .dash-val { font-size: 1.8em; font-weight: 800; display: block; color: var(--success); }
-
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
-        .btn-scan:active { background: #0a2a0a; transform: scale(0.98); }
-        
-        .info-row { display: grid; gap: 8px; margin-bottom: 20px; }
-        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .info-box:active { background: #222; }
+        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; }
         .info-box b { color: var(--primary); font-size: 1.2em; }
-
-        .main-btn { width: 100%; padding: 20px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; cursor: pointer; }
+        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-save { background: var(--primary); color: white; }
         .btn-start { background: var(--success); color: black; }
-        .btn-stop { background: var(--danger); color: white; }
-        .main-btn:active { opacity: 0.8; transform: scale(0.98); }
-
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
         .history-item { text-align: left; background: #111; padding: 12px; border-bottom: 1px solid #222; font-size: 0.9em; }
@@ -35,7 +25,7 @@
 </head>
 <body>
 
-<div class="version-tag">v9.3 BUTTON REPAIR</div>
+<div class="version-tag">v9.5 FINAL RESOLUTION</div>
 
 <div class="container">
     <div class="dashboard">
@@ -56,28 +46,66 @@
     <button id="btn-shift" class="main-btn btn-start">ALOITA VUORO</button>
     
     <div id="hist-list"></div>
-    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.8em; width:100%;">VAIHDA API-AVAIN</button>
+    
+    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em; width:100%;">VAIHDA API-AVAIN</button>
 </div>
 
-<div id="loader"><p>AI Analysoi...</p></div>
+<div id="loader"><p id="status-text">Analysoidaan...</p></div>
 
 <div id="cam-overlay">
-    <video id="video" style="width:100%; height:80%; object-fit:cover;" playsinline></video>
+    <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
     <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--success); border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v93_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v95_hist') || '[]') };
 
-// --- KAMERA JA AI ---
-const btnOpenCam = document.getElementById('btn-open-camera');
-btnOpenCam.onclick = async () => {
+// --- AI ANALYYSI ---
+async function analyze(base64) {
+    const key = localStorage.getItem('claude_api_key');
+    // Käytetään suoraa yhteyttä Anthropicin ohjeiden mukaisesti
+    try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': key,
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+                model: "claude-3-5-sonnet-latest",
+                max_tokens: 500,
+                messages: [{role: "user", content: [
+                    {type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}},
+                    {type: "text", text: "Pura JSON: {tyonumero:6-numeroa, lajike:suuraakkoset, asetus:numero, stdaika:numero}"}
+                ]}]
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        
+        const res = JSON.parse(data.content[0].text);
+        document.getElementById('val-kortti').innerText = res.tyonumero || "-";
+        document.getElementById('val-lajike').innerText = (res.lajike || "-").toUpperCase();
+        document.getElementById('val-asetus').innerText = (res.asetus || 0) + " min";
+        document.getElementById('val-stdaika').innerText = (res.stdaika || 0) + " min";
+    } catch (e) {
+        alert("Analyysi epäonnistui: " + e.message);
+    } finally {
+        document.getElementById('loader').style.display = 'none';
+    }
+}
+
+// --- KAMERA ---
+document.getElementById('btn-open-camera').onclick = async () => {
     try {
         const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: 1280}});
         document.getElementById('video').srcObject = s;
         document.getElementById('video').play();
         document.getElementById('cam-overlay').style.display = 'flex';
-    } catch(e) { alert("Kameravirhe: " + e.message); }
+    } catch(e) { alert("Kamera-virhe"); }
 };
 
 document.getElementById('snap').onclick = async () => {
@@ -91,45 +119,27 @@ document.getElementById('snap').onclick = async () => {
     document.getElementById('cam-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    let key = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
-    if(key) localStorage.setItem('claude_api_key', key.trim());
-
-    try {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-            body: JSON.stringify({
-                model: "claude-3-5-sonnet-latest", max_tokens: 500,
-                messages: [{role: "user", content: [{type: "image", source: {type: "base64", media_type: "image/jpeg", data: b64}}, {type: "text", text: "JSON: {tyonumero, lajike, asetus, stdaika}"}]}]
-            })
-        });
-        const d = await r.json();
-        const res = JSON.parse(d.content[0].text);
-        document.getElementById('val-kortti').innerText = res.tyonumero || "-";
-        document.getElementById('val-lajike').innerText = (res.lajike || "-").toUpperCase();
-        document.getElementById('val-asetus').innerText = (res.asetus || 0) + " min";
-        document.getElementById('val-stdaika').innerText = (res.stdaika || 0) + " min";
-    } catch(e) { alert("Virhe analyysissa."); }
-    finally { document.getElementById('loader').style.display = 'none'; }
+    if(!localStorage.getItem('claude_api_key')) {
+        let k = prompt("Syötä uusi API-avain (sk-ant...):");
+        if(k) localStorage.setItem('claude_api_key', k.trim());
+    }
+    analyze(b64);
 };
 
-// --- TOIMINNALLISUUS ---
+// --- MUUT TOIMINNOT ---
 function manualInput(type) {
-    let v = prompt("Syötä uusi arvo:");
+    let v = prompt("Syötä arvo:");
     if (!v) return;
-    if (type === 'kortti' && v.length !== 6) { alert("Tasan 6 numeroa!"); return; }
+    if (type === 'kortti' && v.length !== 6) { alert("6 numeroa!"); return; }
     document.getElementById('val-' + type).innerText = (type === 'lajike' ? v.toUpperCase() : v + (type === 'kortti' ? '' : ' min'));
 }
 
 document.getElementById('btn-shift').onclick = function() {
     if (!State.running) {
         State.running = true; State.startTime = Date.now();
-        this.innerText = "LOPETA VUORO";
-        this.className = "main-btn btn-stop";
+        this.innerText = "LOPETA VUORO"; this.className = "main-btn btn-stop";
     } else {
-        State.running = false;
-        this.innerText = "ALOITA VUORO";
-        this.className = "main-btn btn-start";
+        State.running = false; this.innerText = "ALOITA VUORO"; this.className = "main-btn btn-start";
     }
 };
 
@@ -138,7 +148,7 @@ document.getElementById('btn-save').onclick = () => {
     if (nr.length !== 6) { alert("Työnumero puuttuu!"); return; }
     const min = (parseFloat(document.getElementById('val-asetus').innerText) || 0) + (parseFloat(document.getElementById('val-stdaika').innerText) || 0);
     State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, min: min });
-    localStorage.setItem('pbpro_v93_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v95_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
