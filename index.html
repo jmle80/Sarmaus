@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v10.3 Gemini</title>
+    <title>PBPro v10.4</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --gemini: #4285f4; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
@@ -22,7 +22,7 @@
 </head>
 <body>
 
-<div class="version-tag">v10.3 GEMINI FIXED</div>
+<div class="version-tag">v10.4 FINAL FIX</div>
 
 <div class="container">
     <div class="dashboard">
@@ -30,7 +30,7 @@
         <div class="dash-box"><span>Teho</span><span id="txt-eff" class="dash-val">0.00</span></div>
     </div>
 
-    <button id="btn-open-camera" class="btn-scan">🤖 GEMINI-SKANNAUS</button>
+    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI</button>
     
     <div class="info-row">
         <div class="info-box" onclick="manualInput('kortti')"><span>Työnumero</span><b id="val-kortti">-</b></div>
@@ -53,7 +53,7 @@
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v103_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v104_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
@@ -77,14 +77,14 @@ document.getElementById('snap').onclick = async () => {
     if(key) localStorage.setItem('gemini_api_key', key.trim());
 
     try {
-        // Korjattu mallin polku: gemini-1.5-flash-latest
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
+        // TÄRKEÄ KORJAUS: mallin nimi on "gemini-1.5-flash"
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        { text: "Etsi tyonumero ja lajike. Palauta vain JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
+                        { text: "Lue tyonumero ja lajike. Palauta vain JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
                         { inline_data: { mime_type: "image/jpeg", data: b64 } }
                     ]
                 }]
@@ -125,7 +125,7 @@ document.getElementById('btn-save').onclick = () => {
     const nr = document.getElementById('val-kortti').innerText;
     if (nr === "-") { alert("Työnumero puuttuu!"); return; }
     State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, time: new Date().toLocaleTimeString() });
-    localStorage.setItem('pbpro_v103_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v104_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
