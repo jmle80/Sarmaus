@@ -3,61 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v19.2</title>
+    <title>PBPro v19.5</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
         .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #004d40; border-bottom: 2px solid var(--openai); font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
-        
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; }
         .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
         .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; margin-top: 5px; }
-        
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .dash-box { background: #1a1a1a; padding: 12px; border-radius: 16px; border: 1px solid #333; }
+        .dash-box { background: #1a1a1a; padding: 12px; border-radius: 16px; border: 1px solid #333; cursor: pointer; }
         .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
         .pace-val { font-size: 1.8em; color: var(--openai); font-weight: 900; display: block; }
-
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
         .info-box b { color: var(--primary); font-size: 1.05em; display: block; word-break: break-all; }
-        
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
-        
         #search-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; border-radius: 10px; color: white; margin-bottom: 15px; box-sizing: border-box; }
         .hist-item { background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 12px; text-align: left; border-left: 4px solid var(--primary); position: relative; }
+        .hist-item.work-shift { border-left: 4px solid var(--success); background: #112211; }
         .hist-actions { position: absolute; right: 10px; top: 10px; display: flex; gap: 10px; }
         .btn-icon { background: none; border: none; color: #888; cursor: pointer; font-size: 1.2em; }
-        
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v19.2 • START BUTTON FIXED</div>
+<div class="version-tag">v19.5 • REAL KELLOKORTTI LOGIC</div>
 
 <div class="container">
     <div class="period-header">
         <div id="txt-period-dates" class="period-dates">-</div>
         <div class="period-stats">
-            <div>
-                <span class="dash-label">Jakson Kerroin</span>
-                <span id="txt-period-pace" class="pace-val">0.00</span>
-            </div>
-            <div style="border-left: 1px solid #222; padding-left: 20px;">
-                <span class="dash-label">Jakson Tunnit</span>
-                <span id="txt-period-hours" class="pace-val" style="color:#fff">0.0</span>
-            </div>
+            <div><span class="dash-label">Jakson Kerroin</span><span id="txt-period-pace" class="pace-val">0.00</span></div>
+            <div style="border-left: 1px solid #222; padding-left: 20px;"><span class="dash-label">Jakson Tunnit</span><span id="txt-period-hours" class="pace-val" style="color:#fff">0.0</span></div>
         </div>
     </div>
     
     <div class="dashboard">
-        <div class="dash-box">
+        <div class="dash-box" onclick="manualTimeEdit()">
             <span class="dash-label">Vuoron Tunnit (h)</span>
             <span id="txt-timer" class="dash-val">0.00</span>
         </div>
@@ -86,7 +75,7 @@
     <div id="hist-list"></div>
 </div>
 
-<div id="loader"><p id="loader-text">Analysoidaan...</p></div>
+<div id="loader"><p>Analysoidaan...</p></div>
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
@@ -96,30 +85,16 @@
 
 <script>
 const payPeriods2026 = [
-    { start: "2025-12-16", end: "2025-12-31" }, { start: "2026-01-01", end: "2026-01-15" },
-    { start: "2026-01-16", end: "2026-01-31" }, { start: "2026-02-01", end: "2026-02-15" },
-    { start: "2026-02-16", end: "2026-02-28" }, { start: "2026-03-01", end: "2026-03-15" }
+    { start: "2026-02-01", end: "2026-02-15" },
+    { start: "2026-02-16", end: "2026-02-28" },
+    { start: "2026-03-01", end: "2026-03-15" }
 ];
 
 let State = {
-    running: false,
     startTime: localStorage.getItem('pb_start') ? new Date(parseInt(localStorage.getItem('pb_start'))) : null,
     history: JSON.parse(localStorage.getItem('pbpro_hist_v19') || '[]'),
     stream: null
 };
-
-// ALOITUSNAPIN ALUSTUS
-function toggleButtons() {
-    if(State.startTime) {
-        document.getElementById('btn-start-shift').style.display='none';
-        document.getElementById('btn-stop-shift').style.display='block';
-    } else {
-        document.getElementById('btn-start-shift').style.display='block';
-        document.getElementById('btn-stop-shift').style.display='none';
-        document.getElementById('txt-timer').innerText = "0.00";
-        document.getElementById('txt-shift-pace').innerText = "0.00";
-    }
-}
 
 function saveToDisk() {
     localStorage.setItem('pbpro_hist_v19', JSON.stringify(State.history));
@@ -129,12 +104,13 @@ function saveToDisk() {
 
 function updateUI() {
     const now = new Date();
+    const todayStr = now.toLocaleDateString('fi-FI');
     const p = payPeriods2026.find(p => { 
         const s = new Date(p.start); const e = new Date(p.end); e.setHours(23,59,59); 
         return now >= s && now <= e; 
     }) || payPeriods2026[0];
     
-    document.getElementById('txt-period-dates').innerText = `${new Date(p.start).toLocaleDateString('fi-FI')} - ${new Date(p.end).toLocaleDateString('fi-FI')}`;
+    document.getElementById('txt-period-dates').innerText = `JAKSO: ${new Date(p.start).toLocaleDateString('fi-FI')} - ${new Date(p.end).toLocaleDateString('fi-FI')}`;
 
     const pS = new Date(p.start); const pE = new Date(p.end); pE.setHours(23,59,59);
     const pD = State.history.filter(h => {
@@ -142,43 +118,68 @@ function updateUI() {
         return d >= pS && d <= pE;
     });
 
-    const activeDays = [...new Set(pD.map(h => h.pvm))].length;
-    const totalPeriodHours = activeDays * 8;
-    document.getElementById('txt-period-hours').innerText = totalPeriodHours.toFixed(1);
-
+    // LASKENTA: Todelliset työtunnit historiasta + käynnissä oleva vuoro
+    const shiftHoursInHistory = pD.filter(h => h.isShift).reduce((s, i) => s + (i.hours || 0), 0);
+    let currentShiftHours = 0;
     if(State.startTime) {
-        const dH = (now - State.startTime) / 3600000;
-        document.getElementById('txt-timer').innerText = Math.max(0, dH).toFixed(2);
-        const sT = State.history.filter(h => h.pvm === now.toLocaleDateString('fi-FI')).reduce((s, i) => s + (i.sumMins || 0), 0);
-        document.getElementById('txt-shift-pace').innerText = dH > 0.01 ? ((sT/60)/dH).toFixed(2) : "0.00";
-        const pT = pD.reduce((s, i) => s + (i.sumMins || 0), 0);
-        document.getElementById('txt-period-pace').innerText = totalPeriodHours > 0 ? ((pT/60)/totalPeriodHours).toFixed(2) : "0.00";
+        currentShiftHours = (now - State.startTime) / 3600000;
+        document.getElementById('btn-start-shift').style.display='none';
+        document.getElementById('btn-stop-shift').style.display='block';
+    } else {
+        document.getElementById('btn-start-shift').style.display='block';
+        document.getElementById('btn-stop-shift').style.display='none';
     }
+
+    const totalPeriodHours = shiftHoursInHistory + currentShiftHours;
+    document.getElementById('txt-period-hours').innerText = totalPeriodHours.toFixed(1);
+    document.getElementById('txt-timer').innerText = currentShiftHours.toFixed(2);
+
+    // JOUTUISUUS: (Tuottavat minuutit / 60) / Työtunnit
+    const todayGoalMins = pD.filter(h => h.pvm === todayStr && !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
+    const periodGoalMins = pD.filter(h => !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
+
+    document.getElementById('txt-shift-pace').innerText = currentShiftHours > 0.01 ? ((todayGoalMins/60)/currentShiftHours).toFixed(2) : "0.00";
+    document.getElementById('txt-period-pace').innerText = totalPeriodHours > 0.01 ? ((periodGoalMins/60)/totalPeriodHours).toFixed(2) : "0.00";
 }
 
-// ALOITUSNAPIN KORJATTU TOIMINTA
 document.getElementById('btn-start-shift').onclick = () => {
-    const i = prompt("Aloitusaika? (esim. 07.00)");
-    if(i) {
-        const d = new Date(); const p = i.split(/[:.]/); 
-        d.setHours(p[0]); d.setMinutes(p[1]||0); d.setSeconds(0);
-        State.startTime = d; 
-        saveToDisk(); 
-        toggleButtons();
-        updateUI();
-    }
+    State.startTime = new Date();
+    saveToDisk();
+    updateUI();
 };
 
 document.getElementById('btn-stop-shift').onclick = () => {
-    if(confirm("Lopetetaanko vuoro?")) {
-        State.startTime = null; 
-        saveToDisk(); 
-        toggleButtons();
+    if(confirm("Lopetetaanko vuoro? (Tunnit tallentuvat historiaan)")) {
+        const now = new Date();
+        const hrs = (now - State.startTime) / 3600000;
+        
+        // Tallennetaan vuoro historiatietoihin jotta se lasketaan jakson tunteihin
+        State.history.unshift({
+            id: Date.now(),
+            pvm: now.toLocaleDateString('fi-FI'),
+            isShift: true,
+            hours: hrs,
+            info: `Vuoro: ${State.startTime.getHours()}.${State.startTime.getMinutes()} - ${now.getHours()}.${now.getMinutes()}`
+        });
+        
+        State.startTime = null;
+        saveToDisk();
+        renderHistory();
         updateUI();
     }
 };
 
-// Skannaus ja tallennus...
+function manualTimeEdit() {
+    if(!State.startTime) return;
+    const i = prompt("Muokkaa aloitusaikaa (HH.MM):", State.startTime.getHours() + "." + State.startTime.getMinutes());
+    if(i) {
+        const d = new Date(); const p = i.split(/[:.]/);
+        d.setHours(parseInt(p[0])); d.setMinutes(parseInt(p[1]||0)); d.setSeconds(0);
+        State.startTime = d; saveToDisk(); updateUI();
+    }
+}
+
+// Skannaus ennallaan (tarkka v18.6)
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
         State.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: {ideal: 1920}}});
@@ -196,7 +197,6 @@ document.getElementById('snap').onclick = async () => {
     if(State.stream) State.stream.getTracks().forEach(t => t.stop());
     document.getElementById('cam-overlay').style.display='none';
     document.getElementById('loader').style.display='flex';
-    
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -204,19 +204,18 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "Lue kortista: 1. Kaksi ylintä viivakoodia. 2. OCR-tiedot: Työnumero (6 nro), Tuote (koodi), Piirustusnumero, Asiakas, Taivutus-vaiheen Asetusaika ja Kapasiteettiaika. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Lue kortista: Työnumero (6 nro), Tuote, Piirustus, Asiakas, Asetusaika ja Taivutusaika. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
         });
-        const d = await response.json(); 
-        const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
+        const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
         document.getElementById('val-tyonr').innerText = (res.tyo || "").replace(/\D/g, '').substring(0,6) || "-";
         document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
         document.getElementById('val-piirnro').innerText = res.piir || "-";
         document.getElementById('val-asiakas').innerText = res.asia || "-";
-        document.getElementById('val-asetusaika').innerText = res.asetus || "0";
-        document.getElementById('val-taivutusaika').innerText = res.taivutus || "0";
+        document.getElementById('val-asetusaika').innerText = (res.asetus || "0").replace(',','.');
+        document.getElementById('val-taivutusaika').innerText = (res.taivutus || "0").replace(',','.');
     } catch(e) { alert("Virhe."); }
     finally { document.getElementById('loader').style.display='none'; }
 };
@@ -226,40 +225,31 @@ document.getElementById('btn-save').onclick = () => {
     if(tyo === "-" || tyo === "") return alert("Skannaa ensin!");
     const kpl = prompt("Kpl-määrä?", "1");
     if(!kpl) return;
-    const a = parseFloat(document.getElementById('val-asetusaika').innerText.replace(',','.')) || 0;
-    const k = parseFloat(document.getElementById('val-taivutusaika').innerText.replace(',','.')) || 0;
+    const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
+    const k = parseFloat(document.getElementById('val-taivutusaika').innerText) || 0;
     State.history.unshift({ id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, tuote: document.getElementById('val-lajike').innerText, asia: document.getElementById('val-asiakas').innerText, kpl, sumMins: a + (k * parseInt(kpl)), asetus: a, taivutus: k });
     saveToDisk(); renderHistory(); updateUI();
 };
 
 function renderHistory() {
     const s = document.getElementById('search-input').value.toLowerCase();
-    const f = State.history.filter(h => h.tyo.toLowerCase().includes(s) || h.asia.toLowerCase().includes(s));
+    const f = State.history.filter(h => (h.tyo||'').toLowerCase().includes(s) || (h.asia||'').toLowerCase().includes(s) || (h.info||'').toLowerCase().includes(s));
     document.getElementById('hist-list').innerHTML = f.map(e => `
-        <div class="hist-item">
-            <div style="padding-right: 60px;"><b>${e.tyo}</b> | ${e.tuote}<br><small>${e.asia} • ${e.kpl} kpl</small></div>
+        <div class="hist-item ${e.isShift ? 'work-shift' : ''}">
+            <div style="padding-right: 60px;">
+                ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info} • ${e.hours.toFixed(2)} h</small>` : 
+                `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.asia} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>`}
+            </div>
             <div class="hist-actions">
-                <button class="btn-icon" onclick="editHist(${e.id})">✏️</button>
                 <button class="btn-icon" onclick="if(confirm('Poista?')){State.history=State.history.filter(h=>h.id!=${e.id});saveToDisk();renderHistory();updateUI();}">🗑️</button>
             </div>
         </div>
     `).join('');
 }
 
-function editHist(id) {
-    const item = State.history.find(h => h.id === id);
-    if(item) {
-        const nKpl = prompt("Uusi kpl-määrä:", item.kpl);
-        if(nKpl) { item.kpl = nKpl; item.sumMins = parseFloat(item.asetus) + (parseFloat(item.taivutus) * parseInt(nKpl)); saveToDisk(); renderHistory(); updateUI(); }
-    }
-}
-
-function closeCam() { if(State.stream) State.stream.getTracks().forEach(t => t.stop()); document.getElementById('cam-overlay').style.display='none'; }
 function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) document.getElementById(id).innerText = (id==='val-lajike'?v.toUpperCase():v); }
 
-// ALUSTUS
 setInterval(updateUI, 5000); 
-toggleButtons();
 updateUI(); 
 renderHistory();
 </script>
