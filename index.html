@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v13.9</title>
+    <title>PBPro v14.0</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 
-<div class="version-tag">v13.9 FINAL TUOTE FIX</div>
+<div class="version-tag">v14.0 COORDINATE LOCK</div>
 
 <div class="container">
     <div class="dashboard">
@@ -49,14 +49,14 @@
     <div id="hist-list" style="margin-top:20px;"></div>
 </div>
 
-<div id="loader"><p id="status-text">Luetaan korttia...</p></div>
+<div id="loader"><p id="status-text">Analysoidaan kortin koordinaatteja...</p></div>
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
     <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--openai); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v139_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v140_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
@@ -89,7 +89,7 @@ document.getElementById('snap').onclick = async () => {
                     content: [
                         { 
                           type: "text", 
-                          text: "Lue tämä TYÖMÄÄRÄIN-kortti:\n1. Työnumero: 6 numeroa kohdasta 'Työnumero'.\n2. Tuote: Lue koodi sanan 'Tuote' alta (esim. 5300218/L). TÄRKEÄÄ: Tuote ei saa olla 'Taivutus'. Jos luet 'Taivutus', etsi ylempää.\n3. Piirustus & Asiakas: Omat kenttänsä.\n4. Taivutus-ajat: Etsi 'Taivutus'-rivit. Jos kone on 'taivutusautomaatti', ohita. Laske muiden 'Asetus' ja 'Kapasiteetti' summat.\nPalauta vain JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" 
+                          text: "Analyze this manufacturing card based on these specific locations:\n1. TOP RIGHT: Work number (e.g. 247022).\n2. TOP LEFT: Below 'Tuote' is the PRODUCT CODE (e.g. 5300218/L). It often ends in /L or /R.\n3. TOP CENTER-RIGHT: Below 'Piirustusnumero' is the Drawing ID (e.g. 5300218 D).\n4. CENTER-RIGHT: Below 'Asiakas' is the Client (e.g. HITSAAMOON!).\n5. BENDING ROWS: Find all rows named 'Taivutus'. If 'Kone' is 'taivutusautomaatti', skip. Sum 'Asetus' and 'Kapasiteetti' for manual rows.\nCRITICAL: Do NOT put 'Taivutus' in the product field. Return JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" 
                         },
                         { type: "image_url", image_url: { url: b64 } }
                     ]
@@ -134,7 +134,7 @@ document.getElementById('btn-save').onclick = () => {
         tuote: document.getElementById('val-lajike').innerText,
         time: new Date().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})
     });
-    localStorage.setItem('pbpro_v139_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v140_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
