@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v17.9</title>
+    <title>PBPro v18.1</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
@@ -13,7 +13,7 @@
         .dash-box { background: #1a1a1a; padding: 12px; border-radius: 16px; border: 1px solid #333; }
         .dash-label { font-size: 0.7em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
-        .period-info { font-size: 0.75em; color: var(--openai); margin-bottom: 10px; background: #111; padding: 8px; border-radius: 8px; border: 1px solid #222; line-height: 1.4; }
+        .period-info { font-size: 0.75em; color: var(--openai); margin-bottom: 10px; background: #111; padding: 8px; border-radius: 8px; border: 1px solid #222; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
@@ -25,16 +25,14 @@
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
         .cam-controls { position: absolute; bottom: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .toggle-btn { background: #333; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 0.8em; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v17.9 • ULTRA HD CAMERA MODE</div>
+<div class="version-tag">v18.1 • POSITION-BASED SCAN</div>
 
 <div class="container">
     <div id="txt-period-label" class="period-info">Palkkajakso 2026</div>
-    
     <div class="dashboard">
         <div class="dash-box">
             <span class="dash-label">Työtunnit (h)</span><span id="txt-timer" class="dash-val">0.00</span>
@@ -63,22 +61,21 @@
     <button id="btn-stop-shift" style="background:var(--danger); color:white; display:none;" class="main-btn">LOPETA VUORO</button>
     
     <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
-    <input type="text" id="search-input" placeholder="Hae historiasta..." oninput="renderHistory()">
+    <input type="text" id="search-input" placeholder="Hae historiaa..." oninput="renderHistory()">
     <div id="hist-list"></div>
 </div>
 
-<div id="loader"><p>Analysoidaan korttia HD-tarkkuudella...</p></div>
+<div id="loader"><p>Analysoidaan...</p></div>
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
     <div class="cam-controls">
-        <button id="btn-toggle-torch" class="toggle-btn">💡 VALO: ON</button>
+        <button id="btn-toggle-torch" style="background:#333;color:white;border:none;padding:10px 20px;border-radius:20px;">💡 VALO: ON</button>
         <button id="snap" style="width:70px; height:70px; background:white; border:5px solid var(--openai); border-radius:50%;"></button>
         <button onclick="closeCam()" style="color:white; background:none; border:none; margin-top:10px;">Peruuta</button>
     </div>
 </div>
 
 <script>
-// Palkkajaksot ja State-logiikka pysyvät muuttumattomina aiempien ohjeidesi mukaisesti
 const payPeriods2026 = [
     { start: "2025-12-16", end: "2025-12-31", payDay: "10.1.2026" },
     { start: "2026-01-01", end: "2026-01-15", payDay: "25.1.2026" },
@@ -138,34 +135,17 @@ document.getElementById('btn-start-shift').onclick = () => {
     }
 };
 
+document.getElementById('btn-stop-shift').onclick = () => { if(confirm("Lopeta?")) { State.running = false; document.getElementById('btn-start-shift').style.display='block'; document.getElementById('btn-stop-shift').style.display='none'; } };
+
 function closeCam() { if(State.stream) State.stream.getTracks().forEach(t => t.stop()); document.getElementById('cam-overlay').style.display = 'none'; }
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try { 
-        // HD KAMERA PÄIVITYS: Käytetään ideal arvoja ja maksimiresoluutiota
-        const constraints = {
-            video: {
-                facingMode: "environment",
-                width: { ideal: 4096 }, // Suositaan 4K jos saatavilla
-                height: { ideal: 2160 },
-                aspectRatio: { ideal: 1.777777778 }, // 16:9
-                focusMode: "continuous"
-            }
-        };
-        State.stream = await navigator.mediaDevices.getUserMedia(constraints);
-        const v = document.getElementById('video');
-        v.srcObject = State.stream;
+        State.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: {ideal: 4096}, focusMode: "continuous"}});
+        const v = document.getElementById('video'); v.srcObject = State.stream;
         document.getElementById('cam-overlay').style.display = 'flex';
-        v.play();
-        setTimeout(() => applyTorch(), 500);
-    } catch(e) { 
-        // Fallback jos 4K on liikaa selaimelle
-        try {
-            State.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: 1280}});
-            document.getElementById('video').srcObject = State.stream;
-            document.getElementById('cam-overlay').style.display = 'flex';
-        } catch(e2) { alert("Kamera ei käynnisty."); }
-    }
+        v.play(); setTimeout(() => applyTorch(), 500);
+    } catch(e) { alert("Kamera ei käynnisty."); }
 };
 
 document.getElementById('btn-toggle-torch').onclick = () => { State.torch = !State.torch; applyTorch(); };
@@ -177,19 +157,14 @@ async function applyTorch() {
         const caps = track.getCapabilities();
         if (caps.torch) {
             await track.applyConstraints({advanced: [{torch: State.torch}]});
-            document.getElementById('btn-toggle-torch').innerText = State.torch ? "💡 VALO: ON" : "💡 VALO: OFF";
         }
     } catch(e) { console.log("Valo ei tuettu."); }
 }
 
 document.getElementById('snap').onclick = async () => {
     const v = document.getElementById('video'), c = document.createElement('canvas');
-    // Canvas käyttää videon todellista HD-kokoa
-    c.width = v.videoWidth; 
-    c.height = v.videoHeight; 
-    c.getContext('2d').drawImage(v, 0, 0);
-    const b64 = c.toDataURL('image/jpeg', 0.85); // Nostettu laatu 0.6 -> 0.85
-    closeCam();
+    c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
+    const b64 = c.toDataURL('image/jpeg', 0.85); closeCam();
     document.getElementById('loader').style.display = 'flex';
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -198,13 +173,18 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "Lue kortti TÄYSIN TARKASTI. Säännöt:\n1. TUOTE: Numerokoodi (esim. 5300218/L). ÄLÄ lue sanaa 'TAIVUTUS'.\n2. TYÖNUMERO: 6-numeroinen luku otsikon 'Työnumero' alta.\n3. TAIVUTUS: Etsi rivi 'Taivutus'. Lue sen rivin sarakkeet Asetus ja Kapasiteetti (minuutit).\nJSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Lue kortti erittäin tarkasti sijainnin perusteella:\n1. TUOTE (KOODI): Etsi sana 'Tuote' ylhäältä vasemmalta. Lue välittömästi sen alapuolella oleva ensimmäinen merkkijono (esim. 5300218/L tai 5300218). ÄLÄ lue materiaalia tai nimeä 'TAIVUTUS'.\n2. TYÖNUMERO: Etsi sana 'Työnumero' ja lue sen alla oleva 6-numeroinen luku.\n3. TAIVUTUS: Etsi rivi 'Taivutus'. Lue sen rivin sarakkeet Asetus ja Kapasiteetti.\nJSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
         });
         const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
-        document.getElementById('val-tyonr').innerText = (res.tyo || "").replace(/\D/g, '').substring(0,6) || "-";
+        
+        // Siivotaan työnumero kirjaimista
+        let cleanTyo = (res.tyo || "").replace(/\D/g, ''); 
+        if(cleanTyo.length < 6) cleanTyo = "-";
+
+        document.getElementById('val-tyonr').innerText = cleanTyo;
         document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
         document.getElementById('val-piirnro').innerText = res.piir || "-";
         document.getElementById('val-asiakas').innerText = res.asia || "-";
@@ -215,7 +195,7 @@ document.getElementById('snap').onclick = async () => {
 };
 
 document.getElementById('btn-save').onclick = () => {
-    const tyo = document.getElementById('val-tyonr').innerText; if(tyo === "-") return alert("Skannaa ensin!");
+    const tyo = document.getElementById('val-tyonr').innerText; if(tyo === "-" || tyo === "") return alert("Skannaa ensin!");
     const kpl = prompt("Kpl-määrä:", "1"); if(!kpl) return;
     const a = parseFloat(document.getElementById('val-asetusaika').innerText.replace(',','.')) || 0;
     const k = parseFloat(document.getElementById('val-taivutusaika').innerText.replace(',','.')) || 0;
