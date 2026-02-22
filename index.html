@@ -3,23 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v18.6</title>
+    <title>PBPro v18.8</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
         .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #222; border-bottom: 2px solid var(--openai); font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
+        
+        /* Yläpaneelin asettelu */
+        .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; }
+        .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
+        .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; margin-top: 5px; }
+        
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .dash-box { background: #1a1a1a; padding: 12px; border-radius: 16px; border: 1px solid #333; }
-        .dash-label { font-size: 0.7em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
-        .period-info { font-size: 0.75em; color: var(--openai); margin-bottom: 10px; background: #111; padding: 8px; border-radius: 8px; border: 1px solid #222; line-height: 1.4; }
+        .pace-val { font-size: 1.8em; color: var(--openai); font-weight: 900; display: block; }
+
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
         .info-box b { color: var(--primary); font-size: 1.05em; display: block; word-break: break-all; }
+        
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
+        
         #search-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; border-radius: 10px; color: white; margin-bottom: 15px; box-sizing: border-box; }
         .hist-item { background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 12px; text-align: left; border-left: 4px solid var(--primary); cursor: pointer; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
@@ -29,20 +38,31 @@
 </head>
 <body>
 
-<div class="version-tag" style="background: #004d40;">v18.6 • ORIGINAL PRECISION SCAN</div>
+<div class="version-tag" style="background: #004d40;">v18.8 • PERIOD TOTALS</div>
 
 <div class="container">
-    <div id="txt-period-label" class="period-info">Palkkajakso 2026</div>
+    <div class="period-header">
+        <div id="txt-period-dates" class="period-dates">-</div>
+        <div class="period-stats">
+            <div>
+                <span class="dash-label">Jakson Kerroin</span>
+                <span id="txt-period-pace" class="pace-val">0.00</span>
+            </div>
+            <div style="border-left: 1px solid #222; padding-left: 20px;">
+                <span class="dash-label">Jakson Tunnit</span>
+                <span id="txt-period-hours" class="pace-val" style="color:#fff">0.0</span>
+            </div>
+        </div>
+    </div>
     
     <div class="dashboard">
         <div class="dash-box">
-            <span class="dash-label">Työtunnit (h)</span><span id="txt-timer" class="dash-val">0.00</span>
+            <span class="dash-label">Vuoron Tunnit (h)</span>
+            <span id="txt-timer" class="dash-val">0.00</span>
         </div>
         <div class="dash-box">
-            <span class="dash-label">Vuoro Joutuisuus</span><span id="txt-shift-pace" class="dash-val">0.00</span>
-        </div>
-        <div class="dash-box" style="grid-column: span 2">
-            <span class="dash-label">Jakson Joutuisuus (Kerroin)</span><span id="txt-period-pace" class="dash-val" style="color:var(--openai)">0.00</span>
+            <span class="dash-label">Vuoro Joutuisuus</span>
+            <span id="txt-shift-pace" class="dash-val">0.00</span>
         </div>
     </div>
 
@@ -69,37 +89,37 @@
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
     <div class="cam-controls">
-        <button id="snap" style="width:80px; height:80px; background:white; border:8px solid var(--openai); border-radius:50%; box-shadow: 0 0 20px rgba(0,0,0,0.5);"></button>
+        <button id="snap" style="width:80px; height:80px; background:white; border:8px solid var(--openai); border-radius:50%;"></button>
         <button onclick="closeCam()" style="color:white; background:rgba(0,0,0,0.5); border:none; padding:10px 20px; border-radius:20px;">Peruuta</button>
     </div>
 </div>
 
 <script>
 const payPeriods2026 = [
-    { start: "2025-12-16", end: "2025-12-31", payDay: "10.1.2026" },
-    { start: "2026-01-01", end: "2026-01-15", payDay: "25.1.2026" },
-    { start: "2026-01-16", end: "2026-01-31", payDay: "10.2.2026" },
-    { start: "2026-02-01", end: "2026-02-15", payDay: "25.2.2026" },
-    { start: "2026-02-16", end: "2026-02-28", payDay: "10.3.2026" },
-    { start: "2026-03-01", end: "2026-03-15", payDay: "25.3.2026" },
-    { start: "2026-03-16", end: "2026-03-31", payDay: "10.4.2026" },
-    { start: "2026-04-01", end: "2026-04-15", payDay: "25.4.2026" },
-    { start: "2026-04-16", end: "2026-04-30", payDay: "10.5.2026" },
-    { start: "2026-05-01", end: "2026-05-15", payDay: "25.5.2026" },
-    { start: "2026-05-16", end: "2026-05-31", payDay: "10.6.2026" },
-    { start: "2026-06-01", end: "2026-06-15", payDay: "25.6.2026" },
-    { start: "2026-06-16", end: "2026-06-30", payDay: "10.7.2026" },
-    { start: "2026-07-01", end: "2026-07-15", payDay: "25.7.2026" },
-    { start: "2026-07-16", end: "2026-07-31", payDay: "10.8.2026" },
-    { start: "2026-08-01", end: "2026-08-15", payDay: "25.8.2026" },
-    { start: "2026-08-16", end: "2026-08-31", payDay: "10.9.2026" },
-    { start: "2026-09-01", end: "2026-09-15", payDay: "25.9.2026" },
-    { start: "2026-09-16", end: "2026-09-30", payDay: "10.10.2026" },
-    { start: "2026-10-01", end: "2026-10-15", payDay: "25.10.2026" },
-    { start: "2026-10-16", end: "2026-10-31", payDay: "10.11.2026" },
-    { start: "2026-11-01", end: "2026-11-15", payDay: "25.11.2026" },
-    { start: "2026-11-16", end: "2026-11-30", payDay: "10.12.2026" },
-    { start: "2026-12-01", end: "2026-12-15", payDay: "25.12.2026" }
+    { start: "2025-12-16", end: "2025-12-31" },
+    { start: "2026-01-01", end: "2026-01-15" },
+    { start: "2026-01-16", end: "2026-01-31" },
+    { start: "2026-02-01", end: "2026-02-15" },
+    { start: "2026-02-16", end: "2026-02-28" },
+    { start: "2026-03-01", end: "2026-03-15" },
+    { start: "2026-03-16", end: "2026-03-31" },
+    { start: "2026-04-01", end: "2026-04-15" },
+    { start: "2026-04-16", end: "2026-04-30" },
+    { start: "2026-05-01", end: "2026-05-15" },
+    { start: "2026-05-16", end: "2026-05-31" },
+    { start: "2026-06-01", end: "2026-06-15" },
+    { start: "2026-06-16", end: "2026-06-30" },
+    { start: "2026-07-01", end: "2026-07-15" },
+    { start: "2026-07-16", end: "2026-07-31" },
+    { start: "2026-08-01", end: "2026-08-15" },
+    { start: "2026-08-16", end: "2026-08-31" },
+    { start: "2026-09-01", end: "2026-09-15" },
+    { start: "2026-09-16", end: "2026-09-30" },
+    { start: "2026-10-01", end: "2026-10-15" },
+    { start: "2026-10-16", end: "2026-10-31" },
+    { start: "2026-11-01", end: "2026-11-15" },
+    { start: "2026-11-16", end: "2026-11-30" },
+    { start: "2026-12-01", end: "2026-12-15" }
 ];
 
 let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v16_hist') || '[]'), stream: null };
@@ -117,17 +137,24 @@ function editV(id, msg) {
 function updateUI() {
     const now = new Date();
     const p = payPeriods2026.find(p => { const s = new Date(p.start); const e = new Date(p.end); e.setHours(23,59,59); return now >= s && now <= e; }) || payPeriods2026[0];
-    document.getElementById('txt-period-label').innerHTML = `JAKSO: ${new Date(p.start).toLocaleDateString('fi-FI')} - ${new Date(p.end).toLocaleDateString('fi-FI')}<br>TILIPÄIVÄ: ${p.payDay}`;
+    document.getElementById('txt-period-dates').innerText = `${new Date(p.start).toLocaleDateString('fi-FI')} - ${new Date(p.end).toLocaleDateString('fi-FI')}`;
+
+    const pS = new Date(p.start); const pE = new Date(p.end); pE.setHours(23,59,59);
+    const pD = State.history.filter(h => { const pts = h.pvm.split('.'); const d = new Date(pts[2], pts[1]-1, pts[0]); return d >= pS && d <= pE; });
+    
+    // Lasketaan aktiiviset päivät ja jakson tunnit
+    const activeDays = [...new Set(pD.map(h => h.pvm))].length;
+    const totalPeriodHours = activeDays * 8;
+    document.getElementById('txt-period-hours').innerText = totalPeriodHours.toFixed(1);
+
     if(State.startTime) {
-        const dH = ((State.running ? now : now) - State.startTime) / 3600000;
+        const dH = (now - State.startTime) / 3600000;
         document.getElementById('txt-timer').innerText = Math.max(0, dH).toFixed(2);
         const sT = State.history.filter(h => h.pvm === now.toLocaleDateString('fi-FI')).reduce((s, i) => s + (i.sumMins || 0), 0);
         document.getElementById('txt-shift-pace').innerText = dH > 0.01 ? ((sT/60)/dH).toFixed(2) : "0.00";
-        const pS = new Date(p.start); const pE = new Date(p.end); pE.setHours(23,59,59);
-        const pD = State.history.filter(h => { const pts = h.pvm.split('.'); const d = new Date(pts[2], pts[1]-1, pts[0]); return d >= pS && d <= pE; });
+        
         const pT = pD.reduce((s, i) => s + (i.sumMins || 0), 0);
-        const days = [...new Set(pD.map(h => h.pvm))].length || 1;
-        document.getElementById('txt-period-pace').innerText = ((pT/60)/(days * 8)).toFixed(2);
+        document.getElementById('txt-period-pace').innerText = totalPeriodHours > 0 ? ((pT/60)/totalPeriodHours).toFixed(2) : "0.00";
     }
 }
 
