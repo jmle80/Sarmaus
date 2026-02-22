@@ -3,37 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PBPro v8.2</title>
+    <title>PBPro v8.3</title>
     <style>
-        :root { --bg: #000; --primary: #FF6700; --success: #00e676; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; }
-        .version-tag { color: var(--success); font-weight: bold; padding: 10px; font-size: 0.8em; border-bottom: 1px solid #222; }
-        .container { padding: 15px; }
-        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 2px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; margin-bottom: 20px; }
-        .info-box { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 8px; display: flex; justify-content: space-between; }
-        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
+        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; }
+        .version-tag { color: #00e676; padding: 10px; font-size: 0.8em; border-bottom: 1px solid #222; }
+        .btn-scan { width: 90%; padding: 25px; border-radius: 15px; border: 2px solid #00e676; background: #051505; color: #00e676; font-weight: bold; font-size: 1.2em; margin-top: 20px; }
+        .box { background: #111; margin: 5px 15px; padding: 15px; border-radius: 10px; border: 1px solid #333; display: flex; justify-content: space-between; }
+        #debug-info { color: #555; font-size: 0.7em; margin-top: 20px; word-break: break-all; padding: 10px; }
+        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v8.2 PROXY-FIX (TOIMII PALKIN KANSSA)</div>
+<div class="version-tag">v8.3 DEBUG-MODE (PROXY)</div>
 
-<div class="container">
-    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI</button>
-    <div class="info-box"><span>Työnumero</span><b id="v-nr">-</b></div>
-    <div class="info-box"><span>Lajike</span><b id="v-laji">-</b></div>
-    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:20px; text-decoration:underline;">Nollaa API-avain</button>
-</div>
+<button class="btn-scan" onclick="startCamera()">🤖 SKANNAA KORTTI</button>
 
-<div id="loader"><p>AI Analysoi (Proxy)...</p></div>
+<div class="box"><span>Työnumero</span><b id="v-nr">-</b></div>
+<div class="box"><span>Lajike</span><b id="v-laji">-</b></div>
 
-<div id="cam-overlay">
+<div id="debug-info"></div>
+
+<button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#FF6700; background:none; border:none; margin-top:40px; text-decoration:underline;">POISTA JA VAIHDA API-AVAIN</button>
+
+<div id="loader"><p>AI Analysoi...</p></div>
+
+<div id="cam-overlay" style="display:none; position:fixed; inset:0; background:#000; z-index:50;">
     <video id="video" style="width:100%; height:80%; object-fit:cover;" playsinline></video>
-    <button id="snap" style="width:80%; margin:20px; padding:20px; background:var(--success); border:none; border-radius:50px; font-weight:bold;">📸 OTA KUVA</button>
+    <button onclick="snap()" style="width:80%; margin:20px; padding:20px; background:#00e676; border:none; border-radius:50px; font-weight:bold; position:absolute; bottom:20px; left:10%;">📸 OTA KUVA</button>
 </div>
 
 <script>
+// Näytetään avaimen tila debug-kentässä
+function updateDebug() {
+    const key = localStorage.getItem('claude_api_key');
+    const debug = document.getElementById('debug-info');
+    if (!key) {
+        debug.innerHTML = "AVAIN PUUTTUU! Paina 'Vaihda API-avain'.";
+    } else {
+        const start = key.substring(0, 10);
+        const end = key.substring(key.length - 4);
+        debug.innerHTML = `Avain tallennettu: ${start}...${end}<br>Pituus: ${key.length} merkkiä.`;
+    }
+}
+updateDebug();
+
 async function startCamera() {
     const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment"}});
     document.getElementById('video').srcObject = s;
@@ -52,10 +66,16 @@ async function snap() {
     document.getElementById('cam-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    let key = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
-    if(key) localStorage.setItem('claude_api_key', key.trim());
+    let key = localStorage.getItem('claude_api_key');
+    if(!key) {
+        key = prompt("Syötä uusi API-avain:");
+        if(key) {
+            key = key.trim();
+            localStorage.setItem('claude_api_key', key);
+            updateDebug();
+        } else { location.reload(); return; }
+    }
 
-    // KÄYTETÄÄN PROXY-PALVELINTA KIERTÄMÄÄN ESTOT
     const proxy = 'https://corsproxy.io/?';
     const target = 'https://api.anthropic.com/v1/messages';
 
@@ -72,19 +92,22 @@ async function snap() {
                 messages: [{role: "user", content: [{type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}}, {type: "text", text: "JSON: {nr, laji}"}]}]
             })
         });
+        
         const d = await r.json();
-        const res = JSON.parse(d.content[0].text);
-        document.getElementById('v-nr').innerText = res.nr;
-        document.getElementById('v-laji').innerText = res.laji;
+        
+        if (d.error) {
+            alert("CLAUDE VIRHE: " + d.error.message);
+        } else {
+            const res = JSON.parse(d.content[0].text);
+            document.getElementById('v-nr').innerText = res.nr;
+            document.getElementById('v-laji').innerText = res.laji;
+        }
     } catch(e) { 
-        alert("Virhe: Yhteys epäonnistui. Varmista API-avain."); 
+        alert("VERKKOVIRHE: " + e.message); 
     } finally { 
         document.getElementById('loader').style.display = 'none'; 
     }
 }
-
-document.getElementById('btn-open-camera').onclick = startCamera;
-document.getElementById('snap').onclick = snap;
 </script>
 </body>
 </html>
