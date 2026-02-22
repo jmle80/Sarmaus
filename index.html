@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a0a0a">
     
-    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiaW5kZXguaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwYTBhMGEiLCJ0aGVtZV9jb2xvciI6IiMwYTBhMGEifQ==">
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiaW5kZXguaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwic2NvcGUiOiIvU2FybWEvIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwYTBhMGEiLCJ0aGVtZV9jb2xvciI6IiMwYTBhMGEifQ==">
 
-    <title>Press Brake Pro v7.1</title>
+    <title>Press Brake Pro v7.2</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; padding-top: env(safe-area-inset-top); }
@@ -29,7 +29,7 @@
 </head>
 <body>
 
-<div class="version-tag">v7.1 FULL PWA & API STABLE</div>
+<div class="version-tag">v7.2 STANDALONE FIX</div>
 
 <div class="container">
     <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI (AI)</button>
@@ -74,8 +74,7 @@ function stopCamera() {
 document.getElementById('btn-capture').onclick = async () => {
     const video = document.getElementById('video');
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     stopCamera();
@@ -83,7 +82,7 @@ document.getElementById('btn-capture').onclick = async () => {
 
     let apiKey = localStorage.getItem('claude_api_key');
     if (!apiKey) {
-        apiKey = prompt("Syötä Claude API-avain (sk-ant-...):");
+        apiKey = prompt("Syötä Claude API-avain:");
         if (apiKey) localStorage.setItem('claude_api_key', apiKey.trim());
         else { document.getElementById('loader').style.display = 'none'; return; }
     }
@@ -103,29 +102,12 @@ document.getElementById('btn-capture').onclick = async () => {
                 messages: [{
                     role: "user",
                     content: [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64Image } },
-                             { type: "text", text: "Extract JSON from production card: tyonumero (6-digits), lajike (uppercase), asetus (min), stdaika (min). Focus on SÄRMÄYS. Return ONLY JSON." }]
+                             { type: "text", text: "Extract JSON: tyonumero (6-digits), lajike (uppercase), asetus (min), stdaika (min). Focus on SÄRMÄYS. Return ONLY JSON." }]
                 }]
             })
         });
 
         if (!response.ok) { const err = await response.json(); throw new Error(err.error.message); }
-
         const result = await response.json();
         const data = JSON.parse(result.content[0].text);
         document.getElementById('val-kortti').innerText = data.tyonumero || "-";
-        document.getElementById('val-lajike').innerText = (data.lajike || "-").toUpperCase();
-        document.getElementById('val-asetus').innerText = data.asetus + " min";
-        document.getElementById('val-taivutus').innerText = data.stdaika + " min";
-    } catch (err) { alert("VIRHE: " + err.message); }
-    finally { document.getElementById('loader').style.display = 'none'; }
-};
-
-document.getElementById('btn-open-camera').onclick = startCamera;
-
-// Service Worker PWA-tukea varten
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('data:application/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ZW50ID0+IHsgfSk7');
-}
-</script>
-</body>
-</html>
