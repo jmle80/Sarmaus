@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v18.9</title>
+    <title>PBPro v19.0</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #222; border-bottom: 2px solid var(--openai); font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #004d40; border-bottom: 2px solid var(--openai); font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; }
@@ -35,11 +35,12 @@
         
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
+        .cam-controls { position: absolute; bottom: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
     </style>
 </head>
 <body>
 
-<div class="version-tag" style="background: #004d40;">v18.9 • HISTORY EDIT & BACKUP</div>
+<div class="version-tag">v19.0 • FULL INTEGRATION & BACKUP</div>
 
 <div class="container">
     <div class="period-header">
@@ -82,15 +83,17 @@
     <button id="btn-start-shift" style="background:var(--success); color:black" class="main-btn">ALOITA VUORO</button>
     <button id="btn-stop-shift" style="background:var(--danger); color:white; display:none;" class="main-btn">LOPETA VUORO</button>
     
-    <input type="text" id="search-input" placeholder="Hae historiasta..." oninput="renderHistory()">
+    <input type="text" id="search-input" placeholder="Hae historiasta (työ nro, asiakas)..." oninput="renderHistory()">
     <div id="hist-list"></div>
 </div>
 
-<div id="loader"><p>Skannataan...</p></div>
+<div id="loader"><p id="loader-text">Skannataan korttia...</p></div>
+
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
-    <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
-        <button id="snap" style="width:70px; height:70px; border-radius:50%; background:white; border:5px solid var(--openai);"></button>
+    <div class="cam-controls">
+        <button id="snap" style="width:80px; height:80px; background:white; border:8px solid var(--openai); border-radius:50%;"></button>
+        <button onclick="closeCam()" style="color:white; background:rgba(0,0,0,0.5); border:none; padding:10px 20px; border-radius:20px;">Peruuta</button>
     </div>
 </div>
 
@@ -98,24 +101,25 @@
 const payPeriods2026 = [
     { start: "2025-12-16", end: "2025-12-31" }, { start: "2026-01-01", end: "2026-01-15" },
     { start: "2026-01-16", end: "2026-01-31" }, { start: "2026-02-01", end: "2026-02-15" },
-    { start: "2026-02-16", end: "2026-02-28" }, { start: "2026-03-01", end: "2026-03-15" }
-    // Jatketaan listoja tarvittaessa...
+    { start: "2026-02-16", end: "2026-02-28" }, { start: "2026-03-01", end: "2026-03-15" },
+    { start: "2026-03-16", end: "2026-03-31" }, { start: "2026-04-01", end: "2026-04-15" }
 ];
 
 let State = {
     running: false,
     startTime: localStorage.getItem('pb_start') ? new Date(parseInt(localStorage.getItem('pb_start'))) : null,
-    history: JSON.parse(localStorage.getItem('pbpro_hist_v189') || '[]'),
+    history: JSON.parse(localStorage.getItem('pbpro_hist_v19') || '[]'),
     stream: null
 };
 
+// Palautetaan vuoron tila varmuuskopiosta
 if(State.startTime) {
     document.getElementById('btn-start-shift').style.display='none';
     document.getElementById('btn-stop-shift').style.display='block';
 }
 
 function saveToDisk() {
-    localStorage.setItem('pbpro_hist_v189', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_hist_v19', JSON.stringify(State.history));
     if(State.startTime) localStorage.setItem('pb_start', State.startTime.getTime());
     else localStorage.removeItem('pb_start');
 }
@@ -159,7 +163,7 @@ function updateUI() {
 }
 
 document.getElementById('btn-start-shift').onclick = () => {
-    const i = prompt("Aloitusaika? (HH.MM)");
+    const i = prompt("Aloitusaika? (esim. 07.00)");
     if(i) {
         const d = new Date(); const p = i.split(/[:.]/); d.setHours(p[0]); d.setMinutes(p[1]||0);
         State.startTime = d; saveToDisk(); updateUI();
@@ -173,48 +177,42 @@ document.getElementById('btn-stop-shift').onclick = () => {
         State.startTime = null; saveToDisk();
         document.getElementById('btn-start-shift').style.display='block';
         document.getElementById('btn-stop-shift').style.display='none';
+        updateUI();
     }
 };
 
 document.getElementById('btn-save').onclick = () => {
     const tyo = document.getElementById('val-tyonr').innerText;
-    if(tyo === "-") return alert("Skannaa ensin!");
+    if(tyo === "-" || tyo === "") return alert("Skannaa ensin!");
     const kpl = prompt("Kpl-määrä?", "1");
     if(!kpl) return;
-    const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
-    const k = parseFloat(document.getElementById('val-taivutusaika').innerText) || 0;
+    const a = parseFloat(document.getElementById('val-asetusaika').innerText.replace(',','.')) || 0;
+    const k = parseFloat(document.getElementById('val-taivutusaika').innerText.replace(',','.')) || 0;
     
     State.history.unshift({
         id: Date.now(),
         pvm: new Date().toLocaleDateString('fi-FI'),
-        tyo, tuote: document.getElementById('val-lajike').innerText,
+        tyo, 
+        tuote: document.getElementById('val-lajike').innerText,
         asia: document.getElementById('val-asiakas').innerText,
-        kpl, sumMins: a + (k * parseInt(kpl)),
-        asetus: a, taivutus: k
+        kpl, 
+        sumMins: a + (k * parseInt(kpl)),
+        asetus: a, 
+        taivutus: k
     });
     saveToDisk(); renderHistory(); updateUI();
+    alert("Kortti tallennettu.");
 };
-
-function editHist(id) {
-    const item = State.history.find(h => h.id === id);
-    if(!item) return;
-    const nTyo = prompt("Työnumero", item.tyo);
-    const nKpl = prompt("Kpl", item.kpl);
-    const nAsia = prompt("Asiakas", item.asia);
-    if(nTyo && nKpl) {
-        item.tyo = nTyo; item.kpl = nKpl; item.asia = nAsia;
-        item.sumMins = parseFloat(item.asetus) + (parseFloat(item.taivutus) * parseInt(nKpl));
-        saveToDisk(); renderHistory(); updateUI();
-    }
-}
 
 function renderHistory() {
     const s = document.getElementById('search-input').value.toLowerCase();
     const f = State.history.filter(h => h.tyo.toLowerCase().includes(s) || h.asia.toLowerCase().includes(s));
     document.getElementById('hist-list').innerHTML = f.map(e => `
         <div class="hist-item">
-            <b>${e.tyo}</b> | ${e.tuote}<br>
-            <small>${e.asia} • ${e.pvm} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>
+            <div style="padding-right: 60px;">
+                <b>${e.tyo}</b> | ${e.tuote}<br>
+                <small>${e.asia} • ${e.pvm} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>
+            </div>
             <div class="hist-actions">
                 <button class="btn-icon" onclick="editHist(${e.id})">✏️</button>
                 <button class="btn-icon" onclick="if(confirm('Poista?')){State.history=State.history.filter(h=>h.id!=${e.id});saveToDisk();renderHistory();updateUI();}">🗑️</button>
@@ -223,28 +221,69 @@ function renderHistory() {
     `).join('');
 }
 
-// Kamera-toiminnot (v18.6 logiikka) pidetty ennallaan...
+function editHist(id) {
+    const item = State.history.find(h => h.id === id);
+    if(!item) return;
+    const nTyo = prompt("Muokkaa työnumeroa:", item.tyo);
+    const nKpl = prompt("Muokkaa kpl-määrää:", item.kpl);
+    const nAsia = prompt("Muokkaa asiakasta:", item.asia);
+    if(nTyo !== null && nKpl !== null) {
+        item.tyo = nTyo.replace(/\D/g, '').substring(0,6);
+        item.kpl = nKpl;
+        item.asia = nAsia || "-";
+        item.sumMins = parseFloat(item.asetus) + (parseFloat(item.taivutus) * parseInt(nKpl));
+        saveToDisk(); renderHistory(); updateUI();
+    }
+}
+
+// PALAUTETTU v18.6 SKANNAUSLOGIIKKA
 document.getElementById('btn-open-camera').onclick = async () => {
-    State.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment"}});
-    document.getElementById('video').srcObject = State.stream;
-    document.getElementById('cam-overlay').style.display='flex';
-    document.getElementById('video').play();
+    try {
+        State.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: {ideal: 1920}}});
+        const v = document.getElementById('video'); v.srcObject = State.stream;
+        document.getElementById('cam-overlay').style.display='flex';
+        v.play();
+    } catch(e) { alert("Salli kameran käyttö."); }
 };
+
+function closeCam() { if(State.stream) State.stream.getTracks().forEach(t => t.stop()); document.getElementById('cam-overlay').style.display='none'; }
 
 document.getElementById('snap').onclick = async () => {
     const v = document.getElementById('video'), c = document.createElement('canvas');
     c.width = v.videoWidth; c.height = v.videoHeight;
     c.getContext('2d').drawImage(v, 0, 0);
     const b64 = c.toDataURL('image/jpeg', 0.8);
-    State.stream.getTracks().forEach(t => t.stop());
-    document.getElementById('cam-overlay').style.display='none';
+    closeCam();
     document.getElementById('loader').style.display='flex';
     
-    // GPT-4o Skannauslogiikka tässä...
-    document.getElementById('loader').style.display='none';
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('openai_api_key') },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [{ role: "user", content: [
+                    { type: "text", text: "Lue kortista: Työnumero (6 nro), Tuote (koodi), Piirustusnumero, Asiakas, Taivutus-vaiheen Asetusaika ja Kapasiteettiaika. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "image_url", image_url: { url: b64 } }
+                ]}]
+            })
+        });
+        const d = await response.json(); 
+        const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
+        
+        document.getElementById('val-tyonr').innerText = (res.tyo || "").replace(/\D/g, '').substring(0,6) || "-";
+        document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
+        document.getElementById('val-piirnro').innerText = res.piir || "-";
+        document.getElementById('val-asiakas').innerText = res.asia || "-";
+        document.getElementById('val-asetusaika').innerText = res.asetus || "0";
+        document.getElementById('val-taivutusaika').innerText = res.taivutus || "0";
+    } catch(e) { alert("Skannaus epäonnistui. Tarkista API-avain."); }
+    finally { document.getElementById('loader').style.display='none'; }
 };
 
-setInterval(updateUI, 5000); renderHistory();
+setInterval(updateUI, 5000); 
+updateUI();
+renderHistory();
 </script>
 </body>
 </html>
