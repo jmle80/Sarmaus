@@ -2,57 +2,86 @@
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PBPro v8.3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>PBPro v8.5</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; }
-        .version-tag { color: #00e676; padding: 10px; font-size: 0.8em; border-bottom: 1px solid #222; }
-        .btn-scan { width: 90%; padding: 25px; border-radius: 15px; border: 2px solid #00e676; background: #051505; color: #00e676; font-weight: bold; font-size: 1.2em; margin-top: 20px; }
-        .box { background: #111; margin: 5px 15px; padding: 15px; border-radius: 10px; border: 1px solid #333; display: flex; justify-content: space-between; }
-        #debug-info { color: #555; font-size: 0.7em; margin-top: 20px; word-break: break-all; padding: 10px; }
-        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; }
+        body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; padding-top: env(safe-area-inset-top); }
+        .version-tag { color: var(--success); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
+        .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
+        
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; border: 1px solid #333; }
+        .dash-val { font-size: 1.8em; font-weight: 800; display: block; color: var(--success); }
+
+        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
+        
+        .info-row { display: grid; gap: 8px; margin-bottom: 20px; }
+        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .info-box b { color: var(--primary); font-size: 1.2em; }
+
+        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-start { background: var(--success); color: black; }
+        .btn-stop { background: var(--danger); color: white; }
+
+        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
+        
+        /* Historia-tyyli */
+        .history-item { text-align: left; background: #111; padding: 10px; border-bottom: 1px solid #222; font-size: 0.9em; }
+        .history-item b { color: var(--success); }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v8.3 DEBUG-MODE (PROXY)</div>
+<div class="version-tag">v8.5 FULL ACCESS & FEATURES</div>
 
-<button class="btn-scan" onclick="startCamera()">🤖 SKANNAA KORTTI</button>
+<div class="container">
+    <div class="dashboard">
+        <div class="dash-box"><span>Vuoro</span><span id="txt-timer" class="dash-val">00:00</span></div>
+        <div class="dash-box"><span>Tehokkuus</span><span id="txt-eff" class="dash-val">0.00</span></div>
+    </div>
 
-<div class="box"><span>Työnumero</span><b id="v-nr">-</b></div>
-<div class="box"><span>Lajike</span><b id="v-laji">-</b></div>
+    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI (AI)</button>
+    
+    <div class="info-row">
+        <div class="info-box" onclick="manualInput('kortti')"><span>Työnumero</span><b id="val-kortti">-</b></div>
+        <div class="info-box" onclick="manualInput('lajike')"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
+        <div class="info-box" onclick="manualInput('asetus')"><span>Asetus (min)</span><b id="val-asetus">-</b></div>
+        <div class="info-box" onclick="manualInput('stdaika')"><span>Std-aika (min)</span><b id="val-stdaika">-</b></div>
+    </div>
 
-<div id="debug-info"></div>
+    <button id="btn-save" class="main-btn btn-save">💾 TALLENNA KORTTI</button>
+    <button id="btn-shift" class="main-btn btn-start">ALOITA VUORO</button>
+    
+    <div id="hist-list" style="margin-top:20px;"></div>
+    
+    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em;">NOLLAA API-AVAIN</button>
+</div>
 
-<button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#FF6700; background:none; border:none; margin-top:40px; text-decoration:underline;">POISTA JA VAIHDA API-AVAIN</button>
+<div id="loader"><p>AI Analysoi (Direct Access)...</p></div>
 
-<div id="loader"><p>AI Analysoi...</p></div>
-
-<div id="cam-overlay" style="display:none; position:fixed; inset:0; background:#000; z-index:50;">
+<div id="cam-overlay">
     <video id="video" style="width:100%; height:80%; object-fit:cover;" playsinline></video>
-    <button onclick="snap()" style="width:80%; margin:20px; padding:20px; background:#00e676; border:none; border-radius:50px; font-weight:bold; position:absolute; bottom:20px; left:10%;">📸 OTA KUVA</button>
+    <button id="snap" style="width:80%; margin: 20px auto; padding:20px; background:var(--success); border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <script>
-// Näytetään avaimen tila debug-kentässä
-function updateDebug() {
-    const key = localStorage.getItem('claude_api_key');
-    const debug = document.getElementById('debug-info');
-    if (!key) {
-        debug.innerHTML = "AVAIN PUUTTUU! Paina 'Vaihda API-avain'.";
-    } else {
-        const start = key.substring(0, 10);
-        const end = key.substring(key.length - 4);
-        debug.innerHTML = `Avain tallennettu: ${start}...${end}<br>Pituus: ${key.length} merkkiä.`;
-    }
-}
-updateDebug();
+let State = {
+    running: false, startTime: null, 
+    history: JSON.parse(localStorage.getItem('pbpro_v85_hist') || '[]')
+};
 
+// --- KAMERA JA AI (KORJATTU VERSIO) ---
 async function startCamera() {
     const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment"}});
     document.getElementById('video').srcObject = s;
     document.getElementById('video').play();
-    document.getElementById('cam-overlay').style.display = 'block';
+    document.getElementById('cam-overlay').style.display = 'flex';
 }
 
 async function snap() {
@@ -66,15 +95,8 @@ async function snap() {
     document.getElementById('cam-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    let key = localStorage.getItem('claude_api_key');
-    if(!key) {
-        key = prompt("Syötä uusi API-avain:");
-        if(key) {
-            key = key.trim();
-            localStorage.setItem('claude_api_key', key);
-            updateDebug();
-        } else { location.reload(); return; }
-    }
+    let key = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
+    if(key) localStorage.setItem('claude_api_key', key.trim());
 
     const proxy = 'https://corsproxy.io/?';
     const target = 'https://api.anthropic.com/v1/messages';
@@ -85,29 +107,22 @@ async function snap() {
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': key,
-                'anthropic-version': '2023-06-01'
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true'
             },
             body: JSON.stringify({
                 model: "claude-3-5-sonnet-20240620", max_tokens: 500,
-                messages: [{role: "user", content: [{type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}}, {type: "text", text: "JSON: {nr, laji}"}]}]
+                messages: [{role: "user", content: [
+                    {type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}}, 
+                    {type: "text", text: "Extract JSON: {tyonumero:6-digits, lajike:text, asetus:number, stdaika:number}"}
+                ]}]
             })
         });
         
         const d = await r.json();
-        
-        if (d.error) {
-            alert("CLAUDE VIRHE: " + d.error.message);
-        } else {
+        if (d.error) { alert("VIRHE: " + d.error.message); }
+        else {
             const res = JSON.parse(d.content[0].text);
-            document.getElementById('v-nr').innerText = res.nr;
-            document.getElementById('v-laji').innerText = res.laji;
-        }
-    } catch(e) { 
-        alert("VERKKOVIRHE: " + e.message); 
-    } finally { 
-        document.getElementById('loader').style.display = 'none'; 
-    }
-}
-</script>
-</body>
-</html>
+            document.getElementById('val-kortti').innerText = res.tyonumero || "-";
+            document.getElementById('val-lajike').innerText = (res.lajike || "-").toUpperCase();
+            document.getElementById('val-asetus').innerText = (res.asetus
