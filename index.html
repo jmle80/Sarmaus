@@ -2,224 +2,89 @@
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0a0a0a">
-    
-    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUHJlc3MgQnJha2UgUHJvIiwic2hvcnRfbmFtZSI6IlBCUHJvIiwic3RhcnRfdXJsIjoiaW5kZXguaHRtbCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwic2NvcGUiOiIvU2FybWEvIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwYTBhMGEiLCJ0aGVtZV9jb2xvciI6IiMwYTBhMGEifQ==">
-
-    <title>PBPro v8.1</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PBPro v8.2</title>
     <style>
-        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; }
-        body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; padding-top: env(safe-area-inset-top); text-align: center; }
-        .version-tag { color: var(--success); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
-        .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
-        
-        #install-btn { display: none; width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; border: 1px solid #333; }
-        .dash-val { font-size: 1.8em; font-weight: 800; display: block; }
-
-        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
-        
-        .info-row { display: grid; gap: 8px; margin-bottom: 20px; }
-        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .info-box b { color: var(--primary); font-size: 1.2em; }
-
-        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
-        .btn-save { background: var(--primary); color: white; }
-        .btn-start { background: var(--success); color: black; }
-        .btn-stop { background: var(--danger); color: white; }
-
+        :root { --bg: #000; --primary: #FF6700; --success: #00e676; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; }
+        .version-tag { color: var(--success); font-weight: bold; padding: 10px; font-size: 0.8em; border-bottom: 1px solid #222; }
+        .container { padding: 15px; }
+        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 2px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; margin-bottom: 20px; }
+        .info-box { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 8px; display: flex; justify-content: space-between; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
-        #numpad-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
-        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 85%; }
-        .key { background: #222; padding: 25px; border-radius: 12px; text-align: center; font-size: 1.8em; font-weight: 800; color: white; border: 1px solid #333; }
+        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v8.1 FINAL STABLE • ALL FEATURES RESTORED</div>
+<div class="version-tag">v8.2 PROXY-FIX (TOIMII PALKIN KANSSA)</div>
 
 <div class="container">
-    <button id="install-btn">📥 ASENNA SOVELLUS KOTINÄYTÖLLE</button>
-
-    <div class="dashboard">
-        <div class="dash-box"><span>Vuoro</span><span id="txt-timer" class="dash-val">00:00</span></div>
-        <div class="dash-box"><span>Tehokkuus</span><span id="txt-eff" class="dash-val">0.00</span></div>
-    </div>
-
-    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI (AI)</button>
-    
-    <div class="info-row">
-        <div class="info-box" onclick="openPad('kortti')"><span>Työnumero</span><b id="val-kortti">-</b></div>
-        <div class="info-box" onclick="askLajike()"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
-        <div class="info-box" onclick="openPad('asetus')"><span>Asetus (min)</span><b id="val-asetus">-</b></div>
-        <div class="info-box" onclick="openPad('taivutus')"><span>Std-aika (min)</span><b id="val-taivutus">-</b></div>
-    </div>
-
-    <button id="btn-save" class="main-btn btn-save">💾 TALLENNA KORTTI</button>
-    <button id="btn-shift" class="main-btn btn-start">ALOITA VUORO</button>
-    
-    <div id="hist-list" style="margin-top:20px; background:#111; border-radius:12px; font-size:0.8em; text-align: left;"></div>
+    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI</button>
+    <div class="info-box"><span>Työnumero</span><b id="v-nr">-</b></div>
+    <div class="info-box"><span>Lajike</span><b id="v-laji">-</b></div>
+    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:20px; text-decoration:underline;">Nollaa API-avain</button>
 </div>
 
-<div id="numpad-overlay">
-    <div id="pad-display" style="color:var(--primary); font-size:3em; font-weight:800; margin-bottom:20px;">-</div>
-    <div class="numpad-grid" id="keys"></div>
-    <button onclick="document.getElementById('numpad-overlay').style.display='none'" style="margin-top:25px; color:#666; background:none; border:none;">SULJE</button>
-</div>
-
-<div id="loader">
-    <div style="border: 4px solid #333; border-top: 4px solid var(--success); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-    <p>AI Analysoi...</p>
-</div>
+<div id="loader"><p>AI Analysoi (Proxy)...</p></div>
 
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:80%; object-fit:cover;" playsinline></video>
-    <button id="snap" style="width:80%; margin: 20px auto; padding:20px; background:var(--success); border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
+    <button id="snap" style="width:80%; margin:20px; padding:20px; background:var(--success); border:none; border-radius:50px; font-weight:bold;">📸 OTA KUVA</button>
 </div>
 
 <script>
-let deferredPrompt;
-const installBtn = document.getElementById('install-btn');
-let State = {
-    running: false, startTime: null, padTarget: '', padBuffer: '',
-    history: JSON.parse(localStorage.getItem('pbpro_v81') || '[]')
-};
-
-// PWA Asennus
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBtn.style.display = 'block';
-});
-
-installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') installBtn.style.display = 'none';
-        deferredPrompt = null;
-    }
-});
-
-// Kamera ja AI
 async function startCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment"}});
-    document.getElementById('video').srcObject = stream;
+    const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment"}});
+    document.getElementById('video').srcObject = s;
     document.getElementById('video').play();
-    document.getElementById('cam-overlay').style.display = 'flex';
+    document.getElementById('cam-overlay').style.display = 'block';
 }
 
 async function snap() {
-    const video = document.getElementById('video');
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+    const v = document.getElementById('video');
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+    const base64 = c.toDataURL('image/jpeg', 0.6).split(',')[1];
     
-    video.srcObject.getTracks().forEach(t => t.stop());
+    v.srcObject.getTracks().forEach(t => t.stop());
     document.getElementById('cam-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
     let key = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
     if(key) localStorage.setItem('claude_api_key', key.trim());
 
+    // KÄYTETÄÄN PROXY-PALVELINTA KIERTÄMÄÄN ESTOT
+    const proxy = 'https://corsproxy.io/?';
+    const target = 'https://api.anthropic.com/v1/messages';
+
     try {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
+        const r = await fetch(proxy + encodeURIComponent(target), {
             method: 'POST',
-            headers: {'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'dangerously-allow-browser': 'true'},
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': key,
+                'anthropic-version': '2023-06-01'
+            },
             body: JSON.stringify({
                 model: "claude-3-5-sonnet-20240620", max_tokens: 500,
-                messages: [{role: "user", content: [{type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}}, {type: "text", text: "Etsi SÄRMÄYS. JSON: {tyonumero:6-digit, lajike:uppercase, asetus:min, stdaika:min}"}]}]
+                messages: [{role: "user", content: [{type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}}, {type: "text", text: "JSON: {nr, laji}"}]}]
             })
         });
         const d = await r.json();
         const res = JSON.parse(d.content[0].text);
-        document.getElementById('val-kortti').innerText = res.tyonumero || "-";
-        document.getElementById('val-lajike').innerText = (res.lajike || "-").toUpperCase();
-        document.getElementById('val-asetus').innerText = (res.asetus || 0) + " min";
-        document.getElementById('val-taivutus').innerText = (res.stdaika || 0) + " min";
-    } catch(e) { alert("Analyysi epäonnistui. Tarkista yhteys ja API-avain."); }
-    finally { document.getElementById('loader').style.display = 'none'; }
-}
-
-// Manuaalinen syöttö (Numpad)
-function openPad(target) {
-    State.padTarget = target; State.padBuffer = '';
-    document.getElementById('pad-display').innerText = '-';
-    document.getElementById('numpad-overlay').style.display = 'flex';
-    const grid = document.getElementById('keys');
-    grid.innerHTML = '';
-    for(let i=1; i<=9; i++) grid.innerHTML += `<div class="key" onclick="press(${i})">${i}</div>`;
-    grid.innerHTML += `<div class="key" onclick="State.padBuffer=''">C</div><div class="key" onclick="press(0)">0</div><div class="key" style="background:var(--success);color:black" onclick="savePad()">OK</div>`;
-}
-
-function press(n) {
-    if (State.padTarget === 'kortti' && State.padBuffer.length >= 6) return;
-    State.padBuffer += n; document.getElementById('pad-display').innerText = State.padBuffer;
-}
-
-function savePad() {
-    if (State.padTarget === 'kortti' && State.padBuffer.length !== 6) { alert("Työnumeron oltava 6 numeroa!"); return; }
-    document.getElementById('val-' + State.padTarget).innerText = State.padBuffer + (State.padTarget==='kortti'?'':' min');
-    document.getElementById('numpad-overlay').style.display = 'none';
-}
-
-function askLajike() {
-    let v = prompt("Syötä lajimerkki:");
-    if (v) document.getElementById('val-lajike').innerText = v.toUpperCase();
-}
-
-// Vuoro & Historia
-document.getElementById('btn-shift').onclick = () => {
-    if (!State.running) {
-        State.running = true; State.startTime = Date.now();
-        document.getElementById('btn-shift').innerText = "LOPETA VUORO";
-        document.getElementById('btn-shift').className = "main-btn btn-stop";
-    } else { State.running = false; document.getElementById('btn-shift').innerText = "ALOITA VUORO"; document.getElementById('btn-shift').className = "main-btn btn-start"; }
-};
-
-document.getElementById('btn-save').onclick = () => {
-    const nr = document.getElementById('val-kortti').innerText;
-    if (nr === "-" || nr.length !== 6) { alert("Työnumero puuttuu!"); return; }
-    State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, min: (parseFloat(document.getElementById('val-asetus').innerText) || 0) + (parseFloat(document.getElementById('val-taivutus').innerText) || 0) });
-    localStorage.setItem('pbpro_v81', JSON.stringify(State.history));
-    renderHistory();
-};
-
-function renderHistory() {
-    document.getElementById('hist-list').innerHTML = State.history.slice(0, 5).map(e => `<div style="padding:10px; border-bottom:1px solid #222;"><b>${e.nr}</b> - ${e.laji} (${e.min} min)</div>`).join('');
-}
-
-setInterval(() => {
-    if (State.running) {
-        const diff = Date.now() - State.startTime;
-        const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
-        document.getElementById('txt-timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
-        let total = State.history.reduce((a, b) => a + b.min, 0);
-        document.getElementById('txt-eff').innerText = (total / (diff / 60000 || 1)).toFixed(2);
+        document.getElementById('v-nr').innerText = res.nr;
+        document.getElementById('v-laji').innerText = res.laji;
+    } catch(e) { 
+        alert("Virhe: Yhteys epäonnistui. Varmista API-avain."); 
+    } finally { 
+        document.getElementById('loader').style.display = 'none'; 
     }
-}, 1000);
+}
 
 document.getElementById('btn-open-camera').onclick = startCamera;
 document.getElementById('snap').onclick = snap;
-renderHistory();
-
-if ('serviceWorker' in navigator) {
-    const sw = "self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));";
-    const blob = new Blob([sw], {type: 'text/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(blob));
-}
 </script>
-<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 </body>
 </html>
