@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v10.7</title>
+    <title>PBPro v10.8 Final</title>
     <style>
-        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --gemini: #4285f4; }
+        :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
-        .version-tag { color: var(--gemini); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
+        .version-tag { color: var(--openai); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; border: 1px solid #333; }
         .dash-val { font-size: 1.8em; font-weight: 800; display: block; color: var(--success); }
-        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--gemini); background: #050a15; color: var(--gemini); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
+        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .info-box b { color: var(--primary); font-size: 1.2em; }
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
@@ -22,7 +22,7 @@
 </head>
 <body>
 
-<div class="version-tag">v10.7 AUTO-REPAIR MODE</div>
+<div class="version-tag">v10.8 OPENAI GPT-4o MINI</div>
 
 <div class="container">
     <div class="dashboard">
@@ -42,18 +42,18 @@
     
     <div id="hist-list" style="margin-top:20px; text-align:left; font-size:0.9em;"></div>
     
-    <button onclick="localStorage.removeItem('gemini_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em; width:100%;">VAIHDA GEMINI-AVAIN</button>
+    <button onclick="localStorage.removeItem('openai_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em; width:100%;">VAIHDA OPENAI-AVAIN</button>
 </div>
 
-<div id="loader"><p id="status-text">Yhdistetään Google AI...</p></div>
+<div id="loader"><p id="status-text">OpenAI analysoi korttia...</p></div>
 
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
-    <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--gemini); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
+    <button id="snap" style="width:80%; margin:20px auto; padding:20px; background:var(--openai); color:white; border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v107_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v108_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
@@ -68,49 +68,44 @@ document.getElementById('snap').onclick = async () => {
     const v = document.getElementById('video'), c = document.createElement('canvas');
     c.width = v.videoWidth; c.height = v.videoHeight;
     c.getContext('2d').drawImage(v, 0, 0);
-    const b64 = c.toDataURL('image/jpeg', 0.5).split(',')[1];
+    const b64 = c.toDataURL('image/jpeg', 0.5);
     v.srcObject.getTracks().forEach(t => t.stop());
     document.getElementById('cam-overlay').style.display = 'none';
     document.getElementById('loader').style.display = 'flex';
 
-    let key = localStorage.getItem('gemini_api_key') || prompt("Syötä Gemini API-avain:");
-    if(key) localStorage.setItem('gemini_api_key', key.trim());
+    let key = localStorage.getItem('openai_api_key') || prompt("Syötä OpenAI API-avain (sk-...):");
+    if(key) localStorage.setItem('openai_api_key', key.trim());
 
-    // Kokeillaan eri mallivaihtoehtoja järjestyksessä
-    const models = ["gemini-1.5-flash-8b-latest", "gemini-1.5-flash-latest", "gemini-1.5-flash"];
-    let success = false;
+    try {
+        const r = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [{
+                    role: "user",
+                    content: [
+                        { type: "text", text: "Lue tyonumero (6 numeroa) ja lajike. Palauta vain JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
+                        { type: "image_url", image_url: { url: b64 } }
+                    ]
+                }],
+                max_tokens: 300
+            })
+        });
 
-    for (const modelName of models) {
-        document.getElementById('status-text').innerText = `Kokeillaan: ${modelName}...`;
-        try {
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: "Lue tyonumero ja lajike. Palauta vain JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
-                            { inline_data: { mime_type: "image/jpeg", data: b64 } }
-                        ]
-                    }]
-                })
-            });
-
-            const d = await r.json();
-            if (d.error) continue; // Yritä seuraavaa mallia
-            
-            const rawText = d.candidates[0].content.parts[0].text;
-            const res = JSON.parse(rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1));
-            
-            document.getElementById('val-kortti').innerText = res.nr || "-";
-            document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
-            success = true;
-            break; 
-        } catch(e) { console.warn(`Malli ${modelName} epäonnistui.`); }
+        const d = await r.json();
+        if (d.error) throw new Error(d.error.message);
+        
+        const rawText = d.choices[0].message.content;
+        const res = JSON.parse(rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1));
+        
+        document.getElementById('val-kortti').innerText = res.nr || "-";
+        document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
+    } catch(e) { 
+        alert("OpenAI-virhe: " + e.message);
+    } finally { 
+        document.getElementById('loader').style.display = 'none'; 
     }
-
-    if (!success) alert("Kaikki Google AI -mallit hylkäsivät pyynnön. Tarkista API-avaimesi oikeellisuus.");
-    document.getElementById('loader').style.display = 'none';
 };
 
 function manualInput(type) {
@@ -132,7 +127,7 @@ document.getElementById('btn-save').onclick = () => {
     const nr = document.getElementById('val-kortti').innerText;
     if (nr === "-") { alert("Työnumero puuttuu!"); return; }
     State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, time: new Date().toLocaleTimeString() });
-    localStorage.setItem('pbpro_v107_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v108_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
