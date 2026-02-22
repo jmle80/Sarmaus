@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v10.5</title>
+    <title>PBPro v10.6</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --gemini: #4285f4; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
@@ -22,7 +22,7 @@
 </head>
 <body>
 
-<div class="version-tag">v10.5 GEMINI STABLE</div>
+<div class="version-tag">v10.6 FLASH-8B STABLE</div>
 
 <div class="container">
     <div class="dashboard">
@@ -53,7 +53,7 @@
 </div>
 
 <script>
-let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v105_hist') || '[]') };
+let State = { running: false, startTime: null, history: JSON.parse(localStorage.getItem('pbpro_v106_hist') || '[]') };
 
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
@@ -77,14 +77,14 @@ document.getElementById('snap').onclick = async () => {
     if(key) localStorage.setItem('gemini_api_key', key.trim());
 
     try {
-        // TÄRKEÄ MUUTOS: Käytetään v1-rajapintaa
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        // LOPULLINEN KORJAUS: Käytetään v1beta-rajapintaa ja flash-8b -mallia
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        { text: "Lue tyonumero ja lajike kuvasta. Palauta vain JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
+                        { text: "Lue tyonumero ja lajike. Palauta vain JSON: {\"nr\": \"...\", \"laji\": \"...\"}" },
                         { inline_data: { mime_type: "image/jpeg", data: b64 } }
                     ]
                 }]
@@ -106,6 +106,7 @@ document.getElementById('snap').onclick = async () => {
     }
 };
 
+// ... loput koodista (manualInput, tallennus jne.) säilyvät ennallaan ...
 function manualInput(type) {
     let v = prompt("Syötä arvo:");
     if (!v) return;
@@ -125,7 +126,7 @@ document.getElementById('btn-save').onclick = () => {
     const nr = document.getElementById('val-kortti').innerText;
     if (nr === "-") { alert("Työnumero puuttuu!"); return; }
     State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, time: new Date().toLocaleTimeString() });
-    localStorage.setItem('pbpro_v105_hist', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_v106_hist', JSON.stringify(State.history));
     renderHistory();
 };
 
