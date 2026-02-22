@@ -5,124 +5,212 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v8.5</title>
+    <title>PBPro v8.6</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; }
-        body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; padding-top: env(safe-area-inset-top); }
+        body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; touch-action: manipulation; }
         .version-tag { color: var(--success); font-weight: bold; padding: 10px; background: #111; border-bottom: 1px solid #333; font-size: 0.8em; }
-        .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 100px; }
+        .container { max-width: 480px; margin: 0 auto; padding: 15px; }
         
+        /* Napit ja niiden tuntuma */
+        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; transition: transform 0.1s; }
+        .btn-scan:active { transform: scale(0.98); background: #0a2a0a; }
+
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .dash-box { background: #1a1a1a; padding: 15px; border-radius: 16px; border: 1px solid #333; }
         .dash-val { font-size: 1.8em; font-weight: 800; display: block; color: var(--success); }
 
-        .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--success); background: #051505; color: var(--success); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
-        
         .info-row { display: grid; gap: 8px; margin-bottom: 20px; }
-        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .info-box { background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .info-box b { color: var(--primary); font-size: 1.2em; }
 
-        .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
+        .main-btn { width: 100%; padding: 20px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; cursor: pointer; transition: opacity 0.2s; }
         .btn-save { background: var(--primary); color: white; }
         .btn-start { background: var(--success); color: black; }
         .btn-stop { background: var(--danger); color: white; }
+        .main-btn:active { opacity: 0.7; }
 
-        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
-        
-        /* Historia-tyyli */
-        .history-item { text-align: left; background: #111; padding: 10px; border-bottom: 1px solid #222; font-size: 0.9em; }
-        .history-item b { color: var(--success); }
+        .history-item { text-align: left; background: #111; padding: 12px; border-bottom: 1px solid #222; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v8.5 FULL ACCESS & FEATURES</div>
+<div class="version-tag">v8.6 BUTTON RESPONSIVENESS FIX</div>
 
 <div class="container">
     <div class="dashboard">
         <div class="dash-box"><span>Vuoro</span><span id="txt-timer" class="dash-val">00:00</span></div>
-        <div class="dash-box"><span>Tehokkuus</span><span id="txt-eff" class="dash-val">0.00</span></div>
+        <div class="dash-box"><span>Teho</span><span id="txt-eff" class="dash-val">0.00</span></div>
     </div>
 
-    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI (AI)</button>
+    <button id="btn-open-camera" class="btn-scan">🤖 SKANNAA KORTTI</button>
     
     <div class="info-row">
-        <div class="info-box" onclick="manualInput('kortti')"><span>Työnumero</span><b id="val-kortti">-</b></div>
-        <div class="info-box" onclick="manualInput('lajike')"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
-        <div class="info-box" onclick="manualInput('asetus')"><span>Asetus (min)</span><b id="val-asetus">-</b></div>
-        <div class="info-box" onclick="manualInput('stdaika')"><span>Std-aika (min)</span><b id="val-stdaika">-</b></div>
+        <div id="box-kortti" class="info-box"><span>Työnumero</span><b id="val-kortti">-</b></div>
+        <div id="box-lajike" class="info-box"><span>Lajimerkki</span><b id="val-lajike">-</b></div>
+        <div id="box-asetus" class="info-box"><span>Asetus</span><b id="val-asetus">-</b></div>
+        <div id="box-stdaika" class="info-box"><span>Std-aika</span><b id="val-stdaika">-</b></div>
     </div>
 
     <button id="btn-save" class="main-btn btn-save">💾 TALLENNA KORTTI</button>
     <button id="btn-shift" class="main-btn btn-start">ALOITA VUORO</button>
     
-    <div id="hist-list" style="margin-top:20px;"></div>
+    <div id="hist-list"></div>
     
-    <button onclick="localStorage.removeItem('claude_api_key'); location.reload();" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.7em;">NOLLAA API-AVAIN</button>
+    <button id="btn-reset-api" style="color:#444; background:none; border:none; margin-top:40px; text-decoration:underline; font-size:0.8em; padding:10px; width:100%;">NOLLAA API-AVAIN</button>
 </div>
 
-<div id="loader"><p>AI Analysoi (Direct Access)...</p></div>
+<div id="loader"><p>Analysoidaan...</p></div>
 
 <div id="cam-overlay">
-    <video id="video" style="width:100%; height:80%; object-fit:cover;" playsinline></video>
-    <button id="snap" style="width:80%; margin: 20px auto; padding:20px; background:var(--success); border:none; border-radius:50px; font-weight:bold; font-size:1.2em;">📸 OTA KUVA</button>
+    <video id="video" style="width:100%; height:75%; object-fit:cover;" playsinline></video>
+    <button id="snap" style="width:80%; margin: 20px auto; padding:25px; background:var(--success); border:none; border-radius:50px; font-weight:bold; font-size:1.4em;">📸 OTA KUVA</button>
+    <button id="cam-close" style="background:none; border:none; color:white; margin-bottom:20px;">SULJE</button>
 </div>
 
 <script>
-let State = {
-    running: false, startTime: null, 
-    history: JSON.parse(localStorage.getItem('pbpro_v85_hist') || '[]')
-};
+// Kaikki koodi on sijoitettu varmuuden vuoksi window.onload -sisään
+window.onload = function() {
+    let State = {
+        running: false, startTime: null, 
+        history: JSON.parse(localStorage.getItem('pbpro_v86_hist') || '[]')
+    };
 
-// --- KAMERA JA AI (KORJATTU VERSIO) ---
-async function startCamera() {
-    const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment"}});
-    document.getElementById('video').srcObject = s;
-    document.getElementById('video').play();
-    document.getElementById('cam-overlay').style.display = 'flex';
-}
+    function updateEff() {
+        if (!State.startTime) return;
+        const diff = (Date.now() - State.startTime) / 60000; // minuuteissa
+        const totalMin = State.history.reduce((a, b) => a + b.min, 0);
+        document.getElementById('txt-eff').innerText = (totalMin / (diff || 1)).toFixed(2);
+    }
 
-async function snap() {
-    const v = document.getElementById('video');
-    const c = document.createElement('canvas');
-    c.width = v.videoWidth; c.height = v.videoHeight;
-    c.getContext('2d').drawImage(v, 0, 0);
-    const base64 = c.toDataURL('image/jpeg', 0.6).split(',')[1];
-    
-    v.srcObject.getTracks().forEach(t => t.stop());
-    document.getElementById('cam-overlay').style.display = 'none';
-    document.getElementById('loader').style.display = 'flex';
+    // --- KAMERA ---
+    const btnOpenCam = document.getElementById('btn-open-camera');
+    const camOverlay = document.getElementById('cam-overlay');
+    const video = document.getElementById('video');
 
-    let key = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
-    if(key) localStorage.setItem('claude_api_key', key.trim());
+    btnOpenCam.onclick = async () => {
+        try {
+            const s = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment"}});
+            video.srcObject = s;
+            video.play();
+            camOverlay.style.display = 'flex';
+        } catch(e) { alert("Kamera ei käynnisty: " + e.message); }
+    };
 
-    const proxy = 'https://corsproxy.io/?';
-    const target = 'https://api.anthropic.com/v1/messages';
+    document.getElementById('cam-close').onclick = () => {
+        if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        camOverlay.style.display = 'none';
+    };
 
-    try {
-        const r = await fetch(proxy + encodeURIComponent(target), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': key,
-                'anthropic-version': '2023-06-01',
-                'anthropic-dangerous-direct-browser-access': 'true'
-            },
-            body: JSON.stringify({
-                model: "claude-3-5-sonnet-20240620", max_tokens: 500,
-                messages: [{role: "user", content: [
-                    {type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}}, 
-                    {type: "text", text: "Extract JSON: {tyonumero:6-digits, lajike:text, asetus:number, stdaika:number}"}
-                ]}]
-            })
-        });
+    document.getElementById('snap').onclick = async () => {
+        const c = document.createElement('canvas');
+        c.width = video.videoWidth; c.height = video.videoHeight;
+        c.getContext('2d').drawImage(video, 0, 0);
+        const base64 = c.toDataURL('image/jpeg', 0.6).split(',')[1];
         
-        const d = await r.json();
-        if (d.error) { alert("VIRHE: " + d.error.message); }
-        else {
+        if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+        camOverlay.style.display = 'none';
+        document.getElementById('loader').style.display = 'flex';
+
+        let key = localStorage.getItem('claude_api_key') || prompt("Syötä API-avain:");
+        if(key) localStorage.setItem('claude_api_key', key.trim());
+
+        const proxy = 'https://corsproxy.io/?';
+        const target = 'https://api.anthropic.com/v1/messages';
+
+        try {
+            const r = await fetch(proxy + encodeURIComponent(target), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': key,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: "claude-3-5-sonnet-20240620", max_tokens: 500,
+                    messages: [{role: "user", content: [
+                        {type: "image", source: {type: "base64", media_type: "image/jpeg", data: base64}}, 
+                        {type: "text", text: "JSON: {tyonumero, lajike, asetus, stdaika}"}
+                    ]}]
+                })
+            });
+            const d = await r.json();
             const res = JSON.parse(d.content[0].text);
             document.getElementById('val-kortti').innerText = res.tyonumero || "-";
             document.getElementById('val-lajike').innerText = (res.lajike || "-").toUpperCase();
-            document.getElementById('val-asetus').innerText = (res.asetus
+            document.getElementById('val-asetus').innerText = (res.asetus || 0) + " min";
+            document.getElementById('val-stdaika').innerText = (res.stdaika || 0) + " min";
+        } catch(e) { alert("Analyysi epäonnistui."); }
+        finally { document.getElementById('loader').style.display = 'none'; }
+    };
+
+    // --- MANUAALISYÖTTÖ ---
+    const setupManual = (id, label, format) => {
+        document.getElementById(id).onclick = () => {
+            let v = prompt("Syötä " + label + ":");
+            if(!v) return;
+            if(format === 'nr' && v.length !== 6) { alert("Tasan 6 numeroa!"); return; }
+            document.getElementById('val-' + id.split('-')[1]).innerText = (format === 'up' ? v.toUpperCase() : v + (format === 'min' ? ' min' : ''));
+        };
+    };
+    setupManual('box-kortti', 'työnumero', 'nr');
+    setupManual('box-lajike', 'lajimerkki', 'up');
+    setupManual('box-asetus', 'asetus', 'min');
+    setupManual('box-stdaika', 'std-aika', 'min');
+
+    // --- VUORO ---
+    const btnShift = document.getElementById('btn-shift');
+    btnShift.onclick = () => {
+        if (!State.running) {
+            State.running = true; State.startTime = Date.now();
+            btnShift.innerText = "LOPETA VUORO";
+            btnShift.className = "main-btn btn-stop";
+        } else {
+            State.running = false;
+            btnShift.innerText = "ALOITA VUORO";
+            btnShift.className = "main-btn btn-start";
+        }
+    };
+
+    // --- TALLENNUS ---
+    document.getElementById('btn-save').onclick = () => {
+        const nr = document.getElementById('val-kortti').innerText;
+        if (nr.length !== 6) { alert("Työnumero virheellinen!"); return; }
+        const min = (parseFloat(document.getElementById('val-asetus').innerText) || 0) + 
+                    (parseFloat(document.getElementById('val-stdaika').innerText) || 0);
+        State.history.unshift({ nr: nr, laji: document.getElementById('val-lajike').innerText, min: min });
+        localStorage.setItem('pbpro_v86_hist', JSON.stringify(State.history));
+        renderHistory();
+        updateEff();
+    };
+
+    function renderHistory() {
+        document.getElementById('hist-list').innerHTML = State.history.slice(0, 5).map(e => `
+            <div class="history-item"><b>${e.nr}</b> | ${e.laji} | ${e.min} min</div>
+        `).join('');
+    }
+
+    document.getElementById('btn-reset-api').onclick = () => {
+        if(confirm("Nollataanko API-avain?")) {
+            localStorage.removeItem('claude_api_key');
+            location.reload();
+        }
+    };
+
+    setInterval(() => {
+        if (State.running) {
+            const diff = Date.now() - State.startTime;
+            const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
+            document.getElementById('txt-timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+            updateEff();
+        }
+    }, 1000);
+
+    renderHistory();
+};
+</script>
+</body>
+</html>
