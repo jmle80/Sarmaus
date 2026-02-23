@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v23.2</title>
+    <title>PBPro v24.1</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #e65100; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #2e7d32; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
@@ -34,34 +34,24 @@
         .hist-actions { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 12px; }
         .btn-icon { background: none; border: none; color: #888; cursor: pointer; font-size: 1.3em; }
 
-        /* CAMERA & ZOOM LOGIC */
-        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; overflow: hidden; }
-        #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        
-        /* ZOOM: scale(1.2) tuo kuvan 20% lähemmäs */
-        #video { 
-            position: absolute; 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transform: scale(1.2); 
-            transition: transform 0.3s ease;
-        }
+        /* CAMERA & FRAME (Honor Magic 5 Lite Optimized) */
+        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
+        #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
         
         #focus-frame { 
-            width: 70vw; 
-            height: calc(70vw * 1.414); 
+            width: 65vw; 
+            height: calc(65vw * 1.414); 
             border: 3px solid var(--openai); 
             border-radius: 5px;
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.8); 
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.7); 
             pointer-events: none;
             position: relative;
-            z-index: 600;
         }
         #focus-frame::after { 
-            content: "ZOOM ON (1.2x) - KOHDISTA A4 KORTTI"; 
-            position: absolute; top: -30px; left: 0; width: 100%; 
-            color: var(--openai); font-size: 0.7em; font-weight: bold; 
+            content: "HONOR OPTIMITU - PIDÄ LÄHELLÄ"; 
+            position: absolute; top: -35px; left: 0; width: 100%; 
+            color: var(--openai); font-size: 0.65em; font-weight: bold; 
         }
 
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
@@ -69,7 +59,7 @@
 </head>
 <body>
 
-<div class="version-tag">v23.2 • CAMERA ZOOM ENABLED (1.2x)</div>
+<div class="version-tag">v24.1 • HONOR MAGIC 5 LITE OPTIMIZED</div>
 
 <div class="container">
     <div class="period-header">
@@ -86,7 +76,7 @@
         <div class="dash-box"><span class="dash-label">Joutuisuus</span><span id="txt-shift-pace" class="dash-val">0.00</span></div>
     </div>
 
-    <button id="btn-open-camera" class="btn-scan">📸 SKANNAA A4 KORTTI</button>
+    <button id="btn-open-camera" class="btn-scan">📸 SKANNAA KORTTI</button>
     
     <div class="info-grid">
         <div class="info-box" onclick="editV('val-tyonr', 'Työnumero')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
@@ -106,16 +96,16 @@
     <div id="hist-list"></div>
 </div>
 
-<div id="loader"><p>Tarkennetaan ja analysoidaan...</p></div>
+<div id="loader"><p>Analysoidaan A4-korttia...</p></div>
 
 <div id="cam-overlay">
     <div id="video-container">
         <video id="video" playsinline muted></video>
         <div id="focus-frame"></div>
     </div>
-    <div style="position:absolute; bottom:30px; width:100%; text-align:center; z-index:700;">
+    <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
         <button id="snap" style="width:75px; height:75px; border-radius:50%; background:white; border:6px solid var(--openai);"></button><br><br>
-        <button onclick="closeCam()" style="color:white; background:none; border:none; font-weight:bold;">PERUUTA</button>
+        <button onclick="closeCam()" style="color:white; background:rgba(255,255,255,0.1); border:none; padding:10px 20px; border-radius:20px; font-weight:bold;">PERUUTA</button>
     </div>
 </div>
 
@@ -136,7 +126,6 @@ function saveToDisk() {
 function fixDecimals(val) {
     if (!val) return "0";
     let s = val.toString().replace(',', '.');
-    // Jos skanneri poisti pilkun (esim. 465), palautetaan se (4.65)
     if (!s.includes('.') && s.length >= 3) return (parseFloat(s) / 100).toString();
     return s.replace(/[^0-9.]/g, '') || "0";
 }
@@ -153,121 +142,4 @@ function updateUI() {
         const pts = h.pvm.split('.'); const d = new Date(pts[2], pts[1]-1, pts[0]);
         return d >= pS && d <= pE;
     });
-    const shiftH = pD.filter(h => h.isShift).reduce((s, i) => s + (i.hours || 0), 0);
-    let curShiftH = State.startTime ? (now - State.startTime) / 3600000 : 0;
-    document.getElementById('btn-start-shift').style.display = State.startTime ? 'none' : 'block';
-    document.getElementById('btn-stop-shift').style.display = State.startTime ? 'block' : 'none';
-    const totalH = shiftH + curShiftH;
-    document.getElementById('txt-period-hours').innerText = totalH.toFixed(1);
-    document.getElementById('txt-timer').innerText = curShiftH.toFixed(2);
-    const todayGoal = pD.filter(h => h.pvm === now.toLocaleDateString('fi-FI') && !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
-    const perGoal = pD.filter(h => !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
-    document.getElementById('txt-shift-pace').innerText = curShiftH > 0.01 ? ((todayGoal/60)/curShiftH).toFixed(2) : "0.00";
-    document.getElementById('txt-period-pace').innerText = totalH > 0.01 ? ((perGoal/60)/totalH).toFixed(2) : "0.00";
-}
-
-function renderHistory() {
-    const s = document.getElementById('search-input').value.toLowerCase();
-    const f = State.history.filter(h => (h.tyo||'').toLowerCase().includes(s) || (h.kuvaus||'').toLowerCase().includes(s));
-    document.getElementById('hist-list').innerHTML = f.map(e => `
-        <div class="hist-item ${e.isShift ? 'work-shift' : ''}">
-            <div style="padding-right: 80px;">
-                ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info} • ${e.hours.toFixed(2)} h</small>` : 
-                `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.kuvaus || '-'} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>`}
-            </div>
-            <div class="hist-actions">
-                <button class="btn-icon" onclick="editHist(${e.id})">✏️</button>
-                <button class="btn-icon" onclick="if(confirm('Poista?')){State.history=State.history.filter(h=>h.id!=${e.id});saveToDisk();renderHistory();updateUI();}">🗑️</button>
-            </div>
-        </div>`).join('');
-}
-
-function editHist(id) {
-    const item = State.history.find(h => h.id === id);
-    if(!item) return;
-    if(item.isShift) {
-        const nH = prompt("Tunnit:", item.hours);
-        if(nH) { item.hours = parseFloat(nH); saveToDisk(); renderHistory(); updateUI(); }
-    } else {
-        const nTyo = prompt("Työnumero:", item.tyo);
-        const nKpl = prompt("Kpl:", item.kpl);
-        if(nTyo && nKpl) { item.tyo = nTyo; item.kpl = nKpl; item.sumMins = parseFloat(item.asetus||0) + (parseFloat(item.taivutus||0) * parseInt(nKpl)); saveToDisk(); renderHistory(); updateUI(); }
-    }
-}
-
-document.getElementById('btn-open-camera').onclick = async () => {
-    try {
-        State.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: 1920}});
-        document.getElementById('video').srcObject = State.stream;
-        document.getElementById('cam-overlay').style.display='flex';
-        document.getElementById('video').play();
-    } catch(e) { alert("Salli kamera."); }
-};
-
-function closeCam() { if(State.stream) State.stream.getTracks().forEach(t=>t.stop()); document.getElementById('cam-overlay').style.display='none'; }
-
-document.getElementById('snap').onclick = async () => {
-    const v = document.getElementById('video'), c = document.createElement('canvas');
-    // Zoomattu kuva täytyy piirtää canvasille oikein
-    c.width = v.videoWidth; c.height = v.videoHeight;
-    const ctx = c.getContext('2d');
-    // Piirretään zoomattu keski-alue
-    const zoom = 1.2;
-    const sw = v.videoWidth / zoom;
-    const sh = v.videoHeight / zoom;
-    const sx = (v.videoWidth - sw) / 2;
-    const sy = (v.videoHeight - sh) / 2;
-    ctx.drawImage(v, sx, sy, sw, sh, 0, 0, c.width, c.height);
-    
-    const b64 = c.toDataURL('image/jpeg', 0.9);
-    closeCam();
-    document.getElementById('loader').style.display='flex';
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('openai_api_key') },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [{ role: "user", content: [
-                    { type: "text", text: "Lue työkortti: Työnumero (6 nro), Tuote (koodi), Kuvaus (nimeke koodin alla), Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. MUUNNA PILKUT PISTEIKSI. JSON: {\"tyo\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
-                    { type: "image_url", image_url: { url: b64 } }
-                ]}]
-            })
-        });
-        const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
-        document.getElementById('val-tyonr').innerText = res.tyo || "-";
-        document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
-        document.getElementById('val-kuvaus').innerText = (res.kuvaus || "-").toUpperCase();
-        document.getElementById('val-asiakas').innerText = res.asia || "-";
-        document.getElementById('val-piirnro').innerText = res.piir || "-";
-        document.getElementById('val-asetusaika').innerText = fixDecimals(res.asetus);
-        document.getElementById('val-taivutusaika').innerText = fixDecimals(res.taivutus);
-    } catch(e) { alert("Luvussa virhe."); }
-    finally { document.getElementById('loader').style.display='none'; }
-};
-
-document.getElementById('btn-save').onclick = () => {
-    const tyo = document.getElementById('val-tyonr').innerText;
-    if(tyo === "-" || tyo.length < 5) return alert("Puutteelliset tiedot!");
-    const kpl = prompt("Kpl-määrä?", "1");
-    if(!kpl) return;
-    const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
-    const t = parseFloat(document.getElementById('val-taivutusaika').innerText) || 0;
-    State.history.unshift({ id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, tuote: document.getElementById('val-lajike').innerText, kuvaus: document.getElementById('val-kuvaus').innerText, asia: document.getElementById('val-asiakas').innerText, kpl, asetus: a, taivutus: t, sumMins: a + (t * parseInt(kpl)) });
-    saveToDisk(); renderHistory(); updateUI();
-};
-
-document.getElementById('btn-start-shift').onclick = () => { State.startTime = new Date(); saveToDisk(); updateUI(); };
-document.getElementById('btn-stop-shift').onclick = () => {
-    const d = new Date();
-    State.history.unshift({ id: Date.now(), pvm: d.toLocaleDateString('fi-FI'), isShift: true, hours: (d - State.startTime) / 3600000, info: `Vuoro: ${State.startTime.getHours()}.${State.startTime.getMinutes()} - ${d.getHours()}.${d.getMinutes()}` });
-    State.startTime = null; saveToDisk(); renderHistory(); updateUI();
-};
-
-function resetAll() { if(confirm("Nollataanko jakso?")) { State.history = []; saveToDisk(); renderHistory(); updateUI(); } }
-function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) { if(id==='val-lajike'||id==='val-kuvaus')v=v.toUpperCase(); document.getElementById(id).innerText=v; } }
-
-setInterval(updateUI, 5000); updateUI(); renderHistory();
-</script>
-</body>
-</html>
+    const shiftH = pD.filter(h => h.isShift).reduce((s, i) => s + (i.
