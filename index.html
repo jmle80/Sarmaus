@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v26.2</title>
+    <title>PBPro v27.0</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #00796b; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #4a148c; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
-        /* UI ELEMENTS */
+        /* HEADER & DASHBOARD */
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
         .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; font-weight: bold; margin-bottom: 8px; display: block; }
         .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; }
@@ -20,12 +20,16 @@
         .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
 
-        /* GRID INPUTS */
+        /* INPUT GRID */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
         .info-box b { color: var(--primary); font-size: 1.05em; display: block; word-break: break-all; }
         
+        /* Yhdistetty Tuote/Kuvaus tyyli */
+        .combined-box { grid-column: span 2; display: flex; flex-direction: column; justify-content: center; }
+        .combined-box b:last-child { color: #aaa; font-size: 0.85em; margin-top: 2px; }
+
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         
@@ -36,22 +40,20 @@
         .modal-content input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 10px; color: white; box-sizing: border-box; font-size: 1em; margin-top: 5px; }
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 30px; }
 
-        /* CAMERA */
+        /* CAMERA & LIST */
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
-        #video-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #video { width: 100%; height: 100%; object-fit: cover; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        
-        /* LIST */
         #search-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; border-radius: 10px; color: white; margin-bottom: 15px; box-sizing: border-box; }
         .hist-item { background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 12px; text-align: left; border-left: 4px solid var(--primary); position: relative; }
-        .hist-item.work-shift { border-left: 4px solid var(--success); background: #112211; }
         .hist-actions { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); }
+        .btn-icon { background: none; border: none; color: #fff; cursor: pointer; font-size: 1.5em; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v26.2 • INTELLIGENT BORDER DETECTION</div>
+<div class="version-tag">v27.0 • UI COMPACT & CUSTOM STEPS</div>
 
 <div class="container">
     <div class="period-header">
@@ -71,13 +73,23 @@
     <button id="btn-open-camera" class="btn-scan">📸 SKANNAA KORTTI</button>
     
     <div class="info-grid">
+        <div class="info-box combined-box" onclick="editCombined()">
+            <span>Tuote & Kuvaus</span>
+            <b id="val-lajike">-</b>
+            <b id="val-kuvaus">-</b>
+        </div>
+        
         <div class="info-box" onclick="editV('val-tyonr', 'Työnumero')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
-        <div class="info-box" onclick="editV('val-lajike', 'Tuote')"><span>Tuote</span><b id="val-lajike">-</b></div>
-        <div class="info-box" style="grid-column: span 2;" onclick="editV('val-kuvaus', 'Kuvaus')"><span>Kuvaus</span><b id="val-kuvaus">-</b></div>
         <div class="info-box" onclick="editV('val-piirnro', 'Piirustus')"><span>Piirustus</span><b id="val-piirnro">-</b></div>
         <div class="info-box" onclick="editV('val-asiakas', 'Asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
+        
+        <div class="info-box" onclick="openMuutModal()" style="background:#1a231a; border-color:#2e7d32;">
+            <span style="color:#00e676;">MUUT VAIHEET</span>
+            <b id="val-muu-nimi">SÄRMÄYS</b>
+        </div>
+        
         <div class="info-box" onclick="editV('val-asetusaika', 'Asetus')"><span>Asetus</span><b id="val-asetusaika">-</b></div>
-        <div class="info-box" onclick="editV('val-taivutusaika', 'Taivutus')"><span>Taivutus</span><b id="val-taivutusaika">-</b></div>
+        <div class="info-box" onclick="editV('val-taivutusaika', 'Aika / kpl')"><span>Aika</span><b id="val-taivutusaika">-</b></div>
     </div>
 
     <button id="btn-save" style="background:var(--primary); color:white" class="main-btn">💾 TALLENNA KORTTI</button>
@@ -88,32 +100,46 @@
     <div id="hist-list"></div>
 </div>
 
+<div id="muut-modal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--success);">Määritä työvaihe</h3>
+        <label>Työvaiheen nimi</label><input type="text" id="muu-nimi-in" placeholder="esim. HITSAUS">
+        <label>Asetusaika (min)</label><input type="text" id="muu-asetus-in" placeholder="0">
+        <label>Aika / kpl (min)</label><input type="text" id="muu-aika-in" placeholder="0">
+        <div class="modal-actions">
+            <button onclick="document.getElementById('muut-modal').style.display='none'" style="background:#333; color:white; border:none; padding:15px; border-radius:10px;">PERUUTA</button>
+            <button onclick="saveMuut()" style="background:var(--success); color:black; border:none; padding:15px; border-radius:10px; font-weight:bold;">KÄYTÄ</button>
+        </div>
+    </div>
+</div>
+
 <div id="edit-modal" class="modal">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--openai);">Muokkaa korttia</h3>
         <input type="hidden" id="edit-id">
         <label>Työnumero</label><input type="text" id="edit-tyo">
+        <label>Piirustus</label><input type="text" id="edit-piir">
         <label>Tuote</label><input type="text" id="edit-laji">
         <label>Kuvaus</label><input type="text" id="edit-kuvaus">
         <label>Asiakas</label><input type="text" id="edit-asia">
         <label>Kpl</label><input type="number" id="edit-kpl">
-        <label>Asetus (min)</label><input type="text" id="edit-asetus">
-        <label>Taivutus (min)</label><input type="text" id="edit-taivutus">
+        <label>Asetus</label><input type="text" id="edit-asetus">
+        <label>Aika</label><input type="text" id="edit-taivutus">
         <div class="modal-actions">
-            <button onclick="deleteEntry()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none; font-weight:bold;">POISTA</button>
-            <button onclick="saveEdit()" style="background:var(--success); color:black; padding:15px; border-radius:10px; border:none; font-weight:bold;">TALLENNA</button>
+            <button onclick="deleteEntry()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none;">POISTA</button>
+            <button onclick="saveEdit()" style="background:var(--success); color:black; padding:15px; border-radius:10px; border:none;">TALLENNA</button>
         </div>
-        <button onclick="document.getElementById('edit-modal').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:20px;">PERUUTA</button>
+        <button onclick="document.getElementById('edit-modal').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:20px;">SULJE</button>
     </div>
 </div>
 
-<div id="loader"><p id="loader-txt">Etsitään arkin reunoja...</p></div>
+<div id="loader"><p id="loader-txt">Käsitellään...</p></div>
 
 <div id="cam-overlay">
     <div id="video-container"><video id="video" playsinline muted></video></div>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
-        <button id="snap" style="width:75px; height:75px; border-radius:50%; background:white; border:6px solid var(--openai); box-shadow: 0 0 20px rgba(0,0,0,0.5);"></button><br><br>
-        <button onclick="closeCam()" style="color:white; background:rgba(0,0,0,0.5); border:none; padding:10px 20px; border-radius:20px; font-weight:bold;">SULJE</button>
+        <button id="snap" style="width:75px; height:75px; border-radius:50%; background:white; border:6px solid var(--openai);"></button><br><br>
+        <button onclick="closeCam()" style="color:white; background:rgba(0,0,0,0.5); border:none; padding:10px 20px; border-radius:20px;">SULJE</button>
     </div>
 </div>
 
@@ -170,10 +196,32 @@ function renderHistory() {
         <div class="hist-item ${e.isShift ? 'work-shift' : ''}">
             <div style="padding-right: 60px;">
                 ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info} • ${e.hours.toFixed(2)} h</small>` : 
-                `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.asia || '-'} • ${e.kuvaus || '-'} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>`}
+                `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.vaihe || 'SÄRMÄYS'} • ${e.asia || '-'} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>`}
             </div>
             <div class="hist-actions"><button class="btn-icon" onclick="openModal(${e.id})">✏️</button></div>
         </div>`).join('');
+}
+
+// MODAL FUNCTIONS
+function openMuutModal() {
+    document.getElementById('muu-nimi-in').value = document.getElementById('val-muu-nimi').innerText;
+    document.getElementById('muu-asetus-in').value = document.getElementById('val-asetusaika').innerText;
+    document.getElementById('muu-aika-in').value = document.getElementById('val-taivutusaika').innerText;
+    document.getElementById('muut-modal').style.display = 'block';
+}
+
+function saveMuut() {
+    document.getElementById('val-muu-nimi').innerText = document.getElementById('muu-nimi-in').value.toUpperCase() || "SÄRMÄYS";
+    document.getElementById('val-asetusaika').innerText = fixDecimals(document.getElementById('muu-asetus-in').value);
+    document.getElementById('val-taivutusaika').innerText = fixDecimals(document.getElementById('muu-aika-in').value);
+    document.getElementById('muut-modal').style.display = 'none';
+}
+
+function editCombined() {
+    let t = prompt("Tuote (Koodi):", document.getElementById('val-lajike').innerText);
+    let k = prompt("Kuvaus:", document.getElementById('val-kuvaus').innerText);
+    if(t!==null) document.getElementById('val-lajike').innerText = t.toUpperCase();
+    if(k!==null) document.getElementById('val-kuvaus').innerText = k.toUpperCase();
 }
 
 function openModal(id) {
@@ -181,6 +229,7 @@ function openModal(id) {
     if(!item || item.isShift) return;
     document.getElementById('edit-id').value = id;
     document.getElementById('edit-tyo').value = item.tyo;
+    document.getElementById('edit-piir').value = item.piir || "";
     document.getElementById('edit-laji').value = item.tuote;
     document.getElementById('edit-kuvaus').value = item.kuvaus || "";
     document.getElementById('edit-asia').value = item.asia || "";
@@ -197,6 +246,7 @@ function saveEdit() {
     const a = parseFloat(document.getElementById('edit-asetus').value) || 0;
     const t = parseFloat(document.getElementById('edit-taivutus').value) || 0;
     item.tyo = document.getElementById('edit-tyo').value.toUpperCase();
+    item.piir = document.getElementById('edit-piir').value.toUpperCase();
     item.tuote = document.getElementById('edit-laji').value.toUpperCase();
     item.kuvaus = document.getElementById('edit-kuvaus').value.toUpperCase();
     item.asia = document.getElementById('edit-asia').value.toUpperCase();
@@ -214,6 +264,7 @@ function deleteEntry() {
     }
 }
 
+// CAMERA & SCAN
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
         State.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } });
@@ -238,7 +289,7 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "VISUAALINEN RAJAUS: Tunnista A4-arkin reunat. Jätä huomiotta kaikki paperin ulkopuolinen. Lue: Työnumero (6 nro), Tuote (koodi), Kuvaus (nimi), Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. MUUNNA PILKUT PISTEIKSI. JSON: {\"tyo\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Tunnista A4-arkki. Lue: Työnumero (6 nro), Piirustusnumero (yläoikea), Tuote (koodi ylävasen), Kuvaus (nimeke koodin alla), Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. MUUNNA PILKUT PISTEIKSI. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
@@ -248,9 +299,11 @@ document.getElementById('snap').onclick = async () => {
         document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
         document.getElementById('val-kuvaus').innerText = (res.kuvaus || "-").toUpperCase();
         document.getElementById('val-asiakas').innerText = res.asia || "-";
+        document.getElementById('val-piirnro').innerText = (res.piir || "-").toUpperCase();
         document.getElementById('val-asetusaika').innerText = fixDecimals(res.asetus);
         document.getElementById('val-taivutusaika').innerText = fixDecimals(res.taivutus);
-    } catch(e) { console.log(e); }
+        document.getElementById('val-muu-nimi').innerText = "SÄRMÄYS";
+    } catch(e) { }
     finally { document.getElementById('loader').style.display='none'; }
 };
 
@@ -262,9 +315,10 @@ document.getElementById('btn-save').onclick = () => {
     const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
     const t = parseFloat(document.getElementById('val-taivutusaika').innerText) || 0;
     State.history.unshift({ 
-        id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, 
+        id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, piir: document.getElementById('val-piirnro').innerText,
         tuote: document.getElementById('val-lajike').innerText, kuvaus: document.getElementById('val-kuvaus').innerText, 
-        asia: document.getElementById('val-asiakas').innerText, kpl, asetus: a, taivutus: t, sumMins: a + (t * parseInt(kpl)) 
+        asia: document.getElementById('val-asiakas').innerText, vaihe: document.getElementById('val-muu-nimi').innerText,
+        kpl, asetus: a, taivutus: t, sumMins: a + (t * parseInt(kpl)) 
     });
     saveToDisk(); renderHistory(); updateUI();
 };
@@ -276,8 +330,8 @@ document.getElementById('btn-stop-shift').onclick = () => {
     State.startTime = null; saveToDisk(); renderHistory(); updateUI();
 };
 
-function resetAll() { if(confirm("Nollataanko koko jakson historia?")) { State.history = []; saveToDisk(); renderHistory(); updateUI(); } }
-function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) { if(id==='val-lajike'||id==='val-kuvaus')v=v.toUpperCase(); document.getElementById(id).innerText=v; } }
+function resetAll() { if(confirm("Nollataanko koko historian tiedot?")) { State.history = []; saveToDisk(); renderHistory(); updateUI(); } }
+function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) { if(id==='val-lajike'||id==='val-kuvaus'||id==='val-piirnro')v=v.toUpperCase(); document.getElementById(id).innerText=v; } }
 setInterval(updateUI, 5000); updateUI(); renderHistory();
 </script>
 </body>
