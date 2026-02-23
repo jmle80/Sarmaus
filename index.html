@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PBPro v19.5</title>
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>PBPro v19.7</title>
+    
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22PBPro%22,%22short_name%22:%22PBPro%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0a0a%22,%22theme_color%22:%22%230a0a0a%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/8061/8061453.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
+
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
@@ -13,7 +18,7 @@
         .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
         .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; margin-top: 5px; }
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .dash-box { background: #1a1a1a; padding: 12px; border-radius: 16px; border: 1px solid #333; cursor: pointer; }
+        .dash-box { background: #1a1a1a; padding: 12px; border-radius: 16px; border: 1px solid #333; }
         .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
         .pace-val { font-size: 1.8em; color: var(--openai); font-weight: 900; display: block; }
@@ -26,15 +31,15 @@
         #search-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; border-radius: 10px; color: white; margin-bottom: 15px; box-sizing: border-box; }
         .hist-item { background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 12px; text-align: left; border-left: 4px solid var(--primary); position: relative; }
         .hist-item.work-shift { border-left: 4px solid var(--success); background: #112211; }
-        .hist-actions { position: absolute; right: 10px; top: 10px; display: flex; gap: 10px; }
-        .btn-icon { background: none; border: none; color: #888; cursor: pointer; font-size: 1.2em; }
+        .hist-actions { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 12px; }
+        .btn-icon { background: none; border: none; color: #888; cursor: pointer; font-size: 1.3em; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v19.5 • REAL KELLOKORTTI LOGIC</div>
+<div class="version-tag">v19.7 • PWA ENABLED & DATA SAFE</div>
 
 <div class="container">
     <div class="period-header">
@@ -46,14 +51,8 @@
     </div>
     
     <div class="dashboard">
-        <div class="dash-box" onclick="manualTimeEdit()">
-            <span class="dash-label">Vuoron Tunnit (h)</span>
-            <span id="txt-timer" class="dash-val">0.00</span>
-        </div>
-        <div class="dash-box">
-            <span class="dash-label">Vuoro Joutuisuus</span>
-            <span id="txt-shift-pace" class="dash-val">0.00</span>
-        </div>
+        <div class="dash-box"><span class="dash-label">Vuoron Tunnit (h)</span><span id="txt-timer" class="dash-val">0.00</span></div>
+        <div class="dash-box"><span class="dash-label">Vuoro Joutuisuus</span><span id="txt-shift-pace" class="dash-val">0.00</span></div>
     </div>
 
     <button id="btn-open-camera" class="btn-scan">📸 SKANNAA KORTTI</button>
@@ -64,7 +63,7 @@
         <div class="info-box" onclick="editV('val-piirnro', 'Piirustus nro')"><span>Piirustus nro</span><b id="val-piirnro">-</b></div>
         <div class="info-box" onclick="editV('val-asiakas', 'Asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
         <div class="info-box" onclick="editV('val-asetusaika', 'Asetus (min)')"><span>Asetus (min)</span><b id="val-asetusaika">-</b></div>
-        <div class="info-box" onclick="editV('val-taivutusaika', 'Taivutus')"><span>Taivutus (min)</span><b id="val-taivutusaika">-</b></div>
+        <div class="info-box" onclick="editV('val-taivutusaika', 'Taivutus (min)')"><span>Taivutus (min)</span><b id="val-taivutusaika">-</b></div>
     </div>
 
     <button id="btn-save" style="background:var(--primary); color:white" class="main-btn">💾 TALLENNA KORTTI</button>
@@ -75,7 +74,7 @@
     <div id="hist-list"></div>
 </div>
 
-<div id="loader"><p>Analysoidaan...</p></div>
+<div id="loader"><p>Skannataan...</p></div>
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
@@ -84,32 +83,26 @@
 </div>
 
 <script>
-const payPeriods2026 = [
-    { start: "2026-02-01", end: "2026-02-15" },
-    { start: "2026-02-16", end: "2026-02-28" },
-    { start: "2026-03-01", end: "2026-03-15" }
-];
-
+// Pysytään samassa tallennusnimessä kuin v19.6, jotta tiedot löytyvät
+const payPeriods2026 = [{ start: "2026-02-16", end: "2026-02-28" }, { start: "2026-03-01", end: "2026-03-15" }];
 let State = {
     startTime: localStorage.getItem('pb_start') ? new Date(parseInt(localStorage.getItem('pb_start'))) : null,
-    history: JSON.parse(localStorage.getItem('pbpro_hist_v19') || '[]'),
+    history: JSON.parse(localStorage.getItem('pbpro_hist_v196') || '[]'),
     stream: null
 };
 
 function saveToDisk() {
-    localStorage.setItem('pbpro_hist_v19', JSON.stringify(State.history));
+    localStorage.setItem('pbpro_hist_v196', JSON.stringify(State.history));
     if(State.startTime) localStorage.setItem('pb_start', State.startTime.getTime());
     else localStorage.removeItem('pb_start');
 }
 
 function updateUI() {
     const now = new Date();
-    const todayStr = now.toLocaleDateString('fi-FI');
     const p = payPeriods2026.find(p => { 
         const s = new Date(p.start); const e = new Date(p.end); e.setHours(23,59,59); 
         return now >= s && now <= e; 
     }) || payPeriods2026[0];
-    
     document.getElementById('txt-period-dates').innerText = `JAKSO: ${new Date(p.start).toLocaleDateString('fi-FI')} - ${new Date(p.end).toLocaleDateString('fi-FI')}`;
 
     const pS = new Date(p.start); const pE = new Date(p.end); pE.setHours(23,59,59);
@@ -118,24 +111,17 @@ function updateUI() {
         return d >= pS && d <= pE;
     });
 
-    // LASKENTA: Todelliset työtunnit historiasta + käynnissä oleva vuoro
     const shiftHoursInHistory = pD.filter(h => h.isShift).reduce((s, i) => s + (i.hours || 0), 0);
-    let currentShiftHours = 0;
-    if(State.startTime) {
-        currentShiftHours = (now - State.startTime) / 3600000;
-        document.getElementById('btn-start-shift').style.display='none';
-        document.getElementById('btn-stop-shift').style.display='block';
-    } else {
-        document.getElementById('btn-start-shift').style.display='block';
-        document.getElementById('btn-stop-shift').style.display='none';
-    }
+    let currentShiftHours = State.startTime ? (now - State.startTime) / 3600000 : 0;
+    
+    document.getElementById('btn-start-shift').style.display = State.startTime ? 'none' : 'block';
+    document.getElementById('btn-stop-shift').style.display = State.startTime ? 'block' : 'none';
 
     const totalPeriodHours = shiftHoursInHistory + currentShiftHours;
     document.getElementById('txt-period-hours').innerText = totalPeriodHours.toFixed(1);
     document.getElementById('txt-timer').innerText = currentShiftHours.toFixed(2);
 
-    // JOUTUISUUS: (Tuottavat minuutit / 60) / Työtunnit
-    const todayGoalMins = pD.filter(h => h.pvm === todayStr && !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
+    const todayGoalMins = pD.filter(h => h.pvm === now.toLocaleDateString('fi-FI') && !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
     const periodGoalMins = pD.filter(h => !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
 
     document.getElementById('txt-shift-pace').innerText = currentShiftHours > 0.01 ? ((todayGoalMins/60)/currentShiftHours).toFixed(2) : "0.00";
@@ -143,43 +129,22 @@ function updateUI() {
 }
 
 document.getElementById('btn-start-shift').onclick = () => {
-    State.startTime = new Date();
-    saveToDisk();
-    updateUI();
+    const i = prompt("Aloitusaika? (esim. 07.00)", new Date().getHours() + "." + (new Date().getMinutes()<10?'0':'') + new Date().getMinutes());
+    if(i !== null) {
+        const d = new Date(); const p = i.split(/[:.]/); d.setHours(parseInt(p[0])); d.setMinutes(parseInt(p[1]||0)); d.setSeconds(0);
+        State.startTime = d; saveToDisk(); updateUI();
+    }
 };
 
 document.getElementById('btn-stop-shift').onclick = () => {
-    if(confirm("Lopetetaanko vuoro? (Tunnit tallentuvat historiaan)")) {
-        const now = new Date();
-        const hrs = (now - State.startTime) / 3600000;
-        
-        // Tallennetaan vuoro historiatietoihin jotta se lasketaan jakson tunteihin
-        State.history.unshift({
-            id: Date.now(),
-            pvm: now.toLocaleDateString('fi-FI'),
-            isShift: true,
-            hours: hrs,
-            info: `Vuoro: ${State.startTime.getHours()}.${State.startTime.getMinutes()} - ${now.getHours()}.${now.getMinutes()}`
-        });
-        
-        State.startTime = null;
-        saveToDisk();
-        renderHistory();
-        updateUI();
+    const i = prompt("Lopetusaika?", new Date().getHours() + "." + (new Date().getMinutes()<10?'0':'') + new Date().getMinutes());
+    if(i !== null) {
+        const d = new Date(); const p = i.split(/[:.]/); d.setHours(parseInt(p[0])); d.setMinutes(parseInt(p[1]||0)); d.setSeconds(0);
+        State.history.unshift({ id: Date.now(), pvm: d.toLocaleDateString('fi-FI'), isShift: true, hours: (d - State.startTime) / 3600000, info: `Vuoro: ${State.startTime.getHours()}.${State.startTime.getMinutes()} - ${d.getHours()}.${d.getMinutes()}` });
+        State.startTime = null; saveToDisk(); renderHistory(); updateUI();
     }
 };
 
-function manualTimeEdit() {
-    if(!State.startTime) return;
-    const i = prompt("Muokkaa aloitusaikaa (HH.MM):", State.startTime.getHours() + "." + State.startTime.getMinutes());
-    if(i) {
-        const d = new Date(); const p = i.split(/[:.]/);
-        d.setHours(parseInt(p[0])); d.setMinutes(parseInt(p[1]||0)); d.setSeconds(0);
-        State.startTime = d; saveToDisk(); updateUI();
-    }
-}
-
-// Skannaus ennallaan (tarkka v18.6)
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
         State.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode:"environment", width: {ideal: 1920}}});
@@ -191,8 +156,7 @@ document.getElementById('btn-open-camera').onclick = async () => {
 
 document.getElementById('snap').onclick = async () => {
     const v = document.getElementById('video'), c = document.createElement('canvas');
-    c.width = v.videoWidth; c.height = v.videoHeight;
-    c.getContext('2d').drawImage(v, 0, 0);
+    c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
     const b64 = c.toDataURL('image/jpeg', 0.8);
     if(State.stream) State.stream.getTracks().forEach(t => t.stop());
     document.getElementById('cam-overlay').style.display='none';
@@ -204,7 +168,7 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "Lue kortista: Työnumero (6 nro), Tuote, Piirustus, Asiakas, Asetusaika ja Taivutusaika. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Lue kortista: Työnumero (6 nro), Tuote, Piirustus, Asiakas. Etsi rivi 'Taivutus' tai 'Särmäys'. Lue siltä riviltä nimenomaan KAPASITEETTIAIKA (min). JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
@@ -222,7 +186,7 @@ document.getElementById('snap').onclick = async () => {
 
 document.getElementById('btn-save').onclick = () => {
     const tyo = document.getElementById('val-tyonr').innerText;
-    if(tyo === "-" || tyo === "") return alert("Skannaa ensin!");
+    if(tyo === "-" || tyo.length < 6) return alert("Työnumero virheellinen!");
     const kpl = prompt("Kpl-määrä?", "1");
     if(!kpl) return;
     const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
@@ -233,25 +197,39 @@ document.getElementById('btn-save').onclick = () => {
 
 function renderHistory() {
     const s = document.getElementById('search-input').value.toLowerCase();
-    const f = State.history.filter(h => (h.tyo||'').toLowerCase().includes(s) || (h.asia||'').toLowerCase().includes(s) || (h.info||'').toLowerCase().includes(s));
+    const f = State.history.filter(h => (h.tyo||'').toLowerCase().includes(s) || (h.asia||'').toLowerCase().includes(s));
     document.getElementById('hist-list').innerHTML = f.map(e => `
         <div class="hist-item ${e.isShift ? 'work-shift' : ''}">
-            <div style="padding-right: 60px;">
-                ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info} • ${e.hours.toFixed(2)} h</small>` : 
-                `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.asia} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>`}
-            </div>
-            <div class="hist-actions">
-                <button class="btn-icon" onclick="if(confirm('Poista?')){State.history=State.history.filter(h=>h.id!=${e.id});saveToDisk();renderHistory();updateUI();}">🗑️</button>
-            </div>
-        </div>
-    `).join('');
+            <div style="padding-right: 80px;">${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info} • ${e.hours.toFixed(2)} h</small>` : `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.asia} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>`}</div>
+            <div class="hist-actions"><button class="btn-icon" onclick="editHist(${e.id})">✏️</button><button class="btn-icon" onclick="if(confirm('Poista?')){State.history=State.history.filter(h=>h.id!=${e.id});saveToDisk();renderHistory();updateUI();}">🗑️</button></div>
+        </div>`).join('');
 }
 
-function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) document.getElementById(id).innerText = (id==='val-lajike'?v.toUpperCase():v); }
+function editHist(id) {
+    const item = State.history.find(h => h.id === id);
+    if(!item) return;
+    if(item.isShift) {
+        const nH = prompt("Muokkaa tunteja (h):", item.hours);
+        if(nH) { item.hours = parseFloat(nH); saveToDisk(); renderHistory(); updateUI(); }
+    } else {
+        const nTyo = prompt("Työnumero:", item.tyo);
+        const nKpl = prompt("Kpl-määrä:", item.kpl);
+        if(nTyo && nKpl) { item.tyo = nTyo.replace(/\D/g, '').substring(0,6); item.kpl = nKpl; item.sumMins = parseFloat(item.asetus) + (parseFloat(item.taivutus) * parseInt(nKpl)); saveToDisk(); renderHistory(); updateUI(); }
+    }
+}
 
-setInterval(updateUI, 5000); 
-updateUI(); 
-renderHistory();
+function closeCam() { if(State.stream) State.stream.getTracks().forEach(t => t.stop()); document.getElementById('cam-overlay').style.display='none'; }
+function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) { if(id==='val-lajike')v=v.toUpperCase(); document.getElementById(id).innerText=v; } }
+
+// Service Worker asennusta varten
+if ('serviceWorker' in navigator) {
+    const sw = `self.addEventListener('fetch', function(event) { event.respondWith(fetch(event.request)); });`;
+    const blob = new Blob([sw], {type: 'text/javascript'});
+    const url = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url);
+}
+
+setInterval(updateUI, 5000); updateUI(); renderHistory();
 </script>
 </body>
 </html>
