@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>PBPro v20.2</title>
+    <title>PBPro v20.3</title>
     
     <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22PBPro%22,%22short_name%22:%22PBPro%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0a0a%22,%22theme_color%22:%22%230a0a0a%22,%22icons%22:[{%22src%22:%22https://cdn-icons-png.flaticon.com/512/8061/8061453.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22}]}">
 
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #bf360c; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #d32f2f; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
         .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
@@ -39,7 +39,7 @@
 </head>
 <body>
 
-<div class="version-tag">v20.2 • DYNAMIC ROW DETECTION</div>
+<div class="version-tag">v20.3 • PRODUCT FIELD LOCK</div>
 
 <div class="container">
     <div class="period-header">
@@ -75,7 +75,7 @@
     <div id="hist-list"></div>
 </div>
 
-<div id="loader"><p id="loader-txt">Etsitään Särmäys-riviä...</p></div>
+<div id="loader"><p id="loader-txt">Analysoidaan...</p></div>
 <div id="cam-overlay">
     <video id="video" style="width:100%; height:100%; object-fit:cover;" playsinline muted></video>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
@@ -192,14 +192,19 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "Kortin asetteluohje: Työnumero, Tuote, Piirustus ja Asiakas ovat VAKIOpaikoilla. Etsi ne sieltä. TAIVUTUS- tai SÄRMÄYS-rivi voi vaihtaa paikkaa pystysuunnassa. Etsi kyseinen rivi koko kortin alueelta ja poimi siltä nimenomaan KAPASITEETTIAIKA (min) ja Asetusaika. Muuta Tuote ISOIKSI. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Etsi tiedot vakiopaikoista: 1. Työnumero (6-nro). 2. Tuote (Lue koodi sanan Tuote vierestä. ÄLÄ KOSKAAN lue sanaa 'TAIVUTUS' Tuote-kenttään, se on vaiheen nimi). 3. Piirustusnro. 4. Asiakas. 5. Etsi SÄRMÄYS- tai TAIVUTUS-rivi ja lue sieltä Kapasiteettiaika ja Asetusaika. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"asia\":\"...\",\"laji\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
         });
         const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
+        
+        // PUHDISTUSLOGIIKKA: Estetään sana "TAIVUTUS"
+        let tuote = (res.laji || "-").toUpperCase();
+        if (tuote.includes("TAIVUTUS")) tuote = "-";
+
         document.getElementById('val-tyonr').innerText = (res.tyo || "").replace(/\D/g, '').substring(0,6) || "-";
-        document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
+        document.getElementById('val-lajike').innerText = tuote;
         document.getElementById('val-piirnro').innerText = res.piir || "-";
         document.getElementById('val-asiakas').innerText = res.asia || "-";
         document.getElementById('val-asetusaika').innerText = (res.asetus || "0").replace(',','.');
