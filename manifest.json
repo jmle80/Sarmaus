@@ -1,21 +1,16 @@
 {
-  "short_name": "Työaika",
-  "name": "Työajanseuranta PWA",
+  "short_name": "PBPro",
+  "name": "PBPro Industrial v32.1",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "https://via.placeholder.com/512",
+      "src": "https://cdn-icons-png.flaticon.com/512/2997/2997300.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": "./index.html",
-  "background_color": "#ffffff",
+  "start_url": "index.html",
+  "background_color": "#0d0d0d",
   "display": "standalone",
   "scope": "./",
-  "theme_color": "#4CAF50"
+  "theme_color": "#FF6200"
 }
