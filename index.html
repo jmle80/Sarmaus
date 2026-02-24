@@ -530,19 +530,34 @@ function safeJSON(key, fallback){
   } catch(e){ return fallback; }
 }
 
-// Migraatio: kokeile kaikki tunnetut avaimet
-const HISTORY_KEY = 'pbpro_history';
+// Etsi kaikista mahdollisista avaimista suurin historia
 const ALL_HIST_KEYS = ['pbpro_history','pbpro_master_history','pbpro_hist','pb_history'];
-
 function getBestHistory(){
-  // Etsi avain jossa on eniten merkintöjä
   let best=[], bestLen=0;
-  for(const k of ALL_HIST_KEYS){
-    const arr = safeJSON(k, []);
-    if(arr.length > bestLen){ best=arr; bestLen=arr.length; }
+  // Käy myös kaikki localStorage-avaimet läpi, ei vain tunnetut
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k.includes('hist')||k.includes('history')){
+      const arr=safeJSON(k,[]);
+      if(Array.isArray(arr)&&arr.length>bestLen){best=arr;bestLen=arr.length;}
+    }
   }
   return best;
 }
+
+function forceRestoreHistory(){
+  const best=getBestHistory();
+  if(best.length===0){alert('Ei löydy tallennettua historiaa.');return;}
+  State.history=best;
+  localStorage.setItem('pbpro_history',JSON.stringify(best));
+  localStorage.setItem('pbpro_master_history',JSON.stringify(best));
+  saveToDisk();
+  renderHistory();
+  updateUI();
+  alert('✅ Historia palautettu! '+best.length+' merkintää.');
+}
+
+const HISTORY_KEY = 'pbpro_history';
 
 let State={
   startTime: localStorage.getItem('pb_start') ? new Date(parseInt(localStorage.getItem('pb_start'))) : null,
@@ -551,9 +566,14 @@ let State={
   stream: null
 };
 
+// Jos historia tyhjenee selainistunnon aikana, yritä palauttaa
+if(State.history.length === 0){
+  State.history = getBestHistory();
+}
+
 function saveToDisk(){
   localStorage.setItem(HISTORY_KEY, JSON.stringify(State.history));
-  localStorage.setItem('pbpro_master_history', JSON.stringify(State.history)); // pidä molemmat synkassa
+  localStorage.setItem('pbpro_master_history', JSON.stringify(State.history));
   localStorage.setItem('pbpro_absences', JSON.stringify(State.absences));
   if(State.startTime) localStorage.setItem('pb_start', State.startTime.getTime());
   else localStorage.removeItem('pb_start');
@@ -566,16 +586,15 @@ function diagStorage(){
     const k=localStorage.key(i);
     const v=localStorage.getItem(k);
     let info=`${k}: ${v.length} merkkiä`;
-    if(k.includes('pbpro')||k.includes('pb_')){
-      try{const arr=JSON.parse(v);if(Array.isArray(arr))info+=` (${arr.length} merkintää)`;}catch(e){}
-    }
+    try{const arr=JSON.parse(v);if(Array.isArray(arr))info+=` (${arr.length} merkintää)`;}catch(e){}
     all.push(info);
   }
-  if(!all.length){alert('localStorage on TYHJÄ.');return;}
-  const msg='localStorage-avaimet:\n\n'+all.join('\n')
-    +'\n\n---\nState.history nyt: '+State.history.length+' merkintää'
-    +'\nState.absences nyt: '+State.absences.length;
-  alert(msg);
+  if(!all.length){alert('localStorage on TYHJÄ — historia on mennyt.');return;}
+  const msg='State.history: '+State.history.length+' merkintää\n\n'
+    +'localStorage:\n'+all.join('\n');
+  if(confirm(msg+'\n\n---\nHaluatko palauttaa historian suurimmasta löydetystä avaimesta?')){
+    forceRestoreHistory();
+  }
 }
 function fixDecimals(val){
   if(!val||val==="-")return"0";
@@ -683,7 +702,15 @@ function renderHistory(){
       <span class="hist-edit" onclick="openEditModal(${e.id})">✏️</span>
     </div>`;
   }).join('');
-  document.getElementById('hist-list').innerHTML=html||'<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.75em;color:var(--muted);padding:20px;text-align:center;">// EI TULOKSIA</div>';
+  const empty = !html || State.history.length === 0;
+  document.getElementById('hist-list').innerHTML = empty
+    ? `<div style="text-align:center;padding:30px 20px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.75em;color:var(--muted);margin-bottom:16px;">// EI HISTORIAA</div>
+        <button onclick="forceRestoreHistory()" style="width:100%;background:var(--warn);color:#000;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.2em;letter-spacing:2px;padding:16px;cursor:pointer;">
+          🔄 PALAUTA HISTORIA
+        </button>
+      </div>`
+    : html;
   document.getElementById('hist-count-label').innerText=`// HISTORIA`;
   document.getElementById('hist-search-info').innerText=q?`${visCount} OSUMAA`:'';
 }
@@ -1240,7 +1267,23 @@ function printReport(){
   w.onload=()=>{ w.focus(); w.print(); };
 }
 
+// ===== KÄYNNISTYS =====
+function init(){
+  // Pakota palautus heti jos historia tyhjä
+  if(State.history.length===0){
+    const recovered=getBestHistory();
+    if(recovered.length>0){
+      State.history=recovered;
+      saveToDisk();
+    }
+  }
+  updateUI();
+  renderHistory();
+  checkApiKey();
+  setInterval(updateUI,10000);
+}
 
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
