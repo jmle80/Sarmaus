@@ -405,6 +405,10 @@ function isWorkday(ds){const d=new Date(ds);const w=d.getDay();if(w===0||w===6)r
 function countWorkdays(s,e){let n=0;const sd=new Date(s),ed=new Date(e);for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1))if(isWorkday(toISO(d)))n++;return n;}
 
 // ===== STATE =====
+// Migraatio: siirrä vanha historia uuteen avaimeen
+if(!localStorage.getItem('pbpro_history')&&localStorage.getItem('pbpro_master_history')){
+  localStorage.setItem('pbpro_history',localStorage.getItem('pbpro_master_history'));
+}
 let State={
   startTime:localStorage.getItem('pb_start')?new Date(parseInt(localStorage.getItem('pb_start'))):null,
   history:JSON.parse(localStorage.getItem('pbpro_history')||'[]'),
