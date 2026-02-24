@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v28.2</title>
+    <title>PBPro v28.3</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #1b5e20; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #d32f2f; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
-        /* DASHBOARD & STATS */
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
         .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; font-weight: bold; margin-bottom: 8px; display: block; }
         .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; gap: 5px; }
@@ -23,7 +22,6 @@
         .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
 
-        /* GRID INPUTS */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
@@ -35,14 +33,12 @@
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         
-        /* MODALS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; overflow-y: auto; }
         .modal-content { background: #1a1a1a; border-radius: 20px; padding: 20px; text-align: left; max-width: 440px; margin: 0 auto; border: 1px solid #333; }
         .modal-content label { font-size: 0.7em; color: #888; text-transform: uppercase; display: block; margin-top: 15px; }
         .modal-content input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 10px; color: white; box-sizing: border-box; font-size: 1em; margin-top: 5px; }
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 30px; }
 
-        /* CAMERA & LIST */
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
         #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #video { width: 100%; height: 100%; object-fit: cover; }
@@ -55,7 +51,7 @@
 </head>
 <body>
 
-<div class="version-tag">v28.2 • CORE STABILITY FIXED</div>
+<div class="version-tag">v28.3 • STARTUP & BUTTON REPAIR</div>
 
 <div class="container">
     <div class="period-header">
@@ -81,17 +77,14 @@
             <b id="val-lajike">-</b>
             <b id="val-kuvaus">-</b>
         </div>
-        
         <div class="info-box" onclick="editV('val-tyonr', 'Työnumero')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
         <div class="info-box" onclick="editV('val-piirnro', 'Piirustus')"><span>Piirustus</span><b id="val-piirnro">-</b></div>
         <div class="info-box" onclick="editV('val-asiakas', 'Asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
         <div class="info-box" onclick="editV('val-paino', 'Kappalepaino (kg)')"><span>Paino (kg)</span><b id="val-paino">-</b></div>
-
         <div class="info-box" onclick="openMuutModal()" style="background:#1a231a; border-color:#2e7d32; grid-column: span 2;">
             <span style="color:#00e676;">TYÖVAIHE</span>
             <b id="val-muu-nimi">-</b>
         </div>
-        
         <div class="info-box" onclick="editV('val-asetusaika', 'Asetus')"><span>Asetus</span><b id="val-asetusaika">-</b></div>
         <div class="info-box" onclick="editV('val-taivutusaika', 'Aika / kpl')"><span>Aika</span><b id="val-taivutusaika">-</b></div>
     </div>
@@ -106,12 +99,12 @@
 
 <div id="muut-modal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--success);">Määritä työvaihe</h3>
+        <h3 style="margin-top:0; color:var(--success);">Työvaihe</h3>
         <label>Työvaiheen nimi</label>
         <input type="text" id="muu-nimi-in" list="step-history" placeholder="esim. HITSAUS">
         <datalist id="step-history"></datalist>
-        <label>Asetusaika (min)</label><input type="text" id="muu-asetus-in" placeholder="Syötä vain jos tarpeen">
-        <label>Aika / kpl (min)</label><input type="text" id="muu-aika-in" placeholder="Syötä vain jos tarpeen">
+        <label>Asetusaika (min)</label><input type="text" id="muu-asetus-in">
+        <label>Aika / kpl (min)</label><input type="text" id="muu-aika-in">
         <div class="modal-actions">
             <button onclick="document.getElementById('muut-modal').style.display='none'" style="background:#333; color:white; border:none; padding:15px; border-radius:10px;">PERUUTA</button>
             <button onclick="saveMuut()" style="background:var(--success); color:black; border:none; padding:15px; border-radius:10px; font-weight:bold;">TALLENNA</button>
@@ -141,7 +134,7 @@
     </div>
 </div>
 
-<div id="loader"><p id="loader-txt">Analysoidaan...</p></div>
+<div id="loader"><p id="loader-txt">Ladataan...</p></div>
 
 <div id="cam-overlay">
     <div id="video-container"><video id="video" playsinline muted></video></div>
@@ -197,158 +190,5 @@ function updateUI() {
     let curShiftH = State.startTime ? (now - State.startTime) / 3600000 : 0;
     const totalH = shiftHoursInHist + curShiftH;
     
-    // Weight Calculation
     const totalKg = pD.filter(h => !h.isShift).reduce((s, i) => s + ((parseFloat(i.paino) || 0) * (parseInt(i.kpl) || 0)), 0);
-    document.getElementById('txt-period-weight').innerText = totalKg >= 1000 ? (totalKg/1000).toFixed(2) + "t" : Math.round(totalKg) + "kg";
-
-    document.getElementById('txt-period-hours').innerText = totalH.toFixed(1);
-    document.getElementById('txt-timer').innerText = curShiftH.toFixed(2);
-    
-    const goalMins = pD.filter(h => !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
-    const todayGoal = pD.filter(h => h.pvm === now.toLocaleDateString('fi-FI') && !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
-    
-    document.getElementById('txt-shift-pace').innerText = curShiftH > 0.01 ? ((todayGoal/60)/curShiftH).toFixed(2) : "0.00";
-    document.getElementById('txt-period-pace').innerText = totalH > 0.01 ? ((goalMins/60)/totalH).toFixed(2) : "0.00";
-    
-    document.getElementById('btn-start-shift').style.display = State.startTime ? 'none' : 'block';
-    document.getElementById('btn-stop-shift').style.display = State.startTime ? 'block' : 'none';
-}
-
-function renderHistory() {
-    const s = document.getElementById('search-input').value.toLowerCase();
-    const f = State.history.filter(h => (h.tyo||'').toLowerCase().includes(s) || (h.kuvaus||'').toLowerCase().includes(s) || (h.asia||'').toLowerCase().includes(s));
-    document.getElementById('hist-list').innerHTML = f.map(e => `
-        <div class="hist-item ${e.isShift ? 'work-shift' : ''}">
-            <div style="padding-right: 60px;">
-                ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info} • ${e.hours.toFixed(2)} h</small>` : 
-                `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.vaihe || 'SÄRMÄYS'} • ${e.asia || '-'} • ${e.paino || '0'}kg • ${e.kpl} kpl</small>`}
-            </div>
-            <div class="hist-actions"><button class="btn-icon" onclick="openModal(${e.id})">✏️</button></div>
-        </div>`).join('');
-    updateStepHistory();
-}
-
-function openMuutModal() {
-    const current = document.getElementById('val-muu-nimi').innerText;
-    document.getElementById('muu-nimi-in').value = current === "-" ? "" : current;
-    document.getElementById('muu-asetus-in').value = document.getElementById('val-asetusaika').innerText;
-    document.getElementById('muu-aika-in').value = document.getElementById('val-taivutusaika').innerText;
-    document.getElementById('muut-modal').style.display = 'block';
-}
-
-function saveMuut() {
-    const nimi = document.getElementById('muu-nimi-in').value.toUpperCase();
-    document.getElementById('val-muu-nimi').innerText = nimi || "-";
-    document.getElementById('val-asetusaika').innerText = fixDecimals(document.getElementById('muu-asetus-in').value);
-    document.getElementById('val-taivutusaika').innerText = fixDecimals(document.getElementById('muu-aika-in').value);
-    document.getElementById('muut-modal').style.display = 'none';
-}
-
-function editCombined() {
-    let t = prompt("Tuote (Koodi):", document.getElementById('val-lajike').innerText);
-    let k = prompt("Kuvaus:", document.getElementById('val-kuvaus').innerText);
-    if(t!==null) document.getElementById('val-lajike').innerText = t.toUpperCase();
-    if(k!==null) document.getElementById('val-kuvaus').innerText = k.toUpperCase();
-}
-
-function openModal(id) {
-    const item = State.history.find(h => h.id === id);
-    if(!item || item.isShift) return;
-    document.getElementById('edit-id').value = id;
-    document.getElementById('edit-tyo').value = item.tyo;
-    document.getElementById('edit-piir').value = item.piir || "";
-    document.getElementById('edit-laji').value = item.tuote;
-    document.getElementById('edit-kuvaus').value = item.kuvaus || "";
-    document.getElementById('edit-asia').value = item.asia || "";
-    document.getElementById('edit-paino').value = item.paino || "0";
-    document.getElementById('edit-vaihe').value = item.vaihe || "SÄRMÄYS";
-    document.getElementById('edit-kpl').value = item.kpl;
-    document.getElementById('edit-asetus').value = item.asetus || 0;
-    document.getElementById('edit-taivutus').value = item.taivutus || 0;
-    document.getElementById('edit-modal').style.display = 'block';
-}
-
-function saveEdit() {
-    const id = parseInt(document.getElementById('edit-id').value);
-    const item = State.history.find(h => h.id === id);
-    const kpl = parseInt(document.getElementById('edit-kpl').value) || 0;
-    const a = parseFloat(document.getElementById('edit-asetus').value) || 0;
-    const t = parseFloat(document.getElementById('edit-taivutus').value) || 0;
-    item.tyo = document.getElementById('edit-tyo').value.toUpperCase();
-    item.piir = document.getElementById('edit-piir').value.toUpperCase();
-    item.tuote = document.getElementById('edit-laji').value.toUpperCase();
-    item.kuvaus = document.getElementById('edit-kuvaus').value.toUpperCase();
-    item.asia = document.getElementById('edit-asia').value.toUpperCase();
-    item.paino = fixDecimals(document.getElementById('edit-paino').value);
-    item.vaihe = document.getElementById('edit-vaihe').value.toUpperCase();
-    item.kpl = kpl; item.asetus = a; item.taivutus = t; item.sumMins = a + (t * kpl);
-    saveToDisk(); document.getElementById('edit-modal').style.display = 'none';
-    renderHistory(); updateUI();
-}
-
-function deleteEntry() {
-    if(confirm("Haluatko varmasti poistaa tämän kortin?")) {
-        const id = parseInt(document.getElementById('edit-id').value);
-        State.history = State.history.filter(h => h.id !== id);
-        saveToDisk(); document.getElementById('edit-modal').style.display = 'none';
-        renderHistory(); updateUI();
-    }
-}
-
-document.getElementById('btn-open-camera').onclick = async () => {
-    try {
-        State.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } });
-        document.getElementById('video').srcObject = State.stream;
-        document.getElementById('cam-overlay').style.display='block';
-        document.getElementById('video').play();
-    } catch(e) { alert("Salli kamera."); }
-};
-function closeCam() { if(State.stream) State.stream.getTracks().forEach(t=>t.stop()); document.getElementById('cam-overlay').style.display='none'; }
-
-document.getElementById('snap').onclick = async () => {
-    const v = document.getElementById('video'), c = document.createElement('canvas');
-    c.width = v.videoWidth; c.height = v.videoHeight;
-    c.getContext('2d').drawImage(v, 0, 0);
-    const b64 = c.toDataURL('image/jpeg', 0.9);
-    closeCam();
-    document.getElementById('loader').style.display='flex';
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('openai_api_key') },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [{ role: "user", content: [
-                    { type: "text", text: "Lue A4: Työnumero (6 nro), Piirustusnumero, Tuote, Kuvaus, Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. POIMI kappalepaino kg-yksikkönä lauseen 'Tarve per yksi' alta. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"paino\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
-                    { type: "image_url", image_url: { url: b64 } }
-                ]}]
-            })
-        });
-        const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
-        document.getElementById('val-tyonr').innerText = res.tyo || "-";
-        document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
-        document.getElementById('val-kuvaus').innerText = (res.kuvaus || "-").toUpperCase();
-        document.getElementById('val-asiakas').innerText = res.asia || "-";
-        document.getElementById('val-piirnro').innerText = (res.piir || "-").toUpperCase();
-        document.getElementById('val-paino').innerText = fixDecimals(res.paino);
-        document.getElementById('val-asetusaika').innerText = fixDecimals(res.asetus);
-        document.getElementById('val-taivutusaika').innerText = fixDecimals(res.taivutus);
-        document.getElementById('val-muu-nimi').innerText = "-"; 
-    } catch(e) { console.error(e); }
-    finally { document.getElementById('loader').style.display='none'; }
-};
-
-document.getElementById('btn-save').onclick = () => {
-    const tyo = document.getElementById('val-tyonr').innerText;
-    if(tyo === "-" || tyo.length < 5) return alert("Puutteelliset tiedot!");
-    const kpl = prompt("Kpl-määrä?", "1");
-    if(!kpl) return;
-    const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
-    const t = parseFloat(document.getElementById('val-taivutusaika').innerText) || 0;
-    const p = parseFloat(document.getElementById('val-paino').innerText) || 0;
-    let vaihe = document.getElementById('val-muu-nimi').innerText;
-    if (vaihe === "-") vaihe = "SÄRMÄYS";
-    State.history.unshift({ 
-        id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, piir: document.getElementById('val-piirnro').innerText,
-        tuote: document.getElementById('val-lajike').innerText, kuvaus: document.getElementById('val-kuvaus').innerText, 
-        asia: document.getElementById('val-asiakas').innerText
+    document.getElementById('txt-period-weight').innerText = totalKg >= 1000 ? (totalKg/1000).toFixed(2) + "t" : Math.round(totalKg)
