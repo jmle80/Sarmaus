@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v28.1</title>
+    <title>PBPro v28.2</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #283593; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #1b5e20; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
+        /* DASHBOARD & STATS */
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
         .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; font-weight: bold; margin-bottom: 8px; display: block; }
         .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; gap: 5px; }
@@ -22,6 +23,7 @@
         .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
 
+        /* GRID INPUTS */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
@@ -33,12 +35,14 @@
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         
+        /* MODALS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; overflow-y: auto; }
         .modal-content { background: #1a1a1a; border-radius: 20px; padding: 20px; text-align: left; max-width: 440px; margin: 0 auto; border: 1px solid #333; }
         .modal-content label { font-size: 0.7em; color: #888; text-transform: uppercase; display: block; margin-top: 15px; }
         .modal-content input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 10px; color: white; box-sizing: border-box; font-size: 1em; margin-top: 5px; }
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 30px; }
 
+        /* CAMERA & LIST */
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
         #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #video { width: 100%; height: 100%; object-fit: cover; }
@@ -51,7 +55,7 @@
 </head>
 <body>
 
-<div class="version-tag">v28.1 • TOTAL WEIGHT MONITOR</div>
+<div class="version-tag">v28.2 • CORE STABILITY FIXED</div>
 
 <div class="container">
     <div class="period-header">
@@ -60,7 +64,7 @@
         <div class="period-stats">
             <div class="stat-col"><span class="dash-label">Kerroin</span><span id="txt-period-pace" style="font-size:1.4em; font-weight:900; color:var(--openai);">0.00</span></div>
             <div class="stat-col"><span class="dash-label">Tunnit</span><span id="txt-period-hours" style="font-size:1.4em; font-weight:900; color:#fff">0.0</span></div>
-            <div class="stat-col"><span class="dash-label">Käsitelty</span><span id="txt-period-weight" style="font-size:1.4em; font-weight:900; color:var(--primary);">0kg</span></div>
+            <div class="stat-col"><span class="dash-label">Jakson t</span><span id="txt-period-weight" style="font-size:1.4em; font-weight:900; color:var(--primary);">0kg</span></div>
         </div>
     </div>
     
@@ -81,7 +85,6 @@
         <div class="info-box" onclick="editV('val-tyonr', 'Työnumero')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
         <div class="info-box" onclick="editV('val-piirnro', 'Piirustus')"><span>Piirustus</span><b id="val-piirnro">-</b></div>
         <div class="info-box" onclick="editV('val-asiakas', 'Asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
-        
         <div class="info-box" onclick="editV('val-paino', 'Kappalepaino (kg)')"><span>Paino (kg)</span><b id="val-paino">-</b></div>
 
         <div class="info-box" onclick="openMuutModal()" style="background:#1a231a; border-color:#2e7d32; grid-column: span 2;">
@@ -103,12 +106,12 @@
 
 <div id="muut-modal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--success);">Määritä työvaihe ja ajat</h3>
+        <h3 style="margin-top:0; color:var(--success);">Määritä työvaihe</h3>
         <label>Työvaiheen nimi</label>
         <input type="text" id="muu-nimi-in" list="step-history" placeholder="esim. HITSAUS">
         <datalist id="step-history"></datalist>
-        <label>Asetusaika (min)</label><input type="text" id="muu-asetus-in">
-        <label>Aika / kpl (min)</label><input type="text" id="muu-aika-in">
+        <label>Asetusaika (min)</label><input type="text" id="muu-asetus-in" placeholder="Syötä vain jos tarpeen">
+        <label>Aika / kpl (min)</label><input type="text" id="muu-aika-in" placeholder="Syötä vain jos tarpeen">
         <div class="modal-actions">
             <button onclick="document.getElementById('muut-modal').style.display='none'" style="background:#333; color:white; border:none; padding:15px; border-radius:10px;">PERUUTA</button>
             <button onclick="saveMuut()" style="background:var(--success); color:black; border:none; padding:15px; border-radius:10px; font-weight:bold;">TALLENNA</button>
@@ -143,7 +146,7 @@
 <div id="cam-overlay">
     <div id="video-container"><video id="video" playsinline muted></video></div>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
-        <button id="snap" style="width:75px; height:75px; border-radius:50%; background:white; border:6px solid var(--openai); box-shadow: 0 0 20px rgba(0,0,0,0.5);"></button><br><br>
+        <button id="snap" style="width:75px; height:75px; border-radius:50%; background:white; border:6px solid var(--openai);"></button><br><br>
         <button onclick="closeCam()" style="color:white; background:rgba(0,0,0,0.5); border:none; padding:10px 20px; border-radius:20px;">SULJE</button>
     </div>
 </div>
@@ -171,7 +174,8 @@ function fixDecimals(val) {
 
 function updateStepHistory() {
     const steps = [...new Set(State.history.map(h => h.vaihe).filter(v => v && v !== "-" && v !== "SÄRMÄYS"))];
-    document.getElementById('step-history').innerHTML = steps.map(s => `<option value="${s}">`).join('');
+    const dl = document.getElementById('step-history');
+    if(dl) dl.innerHTML = steps.map(s => `<option value="${s}">`).join('');
 }
 
 function updateUI() {
@@ -180,23 +184,24 @@ function updateUI() {
         const s = new Date(p.start); const e = new Date(p.end); e.setHours(23,59,59); 
         return now >= s && now <= e; 
     }) || payPeriods[0];
+    
     document.getElementById('txt-period-dates').innerText = `JAKSO: ${new Date(p.start).toLocaleDateString('fi-FI')} - ${new Date(p.end).toLocaleDateString('fi-FI')}`;
     const pS = new Date(p.start); const pE = new Date(p.end); pE.setHours(23,59,59);
+    
     const pD = State.history.filter(h => {
         const pts = h.pvm.split('.'); const d = new Date(pts[2], pts[1]-1, pts[0]);
         return d >= pS && d <= pE;
     });
 
-    const shiftH = pD.filter(h => h.isShift).reduce((s, i) => s + (i.hours || 0), 0);
+    const shiftHoursInHist = pD.filter(h => h.isShift).reduce((s, i) => s + (i.hours || 0), 0);
     let curShiftH = State.startTime ? (now - State.startTime) / 3600000 : 0;
-    const totalH = shiftH + curShiftH;
+    const totalH = shiftHoursInHist + curShiftH;
     
-    // Painon laskenta
+    // Weight Calculation
     const totalKg = pD.filter(h => !h.isShift).reduce((s, i) => s + ((parseFloat(i.paino) || 0) * (parseInt(i.kpl) || 0)), 0);
-    const weightDisplay = totalKg >= 1000 ? (totalKg/1000).toFixed(2) + "t" : Math.round(totalKg) + "kg";
+    document.getElementById('txt-period-weight').innerText = totalKg >= 1000 ? (totalKg/1000).toFixed(2) + "t" : Math.round(totalKg) + "kg";
 
     document.getElementById('txt-period-hours').innerText = totalH.toFixed(1);
-    document.getElementById('txt-period-weight').innerText = weightDisplay;
     document.getElementById('txt-timer').innerText = curShiftH.toFixed(2);
     
     const goalMins = pD.filter(h => !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
@@ -233,11 +238,9 @@ function openMuutModal() {
 
 function saveMuut() {
     const nimi = document.getElementById('muu-nimi-in').value.toUpperCase();
-    const asetus = fixDecimals(document.getElementById('muu-asetus-in').value);
-    const aika = fixDecimals(document.getElementById('muu-aika-in').value);
     document.getElementById('val-muu-nimi').innerText = nimi || "-";
-    document.getElementById('val-asetusaika').innerText = asetus;
-    document.getElementById('val-taivutusaika').innerText = aika;
+    document.getElementById('val-asetusaika').innerText = fixDecimals(document.getElementById('muu-asetus-in').value);
+    document.getElementById('val-taivutusaika').innerText = fixDecimals(document.getElementById('muu-aika-in').value);
     document.getElementById('muut-modal').style.display = 'none';
 }
 
@@ -257,7 +260,7 @@ function openModal(id) {
     document.getElementById('edit-laji').value = item.tuote;
     document.getElementById('edit-kuvaus').value = item.kuvaus || "";
     document.getElementById('edit-asia').value = item.asia || "";
-    document.getElementById('edit-paino').value = item.paino || "";
+    document.getElementById('edit-paino').value = item.paino || "0";
     document.getElementById('edit-vaihe').value = item.vaihe || "SÄRMÄYS";
     document.getElementById('edit-kpl').value = item.kpl;
     document.getElementById('edit-asetus').value = item.asetus || 0;
@@ -284,7 +287,7 @@ function saveEdit() {
 }
 
 function deleteEntry() {
-    if(confirm("Poistetaanko kortti?")) {
+    if(confirm("Haluatko varmasti poistaa tämän kortin?")) {
         const id = parseInt(document.getElementById('edit-id').value);
         State.history = State.history.filter(h => h.id !== id);
         saveToDisk(); document.getElementById('edit-modal').style.display = 'none';
@@ -316,7 +319,7 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "Lue A4: Työnumero (6 nro), Piirustusnumero, Tuote, Kuvaus, Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. POIMI kappalepaino kg-yksikkönä lauseen 'Tarve per yksi' alapuolelta. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"paino\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Lue A4: Työnumero (6 nro), Piirustusnumero, Tuote, Kuvaus, Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. POIMI kappalepaino kg-yksikkönä lauseen 'Tarve per yksi' alta. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"paino\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
@@ -331,7 +334,7 @@ document.getElementById('snap').onclick = async () => {
         document.getElementById('val-asetusaika').innerText = fixDecimals(res.asetus);
         document.getElementById('val-taivutusaika').innerText = fixDecimals(res.taivutus);
         document.getElementById('val-muu-nimi').innerText = "-"; 
-    } catch(e) { }
+    } catch(e) { console.error(e); }
     finally { document.getElementById('loader').style.display='none'; }
 };
 
@@ -346,4 +349,6 @@ document.getElementById('btn-save').onclick = () => {
     let vaihe = document.getElementById('val-muu-nimi').innerText;
     if (vaihe === "-") vaihe = "SÄRMÄYS";
     State.history.unshift({ 
-        id: Date.now(), pvm: new Date().toLocaleDateString('fi-
+        id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, piir: document.getElementById('val-piirnro').innerText,
+        tuote: document.getElementById('val-lajike').innerText, kuvaus: document.getElementById('val-kuvaus').innerText, 
+        asia: document.getElementById('val-asiakas').innerText
