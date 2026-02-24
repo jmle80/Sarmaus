@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v28.3</title>
+    <title>PBPro v28.4</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #d32f2f; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #ff1744; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
@@ -43,15 +43,17 @@
         #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #video { width: 100%; height: 100%; object-fit: cover; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        
         #search-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; border-radius: 10px; color: white; margin-bottom: 15px; box-sizing: border-box; }
         .hist-item { background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 12px; text-align: left; border-left: 4px solid var(--primary); position: relative; }
+        .work-shift { border-left-color: var(--success); }
         .hist-actions { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); }
         .btn-icon { background: none; border: none; color: #fff; cursor: pointer; font-size: 1.5em; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v28.3 • STARTUP & BUTTON REPAIR</div>
+<div class="version-tag">v28.4 • RECOVERY MODE</div>
 
 <div class="container">
     <div class="period-header">
@@ -99,48 +101,39 @@
 
 <div id="muut-modal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--success);">Työvaihe</h3>
-        <label>Työvaiheen nimi</label>
-        <input type="text" id="muu-nimi-in" list="step-history" placeholder="esim. HITSAUS">
+        <h3 style="margin-top:0; color:var(--success);">Määritä työvaihe</h3>
+        <label>Työvaiheen nimi</label><input type="text" id="muu-nimi-in" list="step-history">
         <datalist id="step-history"></datalist>
         <label>Asetusaika (min)</label><input type="text" id="muu-asetus-in">
         <label>Aika / kpl (min)</label><input type="text" id="muu-aika-in">
         <div class="modal-actions">
-            <button onclick="document.getElementById('muut-modal').style.display='none'" style="background:#333; color:white; border:none; padding:15px; border-radius:10px;">PERUUTA</button>
-            <button onclick="saveMuut()" style="background:var(--success); color:black; border:none; padding:15px; border-radius:10px; font-weight:bold;">TALLENNA</button>
+            <button onclick="document.getElementById('muut-modal').style.display='none'">PERUUTA</button>
+            <button onclick="saveMuut()" style="background:var(--success); color:black;">TALLENNA</button>
         </div>
     </div>
 </div>
 
 <div id="edit-modal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--openai);">Muokkaa korttia</h3>
+        <h3 style="margin-top:0; color:var(--openai);">Muokkaa</h3>
         <input type="hidden" id="edit-id">
-        <label>Työnumero</label><input type="text" id="edit-tyo">
-        <label>Piirustus</label><input type="text" id="edit-piir">
-        <label>Tuote</label><input type="text" id="edit-laji">
-        <label>Kuvaus</label><input type="text" id="edit-kuvaus">
-        <label>Asiakas</label><input type="text" id="edit-asia">
-        <label>Paino (kg)</label><input type="text" id="edit-paino">
-        <label>Työvaihe</label><input type="text" id="edit-vaihe" list="step-history">
         <label>Kpl</label><input type="number" id="edit-kpl">
-        <label>Asetus</label><input type="text" id="edit-asetus">
-        <label>Aika</label><input type="text" id="edit-taivutus">
+        <label>Paino (kg)</label><input type="text" id="edit-paino">
         <div class="modal-actions">
-            <button onclick="deleteEntry()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none;">POISTA</button>
-            <button onclick="saveEdit()" style="background:var(--success); color:black; padding:15px; border-radius:10px; border:none;">TALLENNA</button>
+            <button onclick="deleteEntry()" style="background:var(--danger); color:white;">POISTA</button>
+            <button onclick="saveEdit()" style="background:var(--success); color:black;">TALLENNA</button>
         </div>
-        <button onclick="document.getElementById('edit-modal').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:20px;">SULJE</button>
+        <button onclick="document.getElementById('edit-modal').style.display='none'" style="width:100%; margin-top:20px;">SULJE</button>
     </div>
 </div>
 
-<div id="loader"><p id="loader-txt">Ladataan...</p></div>
+<div id="loader"><p>Ladataan...</p></div>
 
 <div id="cam-overlay">
     <div id="video-container"><video id="video" playsinline muted></video></div>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
-        <button id="snap" style="width:75px; height:75px; border-radius:50%; background:white; border:6px solid var(--openai);"></button><br><br>
-        <button onclick="closeCam()" style="color:white; background:rgba(0,0,0,0.5); border:none; padding:10px 20px; border-radius:20px;">SULJE</button>
+        <button id="snap" style="width:70px; height:70px; border-radius:50%; background:white;"></button><br><br>
+        <button onclick="closeCam()" style="color:white; background:#333; border:none; padding:10px 20px; border-radius:20px;">SULJE</button>
     </div>
 </div>
 
@@ -165,12 +158,6 @@ function fixDecimals(val) {
     return s.replace(/[^0-9.]/g, '') || "0";
 }
 
-function updateStepHistory() {
-    const steps = [...new Set(State.history.map(h => h.vaihe).filter(v => v && v !== "-" && v !== "SÄRMÄYS"))];
-    const dl = document.getElementById('step-history');
-    if(dl) dl.innerHTML = steps.map(s => `<option value="${s}">`).join('');
-}
-
 function updateUI() {
     const now = new Date();
     const p = payPeriods.find(p => { 
@@ -182,7 +169,8 @@ function updateUI() {
     const pS = new Date(p.start); const pE = new Date(p.end); pE.setHours(23,59,59);
     
     const pD = State.history.filter(h => {
-        const pts = h.pvm.split('.'); const d = new Date(pts[2], pts[1]-1, pts[0]);
+        const pts = h.pvm.split('.'); 
+        const d = new Date(pts[2], pts[1]-1, pts[0]);
         return d >= pS && d <= pE;
     });
 
@@ -191,4 +179,26 @@ function updateUI() {
     const totalH = shiftHoursInHist + curShiftH;
     
     const totalKg = pD.filter(h => !h.isShift).reduce((s, i) => s + ((parseFloat(i.paino) || 0) * (parseInt(i.kpl) || 0)), 0);
-    document.getElementById('txt-period-weight').innerText = totalKg >= 1000 ? (totalKg/1000).toFixed(2) + "t" : Math.round(totalKg)
+    document.getElementById('txt-period-weight').innerText = totalKg >= 1000 ? (totalKg/1000).toFixed(2) + "t" : Math.round(totalKg) + "kg";
+
+    document.getElementById('txt-period-hours').innerText = totalH.toFixed(1);
+    document.getElementById('txt-timer').innerText = curShiftH.toFixed(2);
+    
+    const goalMins = pD.filter(h => !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
+    const todayGoal = pD.filter(h => h.pvm === now.toLocaleDateString('fi-FI') && !h.isShift).reduce((s, i) => s + (i.sumMins || 0), 0);
+    
+    document.getElementById('txt-shift-pace').innerText = curShiftH > 0.01 ? ((todayGoal/60)/curShiftH).toFixed(2) : "0.00";
+    document.getElementById('txt-period-pace').innerText = totalH > 0.01 ? ((goalMins/60)/totalH).toFixed(2) : "0.00";
+    
+    document.getElementById('btn-start-shift').style.display = State.startTime ? 'none' : 'block';
+    document.getElementById('btn-stop-shift').style.display = State.startTime ? 'block' : 'none';
+}
+
+function renderHistory() {
+    const s = document.getElementById('search-input').value.toLowerCase();
+    const f = State.history.filter(h => (h.tyo||'').toLowerCase().includes(s) || (h.kuvaus||'').toLowerCase().includes(s));
+    document.getElementById('hist-list').innerHTML = f.map(e => `
+        <div class="hist-item ${e.isShift ? 'work-shift' : ''}">
+            <div style="padding-right: 60px;">
+                ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info}</small>` : 
+                `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.vaihe || 'SÄRMÄYS'} • ${e.paino}kg • ${e.k
