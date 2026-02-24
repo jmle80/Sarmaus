@@ -1,5 +1,5 @@
-const CACHE_NAME = 'tyoaika-v2.1.0';
-const assets = ['./index.html'];
+const CACHE_NAME = 'pbpro-cache-v32.1';
+const assets = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(assets)));
