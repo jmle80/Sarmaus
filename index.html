@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v27.2</title>
+    <title>PBPro v27.3</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #37474f; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #bf360c; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
-        /* UI ELEMENTS */
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
         .period-dates { font-size: 0.85em; color: var(--openai); text-transform: uppercase; font-weight: bold; margin-bottom: 8px; display: block; }
         .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; }
@@ -20,7 +19,6 @@
         .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.5em; font-weight: 800; color: var(--success); }
 
-        /* GRID INPUTS */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
@@ -32,14 +30,12 @@
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         
-        /* MODAL */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; overflow-y: auto; }
         .modal-content { background: #1a1a1a; border-radius: 20px; padding: 20px; text-align: left; max-width: 440px; margin: 0 auto; border: 1px solid #333; }
         .modal-content label { font-size: 0.7em; color: #888; text-transform: uppercase; display: block; margin-top: 15px; }
         .modal-content input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 10px; color: white; box-sizing: border-box; font-size: 1em; margin-top: 5px; }
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 30px; }
 
-        /* CAMERA & LIST */
         #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
         #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #video { width: 100%; height: 100%; object-fit: cover; }
@@ -52,7 +48,7 @@
 </head>
 <body>
 
-<div class="version-tag">v27.2 • MANUAL STEP LOCK</div>
+<div class="version-tag">v27.3 • INDEPENDENT TIMES</div>
 
 <div class="container">
     <div class="period-header">
@@ -83,7 +79,7 @@
         <div class="info-box" onclick="editV('val-asiakas', 'Asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
         
         <div class="info-box" onclick="openMuutModal()" style="background:#1a231a; border-color:#2e7d32;">
-            <span style="color:#00e676;">MUUT VAIHEET</span>
+            <span style="color:#00e676;">TYÖVAIHE</span>
             <b id="val-muu-nimi">-</b>
         </div>
         
@@ -101,13 +97,11 @@
 
 <div id="muut-modal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--success);">Määritä työvaihe</h3>
+        <h3 style="margin-top:0; color:var(--success);">Määritä työvaiheen nimi</h3>
         <label>Työvaiheen nimi</label>
-        <input type="text" id="muu-nimi-in" list="step-history" placeholder="Esim. HITSAUS tai HIONTA">
+        <input type="text" id="muu-nimi-in" list="step-history" placeholder="HITSAUS, HIONTA jne.">
         <datalist id="step-history"></datalist>
-        
-        <label>Asetusaika (min)</label><input type="text" id="muu-asetus-in" placeholder="0">
-        <label>Aika / kpl (min)</label><input type="text" id="muu-aika-in" placeholder="0">
+        <p style="font-size:0.7em; color:#888; margin-top:10px;">Ajat syötetään päänäkymän laatikoihin.</p>
         <div class="modal-actions">
             <button onclick="document.getElementById('muut-modal').style.display='none'" style="background:#333; color:white; border:none; padding:15px; border-radius:10px;">PERUUTA</button>
             <button onclick="saveMuut()" style="background:var(--success); color:black; border:none; padding:15px; border-radius:10px; font-weight:bold;">TALLENNA</button>
@@ -211,20 +205,14 @@ function renderHistory() {
     updateStepHistory();
 }
 
-// MODALS
 function openMuutModal() {
     const current = document.getElementById('val-muu-nimi').innerText;
     document.getElementById('muu-nimi-in').value = current === "-" ? "" : current;
-    document.getElementById('muu-asetus-in').value = document.getElementById('val-asetusaika').innerText;
-    document.getElementById('muu-aika-in').value = document.getElementById('val-taivutusaika').innerText;
     document.getElementById('muut-modal').style.display = 'block';
 }
 
 function saveMuut() {
-    const nimi = document.getElementById('muu-nimi-in').value.toUpperCase();
-    document.getElementById('val-muu-nimi').innerText = nimi || "-";
-    document.getElementById('val-asetusaika').innerText = fixDecimals(document.getElementById('muu-asetus-in').value);
-    document.getElementById('val-taivutusaika').innerText = fixDecimals(document.getElementById('muu-aika-in').value);
+    document.getElementById('val-muu-nimi').innerText = document.getElementById('muu-nimi-in').value.toUpperCase() || "-";
     document.getElementById('muut-modal').style.display = 'none';
 }
 
@@ -277,7 +265,6 @@ function deleteEntry() {
     }
 }
 
-// CAMERA & SCAN
 document.getElementById('btn-open-camera').onclick = async () => {
     try {
         State.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } });
@@ -302,7 +289,7 @@ document.getElementById('snap').onclick = async () => {
             body: JSON.stringify({
                 model: "gpt-4o",
                 messages: [{ role: "user", content: [
-                    { type: "text", text: "Analysoi A4: Työnumero (6 nro), Piirustusnumero (yläoikea), Tuote (koodi ylävasen), Kuvaus (nimeke koodin alla), Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. ÄLÄ lue työvaihetta tai MUUT-kenttää. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
+                    { type: "text", text: "Tunnista A4. Lue: Työnumero (6 nro), Piirustusnumero (yläoikea), Tuote (koodi ylävasen), Kuvaus (nimeke koodin alla), Asiakas, SÄRMÄYS Asetus ja Kapasiteettiaika. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" },
                     { type: "image_url", image_url: { url: b64 } }
                 ]}]
             })
@@ -315,8 +302,6 @@ document.getElementById('snap').onclick = async () => {
         document.getElementById('val-piirnro').innerText = (res.piir || "-").toUpperCase();
         document.getElementById('val-asetusaika').innerText = fixDecimals(res.asetus);
         document.getElementById('val-taivutusaika').innerText = fixDecimals(res.taivutus);
-        
-        // MUUT-laatikon nollaus skannauksen jälkeen (Pidetään skannaus aina oletuksena särmäyksenä tallennuksessa, mutta käyttöliittymä tyhjänä)
         document.getElementById('val-muu-nimi').innerText = "-"; 
     } catch(e) { }
     finally { document.getElementById('loader').style.display='none'; }
@@ -329,11 +314,8 @@ document.getElementById('btn-save').onclick = () => {
     if(!kpl) return;
     const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
     const t = parseFloat(document.getElementById('val-taivutusaika').innerText) || 0;
-    
-    // Jos Työvaihe on tyhjä, tallennetaan se SÄRMÄYS-nimellä historiaan
     let vaihe = document.getElementById('val-muu-nimi').innerText;
     if (vaihe === "-") vaihe = "SÄRMÄYS";
-
     State.history.unshift({ 
         id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, piir: document.getElementById('val-piirnro').innerText,
         tuote: document.getElementById('val-lajike').innerText, kuvaus: document.getElementById('val-kuvaus').innerText, 
@@ -351,7 +333,7 @@ document.getElementById('btn-stop-shift').onclick = () => {
 };
 
 function resetAll() { if(confirm("Nollataanko koko jakson historian tiedot?")) { State.history = []; saveToDisk(); renderHistory(); updateUI(); } }
-function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) { if(id==='val-lajike'||id==='val-kuvaus'||id==='val-piirnro')v=v.toUpperCase(); document.getElementById(id).innerText=v; } }
+function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) { if(id==='val-lajike'||id==='val-kuvaus'||id==='val-piirnro')v=v.toUpperCase(); if(id==='val-asetusaika'||id==='val-taivutusaika')v=fixDecimals(v); document.getElementById(id).innerText=v; } }
 setInterval(updateUI, 5000); updateUI(); renderHistory();
 </script>
 </body>
