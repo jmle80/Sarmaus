@@ -522,32 +522,40 @@ function isWorkday(ds){const d=new Date(ds);const w=d.getDay();if(w===0||w===6)r
 function countWorkdays(s,e){let n=0;const sd=new Date(s),ed=new Date(e);for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1))if(isWorkday(toISO(d)))n++;return n;}
 
 // ===== STATE =====
+function safeJSON(key, fallback){
+  try{
+    const v = localStorage.getItem(key);
+    if(!v || v === 'null') return fallback;
+    return JSON.parse(v);
+  } catch(e){ return fallback; }
+}
+
 // Migraatio: kokeile kaikki tunnetut avaimet
 const HISTORY_KEY = 'pbpro_history';
-const KNOWN_KEYS = ['pbpro_history','pbpro_master_history','pbpro_hist','pb_history'];
-function migrateHistory(){
-  if(localStorage.getItem(HISTORY_KEY)) return; // jo olemassa
-  for(const k of KNOWN_KEYS){
-    const v=localStorage.getItem(k);
-    if(v&&v!=='[]'&&v.length>2){
-      localStorage.setItem(HISTORY_KEY,v);
-      console.log('PBPro: historia siirretty avaimesta',k);
-      return;
-    }
+const ALL_HIST_KEYS = ['pbpro_history','pbpro_master_history','pbpro_hist','pb_history'];
+
+function getBestHistory(){
+  // Etsi avain jossa on eniten merkintöjä
+  let best=[], bestLen=0;
+  for(const k of ALL_HIST_KEYS){
+    const arr = safeJSON(k, []);
+    if(arr.length > bestLen){ best=arr; bestLen=arr.length; }
   }
+  return best;
 }
-migrateHistory();
 
 let State={
-  startTime:localStorage.getItem('pb_start')?new Date(parseInt(localStorage.getItem('pb_start'))):null,
-  history:JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'),
-  absences:JSON.parse(localStorage.getItem('pbpro_absences')||'[]'),
-  stream:null
+  startTime: localStorage.getItem('pb_start') ? new Date(parseInt(localStorage.getItem('pb_start'))) : null,
+  history: getBestHistory(),
+  absences: safeJSON('pbpro_absences', []),
+  stream: null
 };
+
 function saveToDisk(){
-  localStorage.setItem(HISTORY_KEY,JSON.stringify(State.history));
-  localStorage.setItem('pbpro_absences',JSON.stringify(State.absences));
-  if(State.startTime)localStorage.setItem('pb_start',State.startTime.getTime());
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(State.history));
+  localStorage.setItem('pbpro_master_history', JSON.stringify(State.history)); // pidä molemmat synkassa
+  localStorage.setItem('pbpro_absences', JSON.stringify(State.absences));
+  if(State.startTime) localStorage.setItem('pb_start', State.startTime.getTime());
   else localStorage.removeItem('pb_start');
 }
 
@@ -563,8 +571,10 @@ function diagStorage(){
     }
     all.push(info);
   }
-  if(!all.length){alert('localStorage on TYHJÄ — historia on kadonnut selaimen muistista.\n\nTämä voi johtua:\n• Yksityinen selausikkuna\n• Selaimen välimuisti tyhjennetty\n• Eri URL kuin aiemmin');return;}
-  const msg='localStorage-avaimet:\n\n'+all.join('\n')+'\n\n---\nPBPro etsii historiaa avaimesta: '+HISTORY_KEY;
+  if(!all.length){alert('localStorage on TYHJÄ.');return;}
+  const msg='localStorage-avaimet:\n\n'+all.join('\n')
+    +'\n\n---\nState.history nyt: '+State.history.length+' merkintää'
+    +'\nState.absences nyt: '+State.absences.length;
   alert(msg);
 }
 function fixDecimals(val){
