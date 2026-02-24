@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0a0a">
-    <title>PBPro v28.5</title>
+    <title>PBPro v30.0</title>
     <style>
         :root { --bg: #0a0a0a; --primary: #FF6700; --success: #00e676; --danger: #ff1744; --openai: #74aa9c; }
         body { margin: 0; background: var(--bg); color: #f5f5f5; font-family: sans-serif; text-align: center; overflow-x: hidden; }
-        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #2e7d32; border-bottom: 2px solid #fff; font-size: 0.8em; }
+        .version-tag { color: #fff; font-weight: bold; padding: 10px; background: #6a1b9a; border-bottom: 2px solid #fff; font-size: 0.8em; }
         .container { max-width: 480px; margin: 0 auto; padding: 15px; padding-bottom: 120px; }
         
+        /* HEADER */
         .period-header { background: #111; padding: 15px; border-radius: 16px; border: 1px solid var(--openai); margin-bottom: 10px; position: relative; }
         .period-stats { display: flex; justify-content: space-around; border-top: 1px solid #222; padding-top: 10px; gap: 5px; }
         .stat-col { flex: 1; border-right: 1px solid #222; }
@@ -21,31 +22,36 @@
         .dash-label { font-size: 0.65em; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
         .dash-val { font-size: 1.4em; font-weight: 800; color: var(--success); }
 
+        /* GRID */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; text-align: left; }
         .info-box { background: #111; padding: 12px; border-radius: 12px; border: 1px solid #333; cursor: pointer; min-height: 45px; }
         .info-box span { font-size: 0.65em; color: #888; display: block; text-transform: uppercase; }
         .info-box b { color: var(--primary); font-size: 1.05em; display: block; word-break: break-all; }
         .combined-box { grid-column: span 2; }
+        .combined-box b:last-child { color: #aaa; font-size: 0.85em; }
 
         .main-btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
         .btn-scan { width: 100%; padding: 25px; border-radius: 16px; border: 3px solid var(--openai); background: #0a1a15; color: var(--openai); font-weight: 900; font-size: 1.2em; cursor: pointer; margin-bottom: 20px; }
         
+        /* MODALS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; overflow-y: auto; }
         .modal-content { background: #1a1a1a; border-radius: 20px; padding: 20px; text-align: left; max-width: 440px; margin: 0 auto; border: 1px solid #333; }
-        .modal-content input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 10px; color: white; box-sizing: border-box; margin-bottom: 10px; }
+        .modal-content label { font-size: 0.7em; color: #888; text-transform: uppercase; display: block; margin-top: 10px; }
+        .modal-content input { width: 100%; background: #222; border: 1px solid #444; padding: 12px; border-radius: 10px; color: white; box-sizing: border-box; margin-top: 5px; }
         
-        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
-        #video-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        #video { width: 100%; height: 100%; object-fit: cover; }
-        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        
+        /* HISTORY */
         .hist-item { background: #1a1a1a; padding: 12px; margin-bottom: 8px; border-radius: 12px; text-align: left; border-left: 4px solid var(--primary); position: relative; }
         .hist-item.work-shift { border-left-color: var(--success); }
+        .hist-actions { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 10px; }
+
+        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">v28.5 • STABILITY RECOVERY</div>
+<div class="version-tag">v30.0 • ADVANCED EDITING & SHIELDED SCAN</div>
 
 <div class="container">
     <div class="period-header">
@@ -68,47 +74,71 @@
     <div class="info-grid">
         <div class="info-box combined-box" onclick="editCombined()">
             <span>Tuote & Kuvaus</span>
-            <b id="val-lajike">-</b><b id="val-kuvaus">-</b>
+            <b id="val-lajike">-</b>
+            <b id="val-kuvaus">-</b>
         </div>
         <div class="info-box" onclick="editV('val-tyonr', 'Työnumero')"><span>Työnumero</span><b id="val-tyonr">-</b></div>
         <div class="info-box" onclick="editV('val-piirnro', 'Piirustus')"><span>Piirustus</span><b id="val-piirnro">-</b></div>
         <div class="info-box" onclick="editV('val-asiakas', 'Asiakas')"><span>Asiakas</span><b id="val-asiakas">-</b></div>
         <div class="info-box" onclick="editV('val-paino', 'Paino (kg)')"><span>Paino (kg)</span><b id="val-paino">-</b></div>
+        
         <div class="info-box" onclick="openMuutModal()" style="grid-column: span 2; background:#1a231a;">
             <span style="color:#00e676;">TYÖVAIHE</span><b id="val-muu-nimi">-</b>
         </div>
-        <div class="info-box" onclick="editV('val-asetusaika', 'Asetus')"><span>Asetus</span><b id="val-asetusaika">-</b></div>
-        <div class="info-box" onclick="editV('val-taivutusaika', 'Aika')"><span>Aika</span><b id="val-taivutusaika">-</b></div>
+        
+        <div class="info-box" onclick="editV('val-asetusaika', 'Asetusaika (min)')"><span>Asetus</span><b id="val-asetusaika">-</b></div>
+        <div class="info-box" onclick="editV('val-kap-aika', 'Kapasiteetti (min/kpl)')"><span>Kapasiteetti</span><b id="val-kap-aika">-</b></div>
     </div>
 
     <button onclick="saveEntry()" style="background:var(--primary); color:white" class="main-btn">💾 TALLENNA KORTTI</button>
     <button id="btn-start" onclick="startShift()" style="background:var(--success); color:black" class="main-btn">ALOITA VUORO</button>
     <button id="btn-stop" onclick="stopShift()" style="background:var(--danger); color:white; display:none;" class="main-btn">LOPETA VUORO</button>
     
-    <input type="text" id="search-input" placeholder="Hae..." oninput="renderHistory()" style="width:100%; padding:10px; background:#222; border:1px solid #444; border-radius:10px; color:white; margin-bottom:10px; box-sizing:border-box;">
     <div id="hist-list"></div>
+</div>
+
+<div id="edit-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="edit-modal-title" style="color:var(--primary); margin-top:0;">Muokkaa korttia</h3>
+        <input type="hidden" id="edit-id">
+        
+        <label>Työnumero</label><input type="text" id="edit-tyo">
+        <label>Tuote (Koodi)</label><input type="text" id="edit-laji">
+        <label>Kuvaus</label><input type="text" id="edit-kuvaus">
+        <label>Asiakas</label><input type="text" id="edit-asia">
+        <label>Kpl</label><input type="number" id="edit-kpl">
+        <label>Paino (kg)</label><input type="text" id="edit-paino">
+        <label>Asetus (min)</label><input type="text" id="edit-asetus">
+        <label>Kapasiteetti (min/kpl)</label><input type="text" id="edit-kap">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+            <button onclick="deleteEntry()" style="background:var(--danger); color:white; padding:15px; border:none; border-radius:10px; font-weight:bold;">POISTA</button>
+            <button onclick="confirmEdit()" style="background:var(--success); color:black; padding:15px; border:none; border-radius:10px; font-weight:bold;">TALLENNA</button>
+        </div>
+        <button onclick="closeModal('edit-modal')" style="width:100%; margin-top:15px; background:none; color:#888; border:none;">PERUUTA</button>
+    </div>
 </div>
 
 <div id="muut-modal" class="modal">
     <div class="modal-content">
-        <h3 style="color:var(--success)">Työvaihe</h3>
-        <input type="text" id="muu-nimi-in" placeholder="Nimi">
-        <input type="text" id="muu-asetus-in" placeholder="Asetus (min)">
-        <input type="text" id="muu-aika-in" placeholder="Aika/kpl (min)">
-        <button onclick="saveMuut()" style="width:100%; padding:15px; background:var(--success); border:none; border-radius:10px; font-weight:bold;">TALLENNA</button>
+        <h3 style="color:var(--success)">Määritä työvaihe</h3>
+        <input type="text" id="muu-nimi-in" placeholder="Nimi (esim. TAIVUTUS)">
+        <input type="text" id="muu-asetus-in" placeholder="Asetusaika (min)">
+        <input type="text" id="muu-kap-in" placeholder="Kapasiteetti (min/kpl)">
+        <button onclick="saveMuut()" style="width:100%; padding:15px; background:var(--success); border:none; border-radius:10px; font-weight:bold;">KÄYTÄ</button>
         <button onclick="closeModal('muut-modal')" style="width:100%; margin-top:10px; background:none; color:#888; border:none;">PERUUTA</button>
     </div>
 </div>
 
 <div id="cam-overlay">
-    <div id="video-container"><video id="video" playsinline muted></video></div>
+    <div id="video-container" style="height:100%"><video id="video" playsinline muted></video></div>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
         <button onclick="takeSnap()" style="width:70px; height:70px; border-radius:50%; background:white; border:5px solid var(--openai);"></button><br><br>
         <button onclick="closeCam()" style="color:white; background:none; border:none; font-weight:bold;">SULJE</button>
     </div>
 </div>
 
-<div id="loader"><p>Käsitellään...</p></div>
+<div id="loader"><p>Analysoidaan... Suodatetaan häiriöitä...</p></div>
 
 <script>
 const payPeriods = [{ start: "2026-02-16", end: "2026-02-28" }, { start: "2026-03-01", end: "2026-03-15" }];
@@ -169,64 +199,108 @@ function updateUI() {
 }
 
 function renderHistory() {
-    const s = document.getElementById('search-input').value.toLowerCase();
-    const f = State.history.filter(h => (h.tyo||'').toLowerCase().includes(s) || (h.kuvaus||'').toLowerCase().includes(s));
-    document.getElementById('hist-list').innerHTML = f.slice(0,20).map(e => `
+    document.getElementById('hist-list').innerHTML = State.history.slice(0,30).map(e => `
         <div class="hist-item ${e.isShift ? 'work-shift' : ''}">
-            ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info}</small>` : 
-            `<b>${e.tyo}</b> | ${e.tuote}<br><small>${e.vaihe || 'SÄRMÄYS'} • ${e.paino}kg • ${e.kpl} kpl</small>`}
-            <div style="position:absolute; right:10px; top:10px;" onclick="deleteEntry(${e.id})">🗑️</div>
+            <div style="padding-right: 50px;">
+                ${e.isShift ? `<b>⏱️ VUORO</b><br><small>${e.info}</small>` : 
+                `<b>${e.tyo}</b> | ${e.tuote}<br>
+                 <small>${e.kuvaus || '-'}</small><br>
+                 <small>${e.vaihe || 'TAIVUTUS'} • ${e.kpl} kpl • ${e.sumMins.toFixed(1)} min</small>`}
+            </div>
+            <div class="hist-actions">
+                <span onclick="openEditModal(${e.id})" style="font-size:1.2em; cursor:pointer;">✏️</span>
+            </div>
         </div>`).join('');
 }
 
-function openMuutModal() { document.getElementById('muut-modal').style.display = 'block'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function saveMuut() {
-    document.getElementById('val-muu-nimi').innerText = document.getElementById('muu-nimi-in').value.toUpperCase() || "-";
-    document.getElementById('val-asetusaika').innerText = fixDecimals(document.getElementById('muu-asetus-in').value);
-    document.getElementById('val-taivutusaika').innerText = fixDecimals(document.getElementById('muu-aika-in').value);
-    closeModal('muut-modal');
+// EDIT LOGIC
+function openEditModal(id) {
+    const item = State.history.find(h => h.id === id);
+    if (!item || item.isShift) return;
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-tyo').value = item.tyo;
+    document.getElementById('edit-laji').value = item.tuote;
+    document.getElementById('edit-kuvaus').value = item.kuvaus;
+    document.getElementById('edit-asia').value = item.asia;
+    document.getElementById('edit-kpl').value = item.kpl;
+    document.getElementById('edit-paino').value = item.paino;
+    document.getElementById('edit-asetus').value = item.asetus || 0;
+    document.getElementById('edit-kap').value = item.kapasiteetti || 0;
+    document.getElementById('edit-modal').style.display = 'block';
 }
 
-function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) document.getElementById(id).innerText = v.toUpperCase(); }
-function editCombined() { 
-    let t = prompt("Tuote:", document.getElementById('val-lajike').innerText); 
-    let k = prompt("Kuvaus:", document.getElementById('val-kuvaus').innerText);
-    if(t) document.getElementById('val-lajike').innerText = t.toUpperCase();
-    if(k) document.getElementById('val-kuvaus').innerText = k.toUpperCase();
+function confirmEdit() {
+    const id = parseInt(document.getElementById('edit-id').value);
+    const item = State.history.find(h => h.id === id);
+    const kpl = parseInt(document.getElementById('edit-kpl').value) || 0;
+    const a = parseFloat(document.getElementById('edit-asetus').value) || 0;
+    const k = parseFloat(document.getElementById('edit-kap').value) || 0;
+    
+    item.tyo = document.getElementById('edit-tyo').value.toUpperCase();
+    item.tuote = document.getElementById('edit-laji').value.toUpperCase();
+    item.kuvaus = document.getElementById('edit-kuvaus').value.toUpperCase();
+    item.asia = document.getElementById('edit-asia').value.toUpperCase();
+    item.kpl = kpl;
+    item.paino = fixDecimals(document.getElementById('edit-paino').value);
+    item.asetus = a;
+    item.kapasiteetti = k;
+    item.sumMins = a + (k * kpl);
+
+    saveToDisk(); closeModal('edit-modal'); renderHistory(); updateUI();
+}
+
+function deleteEntry() {
+    if(confirm("Poistetaanko tämä kortti historiasta?")) {
+        const id = parseInt(document.getElementById('edit-id').value);
+        State.history = State.history.filter(h => h.id !== id);
+        saveToDisk(); closeModal('edit-modal'); renderHistory(); updateUI();
+    }
+}
+
+// OTHER MODALS
+function openMuutModal() { document.getElementById('muut-modal').style.display = 'block'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function saveMuut() { 
+    document.getElementById('val-muu-nimi').innerText = document.getElementById('muu-nimi-in').value.toUpperCase() || "-"; 
+    document.getElementById('val-asetusaika').innerText = fixDecimals(document.getElementById('muu-asetus-in').value);
+    document.getElementById('val-kap-aika').innerText = fixDecimals(document.getElementById('muu-kap-in').value);
+    closeModal('muut-modal'); 
+}
+
+function startShift() {
+    const time = new Date().toLocaleTimeString('fi-FI', {hour: '2-digit', minute:'2-digit'});
+    if(confirm(`Aloitetaanko vuoro kello ${time}?`)) { State.startTime = new Date(); saveToDisk(); updateUI(); }
+}
+
+function stopShift() {
+    const time = new Date().toLocaleTimeString('fi-FI', {hour: '2-digit', minute:'2-digit'});
+    if(confirm(`Lopetetaanko vuoro kello ${time}?`)) {
+        const d = new Date();
+        const hrs = (d - State.startTime) / 3600000;
+        State.history.unshift({ id: Date.now(), pvm: d.toLocaleDateString('fi-FI'), isShift: true, hours: hrs, info: `Kello: ${State.startTime.toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})} - ${time} (${hrs.toFixed(2)}h)` });
+        State.startTime = null; saveToDisk(); updateUI(); renderHistory();
+    }
 }
 
 function saveEntry() {
     const tyo = document.getElementById('val-tyonr').innerText;
-    if(tyo === "-") return alert("Ei tietoja");
-    const kpl = prompt("Kpl-määrä?", "1");
-    if(!kpl) return;
-    const a = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
-    const t = parseFloat(document.getElementById('val-taivutusaika').innerText) || 0;
+    if(tyo === "-") return alert("Skannaa kortti ensin");
+    const kpl = parseInt(prompt("Kpl-määrä?", "1")) || 1;
+    const asetus = parseFloat(document.getElementById('val-asetusaika').innerText) || 0;
+    const kap = parseFloat(document.getElementById('val-kap-aika').innerText) || 0;
     const p = parseFloat(document.getElementById('val-paino').innerText) || 0;
-    const v = document.getElementById('val-muu-nimi').innerText === "-" ? "SÄRMÄYS" : document.getElementById('val-muu-nimi').innerText;
-    State.history.unshift({ id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, tuote: document.getElementById('val-lajike').innerText, kuvaus: document.getElementById('val-kuvaus').innerText, paino: p, kpl, vaihe: v, sumMins: a + (t * parseInt(kpl)) });
+    const v = document.getElementById('val-muu-nimi').innerText === "-" ? "TAIVUTUS" : document.getElementById('val-muu-nimi').innerText;
+    
+    State.history.unshift({ 
+        id: Date.now(), pvm: new Date().toLocaleDateString('fi-FI'), tyo, 
+        tuote: document.getElementById('val-lajike').innerText, 
+        kuvaus: document.getElementById('val-kuvaus').innerText, 
+        asia: document.getElementById('val-asiakas').innerText, 
+        paino: p, kpl: kpl, asetus: asetus, kapasiteetti: kap, vaihe: v, sumMins: asetus + (kap * kpl) 
+    });
     saveToDisk(); renderHistory(); updateUI();
 }
 
-function deleteEntry(id) { if(confirm("Poistetaanko?")) { State.history = State.history.filter(h => h.id !== id); saveToDisk(); renderHistory(); updateUI(); } }
-function startShift() { State.startTime = new Date(); saveToDisk(); updateUI(); }
-function stopShift() {
-    const d = new Date();
-    State.history.unshift({ id: Date.now(), pvm: d.toLocaleDateString('fi-FI'), isShift: true, hours: (d - State.startTime) / 3600000, info: `Vuoro: ${State.startTime.getHours()}.${State.startTime.getMinutes()} - ${d.getHours()}.${d.getMinutes()}` });
-    State.startTime = null; saveToDisk(); updateUI(); renderHistory();
-}
-function resetAll() { if(confirm("Nollataanko koko historia?")) { State.history = []; saveToDisk(); renderHistory(); updateUI(); } }
-
-async function openCam() {
-    try {
-        State.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } } });
-        document.getElementById('video').srcObject = State.stream;
-        document.getElementById('cam-overlay').style.display='block';
-        document.getElementById('video').play();
-    } catch(e) { alert("Kamera-virhe"); }
-}
-function closeCam() { if(State.stream) State.stream.getTracks().forEach(t=>t.stop()); document.getElementById('cam-overlay').style.display='none'; }
 async function takeSnap() {
     const v = document.getElementById('video'), c = document.createElement('canvas');
     c.width = v.videoWidth; c.height = v.videoHeight;
@@ -240,7 +314,7 @@ async function takeSnap() {
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('openai_api_key') },
             body: JSON.stringify({
                 model: "gpt-4o",
-                messages: [{ role: "user", content: [{ type: "text", text: "Analysoi työkortti. Työnumero, Tuote, Kuvaus, Asiakas, Särmäysajat ja paino kg kohdasta 'Tarve per yksi' alta. JSON: {\"tyo\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"paino\":\"...\",\"asetus\":\"...\",\"taivutus\":\"...\"}" }, { type: "image_url", image_url: { url: b64 } }]}]
+                messages: [{ role: "user", content: [{ type: "text", text: "HÄIRIÖSUODATUS: Eristä A4-arkki taustasta. Suodata varjot. Lue: 1. TUOTE (ylin rivi vasen), 2. Työnumero (yläkeski 6 nro), 3. Piirustusnumero (yläoikea), 4. KUVAUS (Tuotteen alla), 5. Etsi rivi 'TAIVUTUS': Asetus (luku 1) ja Kapasiteetti (luku 2), 6. PAINO kg 'Tarve per yksi' alta. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"paino\":\"...\",\"asetus\":\"...\",\"kap\":\"...\"}" }, { type: "image_url", image_url: { url: b64 } }]}]
             })
         });
         const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
@@ -248,12 +322,19 @@ async function takeSnap() {
         document.getElementById('val-lajike').innerText = (res.laji || "-").toUpperCase();
         document.getElementById('val-kuvaus').innerText = (res.kuvaus || "-").toUpperCase();
         document.getElementById('val-asiakas').innerText = res.asia || "-";
+        document.getElementById('val-piirnro').innerText = (res.piir || "-").toUpperCase();
         document.getElementById('val-paino').innerText = fixDecimals(res.paino);
         document.getElementById('val-asetusaika').innerText = fixDecimals(res.asetus);
-        document.getElementById('val-taivutusaika').innerText = fixDecimals(res.taivutus);
-    } catch(e) { console.error(e); }
+        document.getElementById('val-kap-aika').innerText = fixDecimals(res.kap);
+    } catch(e) { }
     finally { document.getElementById('loader').style.display='none'; }
 }
+
+function openCam() { navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920}}}).then(s=>{State.stream=s;document.getElementById('video').srcObject=s;document.getElementById('cam-overlay').style.display='block';document.getElementById('video').play();}); }
+function closeCam() { if(State.stream) State.stream.getTracks().forEach(t=>t.stop()); document.getElementById('cam-overlay').style.display='none'; }
+function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) document.getElementById(id).innerText = v.toUpperCase(); }
+function editCombined() { let t = prompt("Tuote:", document.getElementById('val-lajike').innerText); let k = prompt("Kuvaus:", document.getElementById('val-kuvaus').innerText); if(t) document.getElementById('val-lajike').innerText = t.toUpperCase(); if(k) document.getElementById('val-kuvaus').innerText = k.toUpperCase(); }
+function resetAll() { if(confirm("Nollataanko koko jakso?")) { State.history = []; saveToDisk(); updateUI(); renderHistory(); } }
 
 window.onload = () => { updateUI(); renderHistory(); setInterval(updateUI, 10000); };
 </script>
