@@ -51,7 +51,10 @@
 </head>
 <body>
 
-<div class="version-tag">v30.0 • ADVANCED EDITING & SHIELDED SCAN</div>
+<div class="version-tag" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>v30.1 • ADVANCED EDITING & SHIELDED SCAN</span>
+  <span onclick="openApiSettings()" style="cursor:pointer;font-size:1.2em;" id="api-status-icon">⚙️</span>
+</div>
 
 <div class="container">
     <div class="period-header">
@@ -130,11 +133,26 @@
     </div>
 </div>
 
-<div id="cam-overlay">
-    <div id="video-container" style="height:100%"><video id="video" playsinline muted></video></div>
+
+<div id="cam-overlay" style="display:none; position:fixed; inset:0; background:#000; z-index:500;">
+    <div id="video-container" style="height:100%"><video id="video" playsinline muted style="width:100%;height:100%;object-fit:cover;"></video></div>
     <div style="position:absolute; bottom:30px; width:100%; text-align:center;">
         <button onclick="takeSnap()" style="width:70px; height:70px; border-radius:50%; background:white; border:5px solid var(--openai);"></button><br><br>
-        <button onclick="closeCam()" style="color:white; background:none; border:none; font-weight:bold;">SULJE</button>
+        <button onclick="closeCam()" style="color:white; background:none; border:none; font-weight:bold; font-size:1.1em;">SULJE</button>
+    </div>
+</div>
+
+<div id="api-modal" class="modal">
+    <div class="modal-content">
+        <h3 style="color:var(--openai); margin-top:0;">⚙️ API-asetukset</h3>
+        <label>OpenAI API-avain (sk-...)</label>
+        <input type="password" id="api-key-input" placeholder="sk-..." style="font-family:monospace; font-size:0.85em;">
+        <p style="color:#888; font-size:0.75em; margin-top:8px;">Avain tallennetaan vain tähän laitteeseen. Tarvitaan OCR-skannaukseen.<br>Hanki osoitteesta: platform.openai.com</p>
+        <div id="api-key-status" style="font-size:0.8em; margin-bottom:10px; color:var(--success);"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+            <button onclick="closeModal('api-modal')" style="background:#333; color:#aaa; padding:15px; border:none; border-radius:10px;">PERUUTA</button>
+            <button onclick="saveApiKey()" style="background:var(--openai); color:black; padding:15px; border:none; border-radius:10px; font-weight:bold;">TALLENNA</button>
+        </div>
     </div>
 </div>
 
@@ -314,7 +332,28 @@ async function takeSnap() {
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('openai_api_key') },
             body: JSON.stringify({
                 model: "gpt-4o",
-                messages: [{ role: "user", content: [{ type: "text", text: "HÄIRIÖSUODATUS: Eristä A4-arkki taustasta. Suodata varjot. Lue: 1. TUOTE (ylin rivi vasen), 2. Työnumero (yläkeski 6 nro), 3. Piirustusnumero (yläoikea), 4. KUVAUS (Tuotteen alla), 5. Etsi rivi 'TAIVUTUS': Asetus (luku 1) ja Kapasiteetti (luku 2), 6. PAINO kg 'Tarve per yksi' alta. JSON: {\"tyo\":\"...\",\"piir\":\"...\",\"laji\":\"...\",\"kuvaus\":\"...\",\"asia\":\"...\",\"paino\":\"...\",\"asetus\":\"...\",\"kap\":\"...\"}" }, { type: "image_url", image_url: { url: b64 } }]}]
+                messages: [{ role: "user", content: [{ type: "text", text: `Tämä on suomalainen teollisuuden TYÖMÄÄRÄIN-lomake. Lue seuraavat kentät TARKASTI:
+
+1. TYÖ: "Työnumero"-kentän numero (yleensä 6-numeroinen, yläoikealla otsikon alla, EI viivakoodin numero)
+
+2. LAJI: "Tuote"-kentän KOODI (ylävasemmalla, ensimmäinen rivi, esim. "5300218/L", "LFU4401K2001", "00015072", "BCC4C2M1002"). ÄLÄ ota tuotteen nimeä tähän.
+
+3. KUVAUS: Tuotteen nimi/kuvaus (toinen rivi Tuote-kentässä, esim. "Tuuletinsuoja (560 lieriö)", "NOSTOPUOMI", "Pohjalevy Lukolle")
+
+4. ASIA: "Asiakas"-kentän arvo (esim. "HITSAAMOON!", "VEO Oy", "Oy Tamware Ab")
+
+5. PIIR: "Piirustusnumero"-kentän arvo (yläoikealla, esim. "5300218 D", "A", "B", "-")
+
+6. PAINO: Numero kg-arvosta "Tarve per yksi" -sarakkeessa (desimaaliluku, esim. "49.38", "19.95")
+
+7. ASETUS ja KAP: Etsi vaihelistasta rivi jossa lukee "Taivutus" tai "Särmäys". Sen rivin oikealla puolella on sarakkeet "Asetus", "Std.aika" ja "Kapasiteetti". Ota:
+   - asetus = Asetus-sarakkeen numero (kokonaisluku, esim. 34)
+   - kap = Kapasiteetti-sarakkeen numero (desimaaliluku, esim. 4.65)
+   Jos Taivutus/Särmäys-vaihetta EI löydy, palauta asetus=0 ja kap=0.
+   ÄLÄ ota Rei'itys-, Hitsaus-, Leikkaus- tai muiden vaiheiden arvoja.
+
+Palauta VAIN tämä JSON, ei muuta tekstiä:
+{"tyo":"...","laji":"...","kuvaus":"...","asia":"...","piir":"...","paino":"...","asetus":"...","kap":"..."}` }, { type: "image_url", image_url: { url: b64 } }]}]
             })
         });
         const d = await response.json(); const res = JSON.parse(d.choices[0].message.content.match(/\{.*\}/s)[0]);
@@ -330,13 +369,40 @@ async function takeSnap() {
     finally { document.getElementById('loader').style.display='none'; }
 }
 
-function openCam() { navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920}}}).then(s=>{State.stream=s;document.getElementById('video').srcObject=s;document.getElementById('cam-overlay').style.display='block';document.getElementById('video').play();}); }
+function openApiSettings() {
+    const existing = localStorage.getItem('openai_api_key') || '';
+    document.getElementById('api-key-input').value = existing;
+    document.getElementById('api-key-status').innerText = existing ? '✅ Avain on asetettu' : '❌ Avainta ei ole asetettu';
+    document.getElementById('api-modal').style.display = 'block';
+}
+
+function saveApiKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key.startsWith('sk-')) { alert('Virheellinen avain. Avaimen tulee alkaa sk-'); return; }
+    localStorage.setItem('openai_api_key', key);
+    document.getElementById('api-key-status').innerText = '✅ Tallennettu!';
+    document.getElementById('api-status-icon').innerText = '✅';
+    setTimeout(() => closeModal('api-modal'), 1000);
+}
+
+function checkApiKey() {
+    const key = localStorage.getItem('openai_api_key');
+    if (key) document.getElementById('api-status-icon').innerText = '✅';
+}
+
+function openCam() { 
+    if (!localStorage.getItem('openai_api_key')) {
+        if (confirm('OpenAI API-avain puuttuu. Haluatko asettaa sen nyt?')) openApiSettings();
+        return;
+    }
+    navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1920}}}).then(s=>{State.stream=s;document.getElementById('video').srcObject=s;document.getElementById('cam-overlay').style.display='block';document.getElementById('video').play();}); 
+}
 function closeCam() { if(State.stream) State.stream.getTracks().forEach(t=>t.stop()); document.getElementById('cam-overlay').style.display='none'; }
 function editV(id, msg) { let v = prompt(msg, document.getElementById(id).innerText); if(v!==null) document.getElementById(id).innerText = v.toUpperCase(); }
 function editCombined() { let t = prompt("Tuote:", document.getElementById('val-lajike').innerText); let k = prompt("Kuvaus:", document.getElementById('val-kuvaus').innerText); if(t) document.getElementById('val-lajike').innerText = t.toUpperCase(); if(k) document.getElementById('val-kuvaus').innerText = k.toUpperCase(); }
 function resetAll() { if(confirm("Nollataanko koko jakso?")) { State.history = []; saveToDisk(); updateUI(); renderHistory(); } }
 
-window.onload = () => { updateUI(); renderHistory(); setInterval(updateUI, 10000); };
+window.onload = () => { updateUI(); renderHistory(); checkApiKey(); setInterval(updateUI, 10000); };
 </script>
 </body>
 </html>
