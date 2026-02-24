@@ -159,6 +159,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="topbar-version">v32.0 // INDUSTRIAL</div>
     <div class="topbar-icons">
       <span onclick="openAbsenceModal()" title="Poissaolot">🏖️</span>
+      <span onclick="openReportModal()" title="Raportti">📊</span>
       <span onclick="openApiSettings()" id="api-status-icon">⚙️</span>
     </div>
   </div>
@@ -320,20 +321,72 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div style="background:#111;border:1px solid var(--border);border-left:2px solid var(--warn);padding:15px;margin-bottom:15px;">
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.65em;color:var(--warn);letter-spacing:2px;margin-bottom:10px;">// LISÄÄ POISSAOLO</div>
       <label>Tyyppi</label>
-      <select id="abs-type">
+      <select id="abs-type" onchange="updateAbsPreview()">
         <option value="loma">🌴 Loma</option>
         <option value="sairas">🤒 Sairasloma</option>
         <option value="pekkas">💆 Pekkasvapaa</option>
         <option value="muu">📋 Muu vapaa</option>
       </select>
-      <label>Alkupäivä</label><input type="date" id="abs-start" onchange="updateAbsPreview()">
-      <label>Loppupäivä</label><input type="date" id="abs-end" onchange="updateAbsPreview()">
+
+      <!-- Kokonainen vs. osittainen -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px;margin-bottom:4px;">
+        <button id="abs-mode-full" onclick="setAbsMode('full')" style="background:var(--orange);color:#000;border:none;font-family:'Bebas Neue',sans-serif;font-size:0.9em;letter-spacing:1px;padding:8px;cursor:pointer;">KOKONAINEN PV</button>
+        <button id="abs-mode-partial" onclick="setAbsMode('partial')" style="background:#222;color:var(--muted);border:1px solid var(--border);font-family:'Bebas Neue',sans-serif;font-size:0.9em;letter-spacing:1px;padding:8px;cursor:pointer;">OSITTAINEN (H)</button>
+      </div>
+
+      <!-- Kokonainen päivä -->
+      <div id="abs-full-section">
+        <label>Alkupäivä</label><input type="date" id="abs-start" onchange="updateAbsPreview()">
+        <label>Loppupäivä</label><input type="date" id="abs-end" onchange="updateAbsPreview()">
+      </div>
+
+      <!-- Osittainen (tuntimäärä) -->
+      <div id="abs-partial-section" style="display:none;">
+        <label>Päivä</label><input type="date" id="abs-partial-date" onchange="updateAbsPreview()">
+        <label>Tunnit</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+          <input type="number" id="abs-partial-hours" min="0.5" max="8" step="0.5" placeholder="esim. 2" oninput="updateAbsPreview()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-left:2px solid var(--warn);padding:11px 12px;color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.3em;outline:none;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <button onclick="setPartialH(2)" style="background:#222;border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:0.9em;padding:5px;cursor:pointer;flex:1;">2H</button>
+            <button onclick="setPartialH(4)" style="background:#222;border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:0.9em;padding:5px;cursor:pointer;flex:1;">4H</button>
+          </div>
+        </div>
+      </div>
+
       <div class="abs-preview" id="abs-hours-preview"></div>
       <button class="mbtn confirm full" style="margin-top:12px;" onclick="addAbsence()">LISÄÄ</button>
     </div>
     <div style="font-family:'Share Tech Mono',monospace;font-size:0.65em;color:var(--muted);letter-spacing:2px;margin-bottom:8px;">// TALLENNETUT</div>
     <div id="absence-list"></div>
     <button class="mbtn cancel full" style="margin-top:12px;" onclick="closeModal('absence-modal')">SULJE</button>
+  </div>
+</div>
+
+<!-- MUOKKAA POISSAOLOA MODAL -->
+<div id="abs-edit-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">✏ MUOKKAA POISSAOLOA</div>
+    <input type="hidden" id="abs-edit-id">
+    <label>Tyyppi</label>
+    <select id="abs-edit-type">
+      <option value="loma">🌴 Loma</option>
+      <option value="sairas">🤒 Sairasloma</option>
+      <option value="pekkas">💆 Pekkasvapaa</option>
+      <option value="muu">📋 Muu vapaa</option>
+    </select>
+    <div id="abs-edit-full-section">
+      <label>Alkupäivä</label><input type="date" id="abs-edit-start">
+      <label>Loppupäivä</label><input type="date" id="abs-edit-end">
+    </div>
+    <div id="abs-edit-partial-section" style="display:none;">
+      <label>Päivä</label><input type="date" id="abs-edit-pdate">
+      <label>Tunnit</label><input type="number" id="abs-edit-hours" min="0.5" max="8" step="0.5">
+    </div>
+    <div class="modal-btn-row" style="margin-top:20px;">
+      <button class="mbtn danger" onclick="deleteAbsenceFromEdit()">POISTA</button>
+      <button class="mbtn confirm" onclick="saveAbsenceEdit()">TALLENNA</button>
+    </div>
+    <button class="mbtn cancel full" style="margin-top:8px;" onclick="closeModal('abs-edit-modal')">PERUUTA</button>
   </div>
 </div>
 
@@ -351,6 +404,69 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
   </div>
 </div>
+
+<!-- RAPORTTI MODAL -->
+<div id="report-modal" class="modal">
+  <div class="modal-content" style="max-width:100%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">📊 RAPORTTI</div>
+      <button class="mbtn cancel" onclick="closeModal('report-modal')" style="padding:8px 16px;">✕ SULJE</button>
+    </div>
+
+    <!-- AIKAVÄLIN VALINTA -->
+    <div style="background:#111;border:1px solid var(--border);border-left:2px solid var(--orange);padding:14px;margin-bottom:14px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.62em;color:var(--orange);letter-spacing:2px;margin-bottom:10px;">// AJANJAKSO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+        <button class="rpt-period-btn active" id="rpt-btn-jakso" onclick="setReportPeriod('jakso')">JAKSO</button>
+        <button class="rpt-period-btn" id="rpt-btn-kaikki" onclick="setReportPeriod('kaikki')">KAIKKI</button>
+        <button class="rpt-period-btn" id="rpt-btn-custom" onclick="setReportPeriod('custom')">OMA</button>
+      </div>
+      <div id="rpt-custom-dates" style="display:none;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><label style="font-family:'Share Tech Mono',monospace;font-size:0.6em;color:var(--muted);letter-spacing:1px;">ALKU</label>
+        <input type="date" id="rpt-start" oninput="generateReport()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-left:2px solid var(--orange);padding:8px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.8em;margin-top:4px;outline:none;"></div>
+        <div><label style="font-family:'Share Tech Mono',monospace;font-size:0.6em;color:var(--muted);letter-spacing:1px;">LOPPU</label>
+        <input type="date" id="rpt-end" oninput="generateReport()" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-left:2px solid var(--orange);padding:8px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.8em;margin-top:4px;outline:none;"></div>
+      </div>
+    </div>
+
+    <!-- TULOSTA NAPPI -->
+    <button onclick="printReport()" style="width:100%;background:var(--orange);color:#000;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.2em;letter-spacing:3px;padding:14px;cursor:pointer;margin-bottom:14px;">🖨️ TULOSTA / TALLENNA PDF</button>
+
+    <!-- RAPORTIN SISÄLTÖ -->
+    <div id="report-content"></div>
+  </div>
+</div>
+
+<!-- RAPORTTI MODAL -->
+<style>
+.rpt-period-btn{background:#222;border:1px solid var(--border);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:0.95em;letter-spacing:2px;padding:8px;cursor:pointer;transition:all 0.15s;}
+.rpt-period-btn.active{background:var(--orange);color:#000;border-color:var(--orange);}
+.rpt-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.rpt-sum-box{background:#111;border:1px solid var(--border);border-left:3px solid var(--orange);padding:10px 12px;}
+.rpt-sum-lbl{font-family:'Share Tech Mono',monospace;font-size:0.58em;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:3px;}
+.rpt-sum-val{font-family:'Bebas Neue',sans-serif;font-size:1.5em;color:var(--orange);line-height:1;}
+.rpt-day-header{font-family:'Share Tech Mono',monospace;font-size:0.65em;color:var(--orange);letter-spacing:2px;padding:8px 0 4px;border-bottom:1px solid var(--border);margin:10px 0 6px;display:flex;justify-content:space-between;}
+.rpt-table{width:100%;border-collapse:collapse;font-size:0.82em;margin-bottom:4px;}
+.rpt-table th{font-family:'Share Tech Mono',monospace;font-size:0.7em;color:var(--muted);letter-spacing:1px;text-transform:uppercase;text-align:left;padding:5px 6px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.rpt-table th.r{text-align:right;}
+.rpt-table td{padding:6px 6px;border-bottom:1px solid #1e1e1e;vertical-align:top;}
+.rpt-table td.r{text-align:right;font-family:'Share Tech Mono',monospace;font-size:0.9em;}
+.rpt-table tr:hover td{background:#1e1e1e;}
+.rpt-table .tyo{font-family:'Bebas Neue',sans-serif;font-size:1.1em;color:var(--orange);}
+.rpt-table .tuote{color:var(--text);font-weight:700;}
+.rpt-table .sub{font-family:'Share Tech Mono',monospace;font-size:0.7em;color:var(--muted);display:block;margin-top:2px;}
+.rpt-table .good{color:var(--green);}
+.rpt-table .warn{color:var(--warn);}
+.rpt-table .danger{color:var(--danger);}
+.rpt-day-total{text-align:right;font-family:'Share Tech Mono',monospace;font-size:0.65em;color:var(--muted);padding:4px 6px;margin-bottom:8px;}
+
+@media print {
+  body * { visibility: hidden !important; }
+  #print-frame, #print-frame * { visibility: visible !important; }
+  #print-frame { position: fixed !important; inset: 0 !important; background: white !important; z-index: 99999 !important; padding: 20px !important; overflow: auto !important; }
+}
+</style>
+<div id="print-frame" style="display:none;"></div>
 
 <!-- KAMERA -->
 <div id="cam-overlay">
@@ -436,13 +552,19 @@ function updateUI(){
   const pS=new Date(p.start),pE=new Date(p.end);pE.setHours(23,59,59);
   const totalWD=countWorkdays(p.start,p.end);
   let absDays=0;
+  let absHoursPartial=0;
   State.absences.forEach(a=>{
-    const aS=a.start>p.start?a.start:p.start;
-    const aE=a.end<p.end?a.end:p.end;
-    if(aS<=aE)absDays+=countWorkdays(aS,aE);
+    if(a.mode==='partial'||a.partial){
+      // Osittainen: vähennetään vain tunnit, ei päiviä
+      absHoursPartial+=(parseFloat(a.hours)||0);
+    } else {
+      const aS=a.start>p.start?a.start:p.start;
+      const aE=a.end<p.end?a.end:p.end;
+      if(aS<=aE)absDays+=countWorkdays(aS,aE);
+    }
   });
   const netWD=Math.max(0,totalWD-absDays);
-  const targetH=netWD*8;
+  const targetH=Math.max(0,netWD*8-absHoursPartial);
   const pD=State.history.filter(h=>{
     try{const pts=h.pvm.split('.');const d=new Date(pts[2],pts[1]-1,pts[0]);return d>=pS&&d<=pE;}catch(e){return false;}
   });
@@ -455,7 +577,7 @@ function updateUI(){
   document.getElementById('txt-period-hours').innerHTML=`${hoursText}<span> H</span>`;
   document.getElementById('txt-period-target').innerText=targetH;
   document.getElementById('txt-period-weight').innerText=totalKg>=1000?(totalKg/1000).toFixed(2)+"t":Math.round(totalKg)+"kg";
-  document.getElementById('txt-absence-days').innerText=absDays;
+  document.getElementById('txt-absence-days').innerText=absDays+(absHoursPartial>0?` + ${absHoursPartial}H`:'');
   document.getElementById('txt-timer').innerText=curH.toFixed(2);
   // Palkki
   const pct=targetH>0?Math.min(100,(totalH/targetH)*100):0;
@@ -495,10 +617,10 @@ function renderHistory(){
     if(e.isAbsence)return`<div class="hist-item absence${vis?'':' hidden'}">
       <div class="hist-num" style="color:var(--warn);font-size:1.1em;">🏖️</div>
       <div class="hist-info">
-        <div class="hist-name" style="color:var(--warn);">${absLabel(e.absType)}</div>
-        <div class="hist-sub">${e.pvm}${e.pvmEnd&&e.pvmEnd!==e.pvm?' – '+e.pvmEnd:''} • ${e.days} PV • ${e.days*8}H</div>
+        <div class="hist-name" style="color:var(--warn);">${absLabel(e.absType)}${e.partial?' <span style="font-size:0.75em;">OSA</span>':''}</div>
+        <div class="hist-sub">${e.pvm}${e.pvmEnd&&e.pvmEnd!==e.pvm?' – '+e.pvmEnd:''} • ${e.partial?e.hours+'H (osittainen)':(e.days+' PV • '+e.hours+'H')}</div>
       </div>
-      <div class="hist-right"><div class="hist-mins" style="color:var(--warn);">–${e.days*8}H</div></div>
+      <div class="hist-right"><div class="hist-mins" style="color:var(--warn);">–${e.hours}H</div></div>
       <span class="hist-edit" onclick="deleteHistEntry(${e.id})">🗑️</span>
     </div>`;
     if(e.isShift)return`<div class="hist-item shift${vis?'':' hidden'}">
@@ -538,30 +660,138 @@ function deleteHistEntry(id){
 }
 
 // ===== POISSAOLOT =====
+let absMode='full'; // 'full' tai 'partial'
+
+function setAbsMode(mode){
+  absMode=mode;
+  document.getElementById('abs-mode-full').style.background=mode==='full'?'var(--orange)':'#222';
+  document.getElementById('abs-mode-full').style.color=mode==='full'?'#000':'var(--muted)';
+  document.getElementById('abs-mode-full').style.border=mode==='full'?'none':'1px solid var(--border)';
+  document.getElementById('abs-mode-partial').style.background=mode==='partial'?'var(--warn)':'#222';
+  document.getElementById('abs-mode-partial').style.color=mode==='partial'?'#000':'var(--muted)';
+  document.getElementById('abs-mode-partial').style.border=mode==='partial'?'none':'1px solid var(--border)';
+  document.getElementById('abs-full-section').style.display=mode==='full'?'block':'none';
+  document.getElementById('abs-partial-section').style.display=mode==='partial'?'block':'none';
+  updateAbsPreview();
+}
+
+function setPartialH(h){
+  document.getElementById('abs-partial-hours').value=h;
+  updateAbsPreview();
+}
+
 function openAbsenceModal(){
   const today=toISO(new Date());
   document.getElementById('abs-start').value=today;
   document.getElementById('abs-end').value=today;
-  updateAbsPreview();renderAbsenceList();
+  document.getElementById('abs-partial-date').value=today;
+  document.getElementById('abs-partial-hours').value='';
+  setAbsMode('full');
+  updateAbsPreview();
+  renderAbsenceList();
   document.getElementById('absence-modal').style.display='block';
 }
+
 function updateAbsPreview(){
-  const s=document.getElementById('abs-start').value,e=document.getElementById('abs-end').value;
-  if(s&&e&&s<=e){const d=countWorkdays(s,e);document.getElementById('abs-hours-preview').innerText=`= ${d} TYÖPÄIVÄÄ = ${d*8}H`;}
-  else document.getElementById('abs-hours-preview').innerText='';
+  const el=document.getElementById('abs-hours-preview');
+  if(absMode==='full'){
+    const s=document.getElementById('abs-start').value,e=document.getElementById('abs-end').value;
+    if(s&&e&&s<=e){const d=countWorkdays(s,e);el.innerText=`= ${d} TYÖPÄIVÄÄ = ${d*8}H`;}
+    else el.innerText='';
+  } else {
+    const h=parseFloat(document.getElementById('abs-partial-hours').value)||0;
+    const d=document.getElementById('abs-partial-date').value;
+    if(h>0&&d){el.innerText=`= ${h}H POISSAOLOA`;}
+    else el.innerText='';
+  }
 }
+
 function addAbsence(){
   const type=document.getElementById('abs-type').value;
-  const start=document.getElementById('abs-start').value;
-  const end=document.getElementById('abs-end').value;
-  if(!start||!end||start>end){alert('Tarkista päivämäärät');return;}
-  const days=countWorkdays(start,end);
   const id=Date.now();
-  State.absences.push({id,type,start,end,days});
-  State.history.unshift({id:id+1,pvm:new Date(start).toLocaleDateString('fi-FI'),pvmEnd:new Date(end).toLocaleDateString('fi-FI'),isAbsence:true,absType:type,days});
+
+  if(absMode==='full'){
+    const start=document.getElementById('abs-start').value;
+    const end=document.getElementById('abs-end').value;
+    if(!start||!end||start>end){alert('Tarkista päivämäärät');return;}
+    const days=countWorkdays(start,end);
+    State.absences.push({id,type,mode:'full',start,end,days,hours:days*8});
+    State.history.unshift({
+      id:id+1,pvm:new Date(start).toLocaleDateString('fi-FI'),
+      pvmEnd:new Date(end).toLocaleDateString('fi-FI'),
+      isAbsence:true,absType:type,days,hours:days*8
+    });
+    document.getElementById('abs-hours-preview').innerText=`✅ LISÄTTY: ${days} PV / ${days*8}H`;
+  } else {
+    const pdate=document.getElementById('abs-partial-date').value;
+    const hours=parseFloat(document.getElementById('abs-partial-hours').value)||0;
+    if(!pdate||hours<=0||hours>8){alert('Tarkista päivä ja tuntimäärä (0.5–8h)');return;}
+    // Osittainen vapaa: vähennetään vain tunnit, ei kokonaista päivää
+    State.absences.push({id,type,mode:'partial',start:pdate,end:pdate,days:0,hours});
+    State.history.unshift({
+      id:id+1,pvm:new Date(pdate).toLocaleDateString('fi-FI'),
+      pvmEnd:new Date(pdate).toLocaleDateString('fi-FI'),
+      isAbsence:true,absType:type,days:0,hours,partial:true
+    });
+    document.getElementById('abs-hours-preview').innerText=`✅ LISÄTTY: ${hours}H`;
+  }
   saveToDisk();renderAbsenceList();renderHistory();updateUI();
-  document.getElementById('abs-hours-preview').innerText=`✅ LISÄTTY: ${days} PV / ${days*8}H`;
 }
+
+function openAbsenceEdit(id){
+  const a=State.absences.find(x=>x.id===id);
+  if(!a)return;
+  document.getElementById('abs-edit-id').value=id;
+  document.getElementById('abs-edit-type').value=a.type;
+  if(a.mode==='partial'||a.partial){
+    document.getElementById('abs-edit-full-section').style.display='none';
+    document.getElementById('abs-edit-partial-section').style.display='block';
+    document.getElementById('abs-edit-pdate').value=a.start;
+    document.getElementById('abs-edit-hours').value=a.hours;
+  } else {
+    document.getElementById('abs-edit-full-section').style.display='block';
+    document.getElementById('abs-edit-partial-section').style.display='none';
+    document.getElementById('abs-edit-start').value=a.start;
+    document.getElementById('abs-edit-end').value=a.end;
+  }
+  document.getElementById('abs-edit-modal').style.display='block';
+}
+
+function saveAbsenceEdit(){
+  const id=parseInt(document.getElementById('abs-edit-id').value);
+  const a=State.absences.find(x=>x.id===id);
+  if(!a)return;
+  a.type=document.getElementById('abs-edit-type').value;
+  const isPartial=document.getElementById('abs-edit-partial-section').style.display!=='none';
+  if(isPartial){
+    const pdate=document.getElementById('abs-edit-pdate').value;
+    const hours=parseFloat(document.getElementById('abs-edit-hours').value)||0;
+    if(!pdate||hours<=0){alert('Tarkista tiedot');return;}
+    a.mode='partial';a.start=pdate;a.end=pdate;a.days=0;a.hours=hours;
+    // Päivitä historia
+    const h=State.history.find(x=>x.isAbsence&&x.id===id+1);
+    if(h){h.absType=a.type;h.pvm=new Date(pdate).toLocaleDateString('fi-FI');h.pvmEnd=h.pvm;h.days=0;h.hours=hours;h.partial=true;}
+  } else {
+    const start=document.getElementById('abs-edit-start').value;
+    const end=document.getElementById('abs-edit-end').value;
+    if(!start||!end||start>end){alert('Tarkista päivämäärät');return;}
+    const days=countWorkdays(start,end);
+    a.mode='full';a.start=start;a.end=end;a.days=days;a.hours=days*8;
+    const h=State.history.find(x=>x.isAbsence&&x.id===id+1);
+    if(h){h.absType=a.type;h.pvm=new Date(start).toLocaleDateString('fi-FI');h.pvmEnd=new Date(end).toLocaleDateString('fi-FI');h.days=days;h.hours=days*8;h.partial=false;}
+  }
+  saveToDisk();closeModal('abs-edit-modal');renderAbsenceList();renderHistory();updateUI();
+}
+
+function deleteAbsenceFromEdit(){
+  const id=parseInt(document.getElementById('abs-edit-id').value);
+  if(confirm('Poistetaanko poissaolo?')){
+    State.absences=State.absences.filter(a=>a.id!==id);
+    State.history=State.history.filter(h=>!(h.isAbsence&&h.id===id+1));
+    saveToDisk();closeModal('abs-edit-modal');renderAbsenceList();renderHistory();updateUI();
+  }
+}
+
 function removeAbsence(id){
   if(confirm('Poistetaanko poissaolo?')){
     State.absences=State.absences.filter(a=>a.id!==id);
@@ -569,15 +799,29 @@ function removeAbsence(id){
     saveToDisk();renderAbsenceList();renderHistory();updateUI();
   }
 }
+
 function renderAbsenceList(){
   const list=document.getElementById('absence-list');
-  if(!State.absences.length){list.innerHTML='<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.7em;color:var(--muted);padding:10px;text-align:center;">// EI POISSAOLOJA</div>';return;}
-  list.innerHTML=State.absences.map(a=>`<div class="abs-item ${a.type}">
-    <div><div class="abs-name">${absLabel(a.type)}</div>
-    <div class="abs-sub">${new Date(a.start).toLocaleDateString('fi-FI')} – ${new Date(a.end).toLocaleDateString('fi-FI')} • ${a.days} PV • ${a.days*8}H</div></div>
-    <button class="abs-del" onclick="removeAbsence(${a.id})">✕</button>
-  </div>`).join('');
+  if(!State.absences.length){
+    list.innerHTML='<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.7em;color:var(--muted);padding:10px;text-align:center;">// EI POISSAOLOJA</div>';
+    return;
+  }
+  list.innerHTML=State.absences.map(a=>{
+    const isPartial=a.mode==='partial'||a.partial;
+    const sub=isPartial
+      ?`${new Date(a.start).toLocaleDateString('fi-FI')} • ${a.hours}H (osittainen)`
+      :`${new Date(a.start).toLocaleDateString('fi-FI')} – ${new Date(a.end).toLocaleDateString('fi-FI')} • ${a.days} PV • ${a.hours}H`;
+    return`<div class="abs-item ${a.type}" style="gap:8px;">
+      <div style="flex:1;">
+        <div class="abs-name">${absLabel(a.type)}${isPartial?' <span style="font-size:0.75em;color:var(--warn);">OSITTAINEN</span>':''}</div>
+        <div class="abs-sub">${sub}</div>
+      </div>
+      <button onclick="openAbsenceEdit(${a.id})" style="background:none;border:none;color:var(--orange);font-size:1.1em;cursor:pointer;padding:4px 6px;">✏️</button>
+      <button class="abs-del" onclick="removeAbsence(${a.id})">✕</button>
+    </div>`;
+  }).join('');
 }
+
 
 // ===== VUORO =====
 function startShift(){
@@ -775,7 +1019,188 @@ function saveApiKey(){
 }
 function checkApiKey(){if(localStorage.getItem('openai_api_key'))document.getElementById('api-status-icon').innerText='✅';}
 
-window.onload=()=>{updateUI();renderHistory();checkApiKey();setInterval(updateUI,10000);};
+// ===== RAPORTTI =====
+let reportPeriod='jakso';
+
+function openReportModal(){
+  setReportPeriod('jakso');
+  document.getElementById('report-modal').style.display='block';
+}
+
+function setReportPeriod(p){
+  reportPeriod=p;
+  ['jakso','kaikki','custom'].forEach(x=>{
+    document.getElementById('rpt-btn-'+x).classList.toggle('active',x===p);
+  });
+  const customEl=document.getElementById('rpt-custom-dates');
+  customEl.style.display=p==='custom'?'grid':'none';
+  if(p==='custom'){
+    const today=toISO(new Date());
+    if(!document.getElementById('rpt-start').value)document.getElementById('rpt-start').value=today;
+    if(!document.getElementById('rpt-end').value)document.getElementById('rpt-end').value=today;
+  }
+  generateReport();
+}
+
+function getReportData(){
+  const now=new Date();
+  let startStr,endStr;
+  if(reportPeriod==='jakso'){
+    const p=payPeriods.find(p=>{const s=new Date(p.start),e=new Date(p.end);e.setHours(23,59,59);return now>=s&&now<=e;})||payPeriods[0];
+    startStr=p.start;endStr=p.end;
+  } else if(reportPeriod==='kaikki'){
+    startStr='2000-01-01';endStr='2099-12-31';
+  } else {
+    startStr=document.getElementById('rpt-start').value||toISO(now);
+    endStr=document.getElementById('rpt-end').value||toISO(now);
+  }
+  const pS=new Date(startStr),pE=new Date(endStr);pE.setHours(23,59,59);
+  const items=State.history.filter(h=>{
+    if(h.isAbsence)return false;
+    try{const pts=h.pvm.split('.');const d=new Date(pts[2],pts[1]-1,pts[0]);return d>=pS&&d<=pE;}
+    catch(e){return false;}
+  });
+  return{items,startStr,endStr};
+}
+
+function generateReport(){
+  const{items,startStr,endStr}=getReportData();
+  const workItems=items.filter(h=>!h.isShift);
+  const shiftItems=items.filter(h=>h.isShift);
+
+  if(!items.length){
+    document.getElementById('report-content').innerHTML=
+      '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.75em;color:var(--muted);padding:30px;text-align:center;">// EI DATAA VALITULTA AJANJAKSOLTA</div>';
+    return;
+  }
+
+  // Yhteenveto
+  const totalMins=workItems.reduce((s,i)=>s+(parseFloat(i.sumMins)||0),0);
+  const totalKg=workItems.reduce((s,i)=>s+((parseFloat(i.paino)||0)*(parseInt(i.kpl)||0)),0);
+  const totalH=shiftItems.reduce((s,i)=>s+(parseFloat(i.hours)||0),0);
+  const kerroin=totalH>0.01?((totalMins/60)/totalH):0;
+  const totalKpl=workItems.reduce((s,i)=>s+(parseInt(i.kpl)||0),0);
+  const asetusYht=workItems.reduce((s,i)=>s+(parseFloat(i.asetus)||0),0);
+  const kapYht=workItems.reduce((s,i)=>s+((parseFloat(i.kapasiteetti)||0)*(parseInt(i.kpl)||0)),0);
+
+  let html=`<div class="rpt-summary">
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Työtunnit</span><span class="rpt-sum-val" style="color:var(--green);">${totalH.toFixed(2)}H</span></div>
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Joutuisuus</span><span class="rpt-sum-val" style="color:${kerroin>=1?'var(--green)':kerroin>=0.85?'var(--warn)':'var(--danger)'};">${kerroin.toFixed(2)}</span></div>
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Standardiaika yht.</span><span class="rpt-sum-val">${(totalMins/60).toFixed(2)}H</span></div>
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Paino yht.</span><span class="rpt-sum-val" style="color:var(--orange);">${totalKg>=1000?(totalKg/1000).toFixed(2)+'T':Math.round(totalKg)+'KG'}</span></div>
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Kortit</span><span class="rpt-sum-val">${workItems.length}</span></div>
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Kpl yht.</span><span class="rpt-sum-val">${totalKpl}</span></div>
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Asetusaika yht.</span><span class="rpt-sum-val">${asetusYht.toFixed(0)} MIN</span></div>
+    <div class="rpt-sum-box"><span class="rpt-sum-lbl">Kappaleaika yht.</span><span class="rpt-sum-val">${kapYht.toFixed(0)} MIN</span></div>
+  </div>`;
+
+  // Ryhmittely päivän mukaan
+  const byDay={};
+  workItems.forEach(item=>{
+    if(!byDay[item.pvm])byDay[item.pvm]=[];
+    byDay[item.pvm].push(item);
+  });
+
+  // Vuorot päivittäin
+  const shiftByDay={};
+  shiftItems.forEach(s=>{if(!shiftByDay[s.pvm])shiftByDay[s.pvm]=0;shiftByDay[s.pvm]+=(parseFloat(s.hours)||0);});
+
+  const sortedDays=Object.keys(byDay).sort((a,b)=>{
+    const pa=a.split('.'),pb=b.split('.');
+    return new Date(pb[2],pb[1]-1,pb[0])-new Date(pa[2],pa[1]-1,pa[0]);
+  });
+
+  sortedDays.forEach(day=>{
+    const dayItems=byDay[day];
+    const dayMins=dayItems.reduce((s,i)=>s+(parseFloat(i.sumMins)||0),0);
+    const dayKg=dayItems.reduce((s,i)=>s+((parseFloat(i.paino)||0)*(parseInt(i.kpl)||0)),0);
+    const dayH=shiftByDay[day]||0;
+    const dayKerroin=dayH>0.01?((dayMins/60)/dayH):null;
+
+    html+=`<div class="rpt-day-header">
+      <span>📅 ${day}</span>
+      <span style="color:var(--textdim);">${dayH>0?dayH.toFixed(2)+'H':''} ${dayKerroin!==null?'• K: '+dayKerroin.toFixed(2):''}</span>
+    </div>
+    <table class="rpt-table">
+      <thead><tr>
+        <th>Työnro / Tuote</th>
+        <th class="r">Kpl</th>
+        <th class="r">Asetus</th>
+        <th class="r">Kap/kpl</th>
+        <th class="r">Std yht.</th>
+        <th class="r">Paino</th>
+      </tr></thead>
+      <tbody>`;
+
+    dayItems.forEach(item=>{
+      const stdYht=(parseFloat(item.asetus)||0)+((parseFloat(item.kapasiteetti)||0)*(parseInt(item.kpl)||0));
+      const kgYht=(parseFloat(item.paino)||0)*(parseInt(item.kpl)||0);
+      html+=`<tr>
+        <td>
+          <span class="tyo">${item.tyo||'-'}</span>
+          <span class="tuote">${item.tuote||'-'}</span>
+          <span class="sub">${item.kuvaus||''} ${item.asia?'• '+item.asia:''} ${item.vahvuus?'• '+item.vahvuus+'mm':''}</span>
+        </td>
+        <td class="r">${item.kpl||1}</td>
+        <td class="r">${(parseFloat(item.asetus)||0).toFixed(0)} min</td>
+        <td class="r">${(parseFloat(item.kapasiteetti)||0).toFixed(2)}</td>
+        <td class="r"><b>${stdYht.toFixed(1)} min</b></td>
+        <td class="r">${kgYht.toFixed(1)} kg</td>
+      </tr>`;
+    });
+
+    html+=`</tbody></table>
+    <div class="rpt-day-total">
+      Päivä yhteensä: ${dayMins.toFixed(0)} min std-aikaa • ${dayKg.toFixed(1)} kg
+    </div>`;
+  });
+
+  document.getElementById('report-content').innerHTML=html;
+}
+
+function printReport(){
+  const{startStr,endStr}=getReportData();
+  const content=document.getElementById('report-content').innerHTML;
+  const printHtml=`
+    <html><head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{background:white;color:#111;font-family:'Barlow Condensed',sans-serif;padding:20px;font-size:13px;}
+      h1{font-family:'Bebas Neue',sans-serif;font-size:2em;letter-spacing:3px;color:#FF6200;margin-bottom:4px;}
+      .meta{font-family:'Share Tech Mono',monospace;font-size:0.7em;color:#888;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #FF6200;}
+      .rpt-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+      .rpt-sum-box{background:#f5f5f5;border:1px solid #ddd;border-left:3px solid #FF6200;padding:8px 10px;}
+      .rpt-sum-lbl{font-family:'Share Tech Mono',monospace;font-size:0.6em;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px;}
+      .rpt-sum-val{font-family:'Bebas Neue',sans-serif;font-size:1.4em;color:#FF6200;line-height:1;}
+      .rpt-day-header{font-family:'Share Tech Mono',monospace;font-size:0.7em;color:#FF6200;letter-spacing:2px;padding:8px 0 4px;border-bottom:2px solid #FF6200;margin:12px 0 6px;display:flex;justify-content:space-between;}
+      .rpt-table{width:100%;border-collapse:collapse;font-size:0.85em;margin-bottom:4px;}
+      .rpt-table th{font-family:'Share Tech Mono',monospace;font-size:0.7em;color:#888;letter-spacing:1px;text-transform:uppercase;text-align:left;padding:5px 6px;border-bottom:1px solid #ddd;white-space:nowrap;background:#f9f9f9;}
+      .rpt-table th.r{text-align:right;}
+      .rpt-table td{padding:5px 6px;border-bottom:1px solid #eee;vertical-align:top;}
+      .rpt-table td.r{text-align:right;font-family:'Share Tech Mono',monospace;}
+      .rpt-table tr:nth-child(even) td{background:#fafafa;}
+      .tyo{font-family:'Bebas Neue',sans-serif;font-size:1.15em;color:#FF6200;display:block;}
+      .tuote{font-weight:700;display:block;}
+      .sub{font-family:'Share Tech Mono',monospace;font-size:0.7em;color:#999;display:block;margin-top:1px;}
+      .rpt-day-total{text-align:right;font-family:'Share Tech Mono',monospace;font-size:0.65em;color:#999;padding:3px 6px 8px;border-bottom:1px solid #eee;}
+      .good{color:#00a040;}.warn{color:#e08000;}.danger{color:#cc0000;}
+      @page{margin:15mm;}
+    </style>
+    </head><body>
+    <h1>PBPro — Työraportti</h1>
+    <div class="meta">Ajanjakso: ${new Date(startStr).toLocaleDateString('fi-FI')} – ${new Date(endStr).toLocaleDateString('fi-FI')} &nbsp;|&nbsp; Tulostettu: ${new Date().toLocaleDateString('fi-FI')} ${new Date().toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'})}</div>
+    ${content}
+    </body></html>`;
+
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(printHtml);
+  w.document.close();
+  w.onload=()=>{ w.focus(); w.print(); };
+}
+
+
 </script>
 </body>
 </html>
