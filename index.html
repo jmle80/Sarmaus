@@ -160,6 +160,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="topbar-icons">
       <span onclick="openAbsenceModal()" title="Poissaolot">🏖️</span>
       <span onclick="openReportModal()" title="Raportti">📊</span>
+      <span onclick="diagStorage()" title="Diagnostiikka" style="font-size:0.9em;">🔧</span>
       <span onclick="openApiSettings()" id="api-status-icon">⚙️</span>
     </div>
   </div>
@@ -521,21 +522,50 @@ function isWorkday(ds){const d=new Date(ds);const w=d.getDay();if(w===0||w===6)r
 function countWorkdays(s,e){let n=0;const sd=new Date(s),ed=new Date(e);for(let d=new Date(sd);d<=ed;d.setDate(d.getDate()+1))if(isWorkday(toISO(d)))n++;return n;}
 
 // ===== STATE =====
-// Migraatio: siirrä vanha historia uuteen avaimeen
-if(!localStorage.getItem('pbpro_history')&&localStorage.getItem('pbpro_master_history')){
-  localStorage.setItem('pbpro_history',localStorage.getItem('pbpro_master_history'));
+// Migraatio: kokeile kaikki tunnetut avaimet
+const HISTORY_KEY = 'pbpro_history';
+const KNOWN_KEYS = ['pbpro_history','pbpro_master_history','pbpro_hist','pb_history'];
+function migrateHistory(){
+  if(localStorage.getItem(HISTORY_KEY)) return; // jo olemassa
+  for(const k of KNOWN_KEYS){
+    const v=localStorage.getItem(k);
+    if(v&&v!=='[]'&&v.length>2){
+      localStorage.setItem(HISTORY_KEY,v);
+      console.log('PBPro: historia siirretty avaimesta',k);
+      return;
+    }
+  }
 }
+migrateHistory();
+
 let State={
   startTime:localStorage.getItem('pb_start')?new Date(parseInt(localStorage.getItem('pb_start'))):null,
-  history:JSON.parse(localStorage.getItem('pbpro_history')||'[]'),
+  history:JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'),
   absences:JSON.parse(localStorage.getItem('pbpro_absences')||'[]'),
   stream:null
 };
 function saveToDisk(){
-  localStorage.setItem('pbpro_history',JSON.stringify(State.history));
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(State.history));
   localStorage.setItem('pbpro_absences',JSON.stringify(State.absences));
   if(State.startTime)localStorage.setItem('pb_start',State.startTime.getTime());
   else localStorage.removeItem('pb_start');
+}
+
+// Diagnostiikka: näyttää mitä localStorage-avaimia löytyy
+function diagStorage(){
+  const all=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    const v=localStorage.getItem(k);
+    let info=`${k}: ${v.length} merkkiä`;
+    if(k.includes('pbpro')||k.includes('pb_')){
+      try{const arr=JSON.parse(v);if(Array.isArray(arr))info+=` (${arr.length} merkintää)`;}catch(e){}
+    }
+    all.push(info);
+  }
+  if(!all.length){alert('localStorage on TYHJÄ — historia on kadonnut selaimen muistista.\n\nTämä voi johtua:\n• Yksityinen selausikkuna\n• Selaimen välimuisti tyhjennetty\n• Eri URL kuin aiemmin');return;}
+  const msg='localStorage-avaimet:\n\n'+all.join('\n')+'\n\n---\nPBPro etsii historiaa avaimesta: '+HISTORY_KEY;
+  alert(msg);
 }
 function fixDecimals(val){
   if(!val||val==="-")return"0";
