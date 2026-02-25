@@ -158,8 +158,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="topbar-logo"><span>PBPro</span></div>
     <div class="topbar-version">v32.0 // INDUSTRIAL</div>
     <div class="topbar-icons">
+      <span id="gps-status-icon" onclick="openGpsSettings()" title="GPS" style="font-size:1em;">📍</span>
       <span onclick="openAbsenceModal()" title="Poissaolot">🏖️</span>
       <span onclick="openReportModal()" title="Raportti">📊</span>
+      <span onclick="exportJSON()" title="Vie historia JSON" style="font-size:0.9em;cursor:pointer;margin-right:4px;">💾</span>
       <span onclick="diagStorage()" title="Diagnostiikka" style="font-size:0.9em;">🔧</span>
       <span onclick="openApiSettings()" id="api-status-icon">⚙️</span>
     </div>
@@ -218,6 +220,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <span class="vuoro-lbl">⬛ Joutuisuus</span>
       <span class="vuoro-val" id="txt-shift-pace" style="color:var(--orange);">0.00</span>
     </div>
+  </div>
+
+  <!-- GPS STATUS -->
+  <div id="gps-bar" style="display:none;background:var(--panel);border:1px solid var(--border);border-left:3px solid #29b6f6;padding:8px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+    <span id="gps-bar-text" style="font-family:'Share Tech Mono',monospace;font-size:0.65em;color:#29b6f6;letter-spacing:1px;">// GPS AKTIIVINEN</span>
+    <span id="gps-bar-dist" style="font-family:'Bebas Neue',sans-serif;font-size:1.1em;color:var(--muted);">-</span>
   </div>
 
   <!-- SCAN -->
@@ -388,6 +396,32 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button class="mbtn confirm" onclick="saveAbsenceEdit()">TALLENNA</button>
     </div>
     <button class="mbtn cancel full" style="margin-top:8px;" onclick="closeModal('abs-edit-modal')">PERUUTA</button>
+  </div>
+</div>
+
+<!-- GPS MODAL -->
+<div id="gps-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">📍 GPS-ASETUKSET</div>
+    <div id="gps-modal-status" style="font-family:'Share Tech Mono',monospace;font-size:0.72em;padding:10px;background:#111;border-left:3px solid #29b6f6;margin-bottom:14px;min-height:20px;color:#29b6f6;"></div>
+
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.62em;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">TYÖPAIKAN SIJAINTI</div>
+    <div id="gps-saved-location" style="font-family:'Share Tech Mono',monospace;font-size:0.7em;color:var(--textdim);padding:8px;background:#111;border:1px solid var(--border);margin-bottom:10px;">Ei asetettu</div>
+
+    <button class="mbtn confirm full" onclick="setWorkplaceLocation()" style="margin-bottom:8px;">📍 ASETA NYKYINEN SIJAINTI TYÖPAIKAKSI</button>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <button id="gps-toggle-btn" class="mbtn green-btn" onclick="toggleGps()">▶ KÄYNNISTÄ GPS</button>
+      <button class="mbtn danger" onclick="clearWorkplace()">🗑 POISTA SIJAINTI</button>
+    </div>
+
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.6em;color:var(--muted);margin-top:10px;line-height:1.6;">
+      GPS tarkistaa sijaintisi 30 sekunnin välein.<br>
+      Vuoro alkaa automaattisesti kun olet 100m säteellä.<br>
+      Vuoro loppuu automaattisesti kun poistut alueelta.
+    </div>
+
+    <button class="mbtn cancel full" style="margin-top:14px;" onclick="closeModal('gps-modal')">SULJE</button>
   </div>
 </div>
 
@@ -580,6 +614,22 @@ function saveToDisk(){
 }
 
 // Diagnostiikka: näyttää mitä localStorage-avaimia löytyy
+function exportJSON(){
+  const data = {
+    history: State.history,
+    absences: State.absences,
+    exported: new Date().toISOString(),
+    version: 'pbpro_v32'
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pbpro_historia_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function diagStorage(){
   const all=[];
   for(let i=0;i<localStorage.length;i++){
@@ -600,6 +650,13 @@ function fixDecimals(val){
   if(!val||val==="-")return"0";
   let s=val.toString().replace(',','.');
   if(!s.includes('.')&&s.length>=3)return(parseFloat(s)/100).toString();
+  return s.replace(/[^0-9.]/g,'')||"0";
+}
+
+// Kapasiteetille: säilytä arvo sellaisenaan, vain vaihda pilkku pisteeksi
+function fixKap(val){
+  if(!val||val==="-")return"0";
+  let s=val.toString().replace(',','.');
   return s.replace(/[^0-9.]/g,'')||"0";
 }
 
@@ -950,7 +1007,7 @@ async function takeSnap(){
 7. MATERIAALI: "Koodi"-kentän arvo Materiaali-osiosta (esim. "DC01 Am O/I 3.0", "HR S355MC LASER P/O 4.0")
 8. NIMIKE: "Nimike"-kentän arvo Materiaali-osiosta (esim. "KYLMÄVALSSATTU TERÄSLEVY", "KUUMAVALSSATTU TERÄSLEVY")
 9. VAHVUUS: Ainevahvuus millimetreinä Koodi-kentästä — se on viimeinen numero koodissa (esim. "DC01 Am O/I 3.0" → "3.0", "HR S355MC LASER P/O 4.0" → "4.0")
-10. ASETUS ja KAP: Etsi vaihelistasta "Taivutus" tai "Särmäys". Ota sen rivin Asetus ja Kapasiteetti. Jos ei löydy, palauta 0.
+10. ASETUS ja KAP: Etsi vaihelistasta "Taivutus" tai "Särmäys". Ota sen rivin Asetus (kokonaisluku, minuutteja) ja Kapasiteetti (desimaaliluku, min/kpl). Kapasiteetti voi olla esim "4,65" tai "0,62" tai "6,20" — lue se TARKASTI sellaisenaan pilkku pisteeksi muutettuna. ÄLÄ muuta arvoa. Jos ei löydy, palauta 0.
 
 Palauta VAIN JSON:
 {"tyo":"...","laji":"...","kuvaus":"...","asia":"...","piir":"...","paino":"...","materiaali":"...","nimike":"...","vahvuus":"...","asetus":"...","kap":"..."}`},
@@ -966,7 +1023,7 @@ Palauta VAIN JSON:
     document.getElementById('val-piirnro').innerText=(res.piir||"-").toUpperCase();
     document.getElementById('val-paino').innerText=fixDecimals(res.paino);
     document.getElementById('val-asetusaika').innerText=fixDecimals(res.asetus);
-    document.getElementById('val-kap-aika').innerText=fixDecimals(res.kap);
+    document.getElementById('val-kap-aika').innerText=fixKap(res.kap);
     // Tallenna piilotetut kentät väliaikaiseen tilaan
     State._pendingMateriaali=(res.materiaali||'').toUpperCase();
     State._pendingNimike=(res.nimike||'').toUpperCase();
@@ -977,7 +1034,7 @@ Palauta VAIN JSON:
 
 // ===== EDIT =====
 function openEditModal(id){
-  const item=State.history.find(h=>h.id===id);
+  const item=State.history.find(h=>String(h.id)===String(id));
   if(!item||item.isShift||item.isAbsence)return;
   document.getElementById('edit-id').value=id;
   document.getElementById('edit-tyo').value=item.tyo||'';
@@ -994,8 +1051,9 @@ function openEditModal(id){
   document.getElementById('edit-modal').style.display='block';
 }
 function confirmEdit(){
-  const id=parseInt(document.getElementById('edit-id').value);
-  const item=State.history.find(h=>h.id===id);
+  const id=document.getElementById('edit-id').value;
+  const item=State.history.find(h=>String(h.id)===String(id));
+  if(!item){alert('Merkintää ei löydy, id: '+id);return;}
   const kpl=parseInt(document.getElementById('edit-kpl').value)||0;
   const a=parseFloat(document.getElementById('edit-asetus').value)||0;
   const k=parseFloat(document.getElementById('edit-kap').value)||0;
@@ -1012,8 +1070,8 @@ function confirmEdit(){
 }
 function deleteEntry(){
   if(confirm("Poistetaanko tämä kortti?")){
-    const id=parseInt(document.getElementById('edit-id').value);
-    State.history=State.history.filter(h=>h.id!==id);
+    const id=document.getElementById('edit-id').value;
+    State.history=State.history.filter(h=>String(h.id)!==String(id));
     saveToDisk();closeModal('edit-modal');renderHistory();updateUI();
   }
 }
@@ -1051,7 +1109,7 @@ function closeModal(id){document.getElementById(id).style.display='none';}
 function saveMuut(){
   document.getElementById('val-muu-nimi').innerText=document.getElementById('muu-nimi-in').value.toUpperCase()||"-";
   document.getElementById('val-asetusaika').innerText=fixDecimals(document.getElementById('muu-asetus-in').value);
-  document.getElementById('val-kap-aika').innerText=fixDecimals(document.getElementById('muu-kap-in').value);
+  document.getElementById('val-kap-aika').innerText=fixKap(document.getElementById('muu-kap-in').value);
   closeModal('muut-modal');
 }
 function openCam(){
@@ -1267,7 +1325,164 @@ function printReport(){
   w.onload=()=>{ w.focus(); w.print(); };
 }
 
-// ===== KÄYNNISTYS =====
+// ===== GPS =====
+const GPS_RADIUS = 100; // metriä
+let gpsWatchId = null;
+let gpsActive = false;
+let lastGpsState = null; // 'inside' | 'outside'
+
+function getWorkplace(){
+  try{ return JSON.parse(localStorage.getItem('pbpro_workplace')||'null'); }
+  catch(e){ return null; }
+}
+
+function haversineDistance(lat1,lon1,lat2,lon2){
+  const R=6371000;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+    Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function openGpsSettings(){
+  const wp=getWorkplace();
+  document.getElementById('gps-saved-location').innerText=
+    wp?`${wp.lat.toFixed(6)}, ${wp.lon.toFixed(6)} (asetettu ${wp.setAt})`:'Ei asetettu';
+  document.getElementById('gps-modal-status').innerText=
+    gpsActive?'✅ GPS ON — tarkistaa 30s välein':'⭕ GPS EI OLE KÄYNNISSÄ';
+  document.getElementById('gps-toggle-btn').innerText=gpsActive?'■ PYSÄYTÄ GPS':'▶ KÄYNNISTÄ GPS';
+  document.getElementById('gps-toggle-btn').style.background=gpsActive?'var(--danger)':'var(--green)';
+  document.getElementById('gps-modal').style.display='block';
+}
+
+function setWorkplaceLocation(){
+  const el=document.getElementById('gps-modal-status');
+  el.innerText='📡 Haetaan sijaintia...';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const wp={lat:pos.coords.latitude,lon:pos.coords.longitude,
+      setAt:new Date().toLocaleDateString('fi-FI')};
+    localStorage.setItem('pbpro_workplace',JSON.stringify(wp));
+    document.getElementById('gps-saved-location').innerText=
+      `${wp.lat.toFixed(6)}, ${wp.lon.toFixed(6)} (asetettu ${wp.setAt})`;
+    el.style.color='var(--green)';
+    el.innerText='✅ Työpaikka tallennettu!';
+    document.getElementById('gps-status-icon').innerText='📍';
+    lastGpsState=null; // reset jotta tunnistus toimii heti
+  }, err=>{
+    el.style.color='var(--danger)';
+    el.innerText='❌ GPS-virhe: '+err.message;
+  },{enableHighAccuracy:true,timeout:10000});
+}
+
+function clearWorkplace(){
+  if(confirm('Poistetaanko työpaikan sijainti?')){
+    localStorage.removeItem('pbpro_workplace');
+    document.getElementById('gps-saved-location').innerText='Ei asetettu';
+    document.getElementById('gps-modal-status').innerText='Sijainti poistettu.';
+    stopGps();
+  }
+}
+
+function toggleGps(){
+  if(gpsActive) stopGps();
+  else startGps();
+  // Päivitä modal
+  document.getElementById('gps-modal-status').innerText=
+    gpsActive?'✅ GPS ON — tarkistaa 30s välein':'⭕ GPS EI OLE KÄYNNISSÄ';
+  document.getElementById('gps-toggle-btn').innerText=gpsActive?'■ PYSÄYTÄ GPS':'▶ KÄYNNISTÄ GPS';
+  document.getElementById('gps-toggle-btn').style.background=gpsActive?'var(--danger)':'var(--green)';
+}
+
+function startGps(){
+  if(!getWorkplace()){alert('Aseta ensin työpaikan sijainti!');return;}
+  if(!navigator.geolocation){alert('Selain ei tue GPS:ää');return;}
+  gpsActive=true;
+  localStorage.setItem('pbpro_gps_active','1');
+  document.getElementById('gps-status-icon').innerText='🟢';
+  document.getElementById('gps-bar').style.display='flex';
+  checkGpsPosition(); // heti kerran
+  // Tarkista 30s välein
+  if(window._gpsInterval) clearInterval(window._gpsInterval);
+  window._gpsInterval=setInterval(checkGpsPosition,30000);
+}
+
+function stopGps(){
+  gpsActive=false;
+  localStorage.removeItem('pbpro_gps_active');
+  if(window._gpsInterval) clearInterval(window._gpsInterval);
+  document.getElementById('gps-status-icon').innerText='📍';
+  document.getElementById('gps-bar').style.display='none';
+}
+
+function checkGpsPosition(){
+  const wp=getWorkplace();
+  if(!wp||!gpsActive) return;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const dist=Math.round(haversineDistance(pos.coords.latitude,pos.coords.longitude,wp.lat,wp.lon));
+    const inside=dist<=GPS_RADIUS;
+    const bar=document.getElementById('gps-bar');
+    const distEl=document.getElementById('gps-bar-dist');
+    const textEl=document.getElementById('gps-bar-text');
+
+    distEl.innerText=dist+'M';
+
+    if(inside){
+      bar.style.borderLeftColor='var(--green)';
+      textEl.style.color='var(--green)';
+      textEl.innerText='// TYÖPAIKALLA';
+      distEl.style.color='var(--green)';
+    } else {
+      bar.style.borderLeftColor='#29b6f6';
+      textEl.style.color='#29b6f6';
+      textEl.innerText='// GPS AKTIIVINEN';
+      distEl.style.color='var(--muted)';
+    }
+
+    // Automaattinen vuoron aloitus/lopetus
+    if(inside && lastGpsState !== 'inside'){
+      lastGpsState='inside';
+      if(!State.startTime){
+        // Aloita vuoro automaattisesti
+        State.startTime=new Date();
+        saveToDisk();
+        updateUI();
+        showGpsToast('✅ Vuoro aloitettu automaattisesti');
+      }
+    } else if(!inside && lastGpsState === 'inside'){
+      lastGpsState='outside';
+      if(State.startTime){
+        // Lopeta vuoro automaattisesti
+        const now=new Date();
+        const hrs=(now-State.startTime)/3600000;
+        const t=now.toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'});
+        const tStart=State.startTime.toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'});
+        State.history.unshift({
+          id:Date.now(),pvm:now.toLocaleDateString('fi-FI'),isShift:true,hours:hrs,
+          info:`${tStart} – ${t} (${hrs.toFixed(2)}H) [GPS]`
+        });
+        State.startTime=null;
+        saveToDisk();updateUI();renderHistory();
+        showGpsToast('⏹ Vuoro lopetettu automaattisesti');
+      }
+    }
+    if(lastGpsState===null) lastGpsState=inside?'inside':'outside';
+
+  },err=>{
+    document.getElementById('gps-bar-text').innerText='// GPS-VIRHE: '+err.message;
+  },{enableHighAccuracy:true,timeout:8000,maximumAge:20000});
+}
+
+function showGpsToast(msg){
+  const t=document.createElement('div');
+  t.innerText=msg;
+  t.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--orange);color:var(--text);font-family:\'Share Tech Mono\',monospace;font-size:0.8em;padding:12px 20px;z-index:5000;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+
 function init(){
   // Pakota palautus heti jos historia tyhjä
   if(State.history.length===0){
